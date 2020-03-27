@@ -50,9 +50,9 @@ from __future__ import print_function
 #######################################################################
 
 #--------------------Time range--------------------
-YEAR=2004
-TIME_START='%d-01-01 00:00:00' %YEAR
-TIME_END='%d-03-31 18:00:00' %YEAR
+YEAR=1984
+TIME_START='%d-03-01 00:00:00' %YEAR
+TIME_END='%d-06-31 18:00:00' %YEAR
 
 #-----------u-qflux----------------------
 SOURCEDIR1='/home/guangzhi/datasets/erai/erai_qflux'
@@ -119,6 +119,7 @@ PARAM_DICT={
 
 #--------Import modules-------------------------
 import os
+import sys
 import cdms2 as cdms
 import MV2 as MV
 import numpy as np
@@ -431,7 +432,10 @@ if __name__=='__main__':
     abpath_out=os.path.join(OUTPUTDIR,file_out_name)
     print('\n### <river_tracker1>: Saving output to:\n',abpath_out)
     # Necessary: to remove ... in csv file
-    np.set_printoptions(threshold='nan')
+    if sys.version_info.major==2:
+        np.set_printoptions(threshold='nan')
+    elif sys.version_info.major==3:
+        np.set_printoptions(threshold=9223372036854775807)
     result_df.to_csv(abpath_out,index=False)
 
 

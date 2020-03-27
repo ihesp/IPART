@@ -40,7 +40,7 @@ from __future__ import print_function
 #--------------Globals------------------------------------------
 
 #-----------IVT data----------------------
-IVT_FILE='/home/guangzhi/datasets/erai/erai_qflux/ivt_m1-60_6_2008.nc'
+IVT_FILE='/home/guangzhi/datasets/erai/erai_qflux/ivt_m1-60_6_1984_cln.nc'
 VARIN='ivt'          # data id in nc file
 
 LAT1=0; LAT2=90      # degree, latitude domain

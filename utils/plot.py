@@ -1419,7 +1419,7 @@ class Plot2Basemap(Plot2D):
 
             if self.method.method=='isofill':
                 cs=bmap.contourf(self.lons,self.lats,self.var,self.method.levels,latlon=True,\
-                        cmap=self.method.cmap,ax=self.ax,extend=extend,hatch='/')
+                        cmap=self.method.cmap,ax=self.ax,extend=extend)
 
             elif self.method.method=='isoline':
                 if self.method.black:

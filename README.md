@@ -8,7 +8,7 @@
 * CDAT (Climatic Data Analysis Tool): (https://github.com/CDAT/cdat). Use a version compatible with Py2. cdat-lite will do
 * numpy (developed in 1.16.5)
 * scipy (developed in 1.2.1)
-* matplotlib (developed in 2.2.3)
+* matplotlib (developed in 2.2.3. Having [issues](https://github.com/matplotlib/matplotlib/issues/12820) with 3.1.3)
 * basemap (developed in 1.2.0)
 * pandas (developed in 0.23.4)
 * networkx (tested 1.11 and 2.2)

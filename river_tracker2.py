@@ -15,11 +15,11 @@ Update time: 2018-12-05 13:19:09.
 from __future__ import print_function
 
 #--------------Globals------------------------------------------
-YEAR=2007
+YEAR=1984
 
-SOURCEDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/2004/'
-RECORD_FILE='ar_records_2004-01-01_00-00-00-2004-03-31_18-00-00.csv'
-OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/2004/'
+SOURCEDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/1984/'
+RECORD_FILE='ar_records_1984-03-01_00-00-00-1984-06-31_18-00-00.csv'
+OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/1984/'
 
 SCHEMATIC=True   # plot schematic or not
 
@@ -232,7 +232,7 @@ def plotHD(y1,x1,y2,x2,timelabel=None,linkflag='',ax=None,show=True):
     ax.add_patch(arrow)
 
     # plot max dist texts
-    ax.text(fhmax_x2, fhmax_y2, '%.1f %s' %(np.max(fh_mins.values()), linkflag),
+    ax.text(fhmax_x2, fhmax_y2, '%.1f %s' %(np.max(list(fh_mins.values())), linkflag),
             fontsize=12, color='b')
 
     # backward arrows
@@ -244,7 +244,7 @@ def plotHD(y1,x1,y2,x2,timelabel=None,linkflag='',ax=None,show=True):
             fc='c', ec='c')
     ax.add_patch(arrow)
 
-    ax.text(bhmax_x2, bhmax_y2, '%.1f %s' %(np.max(bh_mins.values()), linkflag),
+    ax.text(bhmax_x2, bhmax_y2, '%.1f %s' %(np.max(list(bh_mins.values())), linkflag),
             fontsize=12, color='c')
 
     ax.set_xlabel('Longitude (degree)')
@@ -559,7 +559,7 @@ def matchCenters2(tr_list, newrec, params, isplot=False, plot_dir=None,
             plot_save_name=os.path.join(plot_dir,plot_save_name)
             print('\n# <river_tracker2>: Save figure to', plot_save_name)
             figure.savefig(plot_save_name+'.png',dpi=100,bbox_inches='tight')
-            figure.savefig(plot_save_name+'.pdf',dpi=100,bbox_inches='tight')
+            #figure.savefig(plot_save_name+'.pdf',dpi=100,bbox_inches='tight')
 
         plt.close(figure)
 
