@@ -18,7 +18,7 @@ from __future__ import print_function
 YEAR=1984
 
 SOURCEDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/1984/'
-RECORD_FILE='ar_records_1984-03-01_00-00-00-1984-06-31_18-00-00.csv'
+RECORD_FILE='ar_records_1984-01-01_00-00-00-1984-06-30_18-00-00.csv'
 OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/1984/'
 
 SCHEMATIC=True   # plot schematic or not

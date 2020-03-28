@@ -40,7 +40,7 @@ from __future__ import print_function
 #--------------Globals------------------------------------------
 
 #-----------IVT data----------------------
-IVT_FILE='/home/guangzhi/datasets/erai/erai_qflux/ivt_m1-60_6_1984_cln.nc'
+IVT_FILE='/home/guangzhi/datasets/erai/ERAI_AR_THR/ivt_m1-60_6_1984_crop.nc'
 VARIN='ivt'          # data id in nc file
 
 LAT1=0; LAT2=90      # degree, latitude domain
@@ -51,7 +51,7 @@ KERNEL=[16,6,6]   # half length of time (time steps), and half length of spatial
 SHIFT_LON=80  # shift longitudinally to center Pacific and Altantic
 
 #------------------Output folder------------------
-OUTPUTDIR='/home/guangzhi/datasets/erai/ivt_thr/'
+OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/'
 
 
 

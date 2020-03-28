@@ -201,7 +201,7 @@ def maskToGraph(mask, quslab, qvslab, costhetas, sinthetas, edge_eps,
         '''Add directed edges to graph. For shifting approach
         '''
 
-        ratio=np.where(wsslab==0., 0, speedslab/wsslab)
+        ratio=np.where(np.isclose(wsslab, 0., atol=1e-5), 0, speedslab/wsslab)
         idx=np.where(ratio>=edge_eps, 1, 0)*nodes1
         idx=zip(*np.where(idx>0))
 

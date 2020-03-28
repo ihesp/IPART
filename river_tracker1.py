@@ -51,22 +51,22 @@ from __future__ import print_function
 
 #--------------------Time range--------------------
 YEAR=1984
-TIME_START='%d-03-01 00:00:00' %YEAR
-TIME_END='%d-06-31 18:00:00' %YEAR
+TIME_START='%d-01-01 00:00:00' %YEAR
+TIME_END='%d-06-30 18:00:00' %YEAR
 
 #-----------u-qflux----------------------
-SOURCEDIR1='/home/guangzhi/datasets/erai/erai_qflux'
-UQ_FILE_NAME='uflux_m1-60_6_%d_cln.nc'
+SOURCEDIR1='/home/guangzhi/datasets/erai/ERAI_AR_THR'
+UQ_FILE_NAME='uflux_m1-60_6_%d_crop.nc'
 UQ_VAR='uflux'
 
 #-----------v-qflux----------------------
-SOURCEDIR2='/home/guangzhi/datasets/erai/erai_qflux'
-VQ_FILE_NAME='vflux_m1-60_6_%d_cln.nc'
+SOURCEDIR2='/home/guangzhi/datasets/erai/ERAI_AR_THR'
+VQ_FILE_NAME='vflux_m1-60_6_%d_crop.nc'
 VQ_VAR='vflux'
 
 #-----------------ivt reconstruction and anomalies-----------------
-SOURCEDIR3='/home/guangzhi/datasets/erai/ivt_thr/'
-IVT_FILE_NAME='ivt_m1-60_6_%d_cln-minimal-rec-ano-kernel-t16-s6.nc'
+SOURCEDIR3='/home/guangzhi/datasets/erai/ERAI_AR_THR/'
+IVT_FILE_NAME='ivt_m1-60_6_%d_crop-minimal-rec-ano-kernel-t16-s6.nc'
 
 #------------------Output folder------------------
 OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/%d/' %YEAR
@@ -101,12 +101,12 @@ PARAM_DICT={
     # km, ARs shorter than this length is treated as relaxed.
     'min_length': 2000,
     # km, ARs shorter than this length is discarded.
-    'min_length_hard': 800,
+    'min_length_hard': 1500,
     # degree lat/lon, error when simplifying axis using rdp algorithm.
     'rdp_thres': 2,
     # grids. Remove small holes in AR contour.
     'fill_radius': max(1,int(4*0.75/RESO)),
-    # max prominence/height ratio of a local peak.
+    # max prominence/height ratio of a local peak. Only used when SINGLE_DOME=True
     'max_ph_ratio': 0.4,
     # minimal proportion of flux component in a direction to total flux to
     # allow edge building in that direction
@@ -396,6 +396,7 @@ if __name__=='__main__':
         #-------------------Plot------------------------
         if PLOT:
             plot_vars=[slab,slabrec,slabano]
+            titles=['IVT', 'Reconstruction', 'THR']
             iso=plot.Isofill(plot_vars,12,1,1,min_level=0,max_level=800)
 
             figure=plt.figure(figsize=(12,10),dpi=100)
@@ -403,7 +404,7 @@ if __name__=='__main__':
             for jj in range(len(plot_vars)):
                 ax=figure.add_subplot(3,1,jj+1)
                 pobj=plot.plot2(plot_vars[jj],iso,ax,projection='cyl',
-                        title=timett_str,
+                        title='%s %s' %(timett_str, titles[jj]),
                         fix_aspect=False)
 
                 bmap=pobj.bmap
