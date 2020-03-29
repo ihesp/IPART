@@ -21,7 +21,7 @@ def get3DEllipse(t,y,x):
     return np.where(dd<=1,1,0)
 
 
-def getQuantiles(slab,percents=None,verbose=True):
+def getQuantiles(slab,percents=None,verbose=False):
     '''Find quantiles of a slab
 
     <slab>: ndarray, whose quantiles will be found.
@@ -57,7 +57,7 @@ def getQuantiles(slab,percents=None,verbose=True):
     ql=flatten[qlidx]
     qr=flatten[qridx]
 
-    quantiles=zip(ql,qr)
+    quantiles=list(zip(ql,qr))
 
     if verbose:
         for ii,pii in enumerate(percents):
@@ -693,8 +693,6 @@ def findIndex(x,a):
     return idx
 
 
-
-
 def getBearing(lat1,lon1,lat2,lon2):
     '''Compute bearing from point 1 to point2
 
@@ -757,3 +755,67 @@ def getCrossTrackDistance(lat1,lon1,lat2,lon2,lat3,lon3,r=None):
     dxt=r*dtheta
 
     return dxt
+
+
+
+def readVar(abpath_in, varid):
+    '''Read in netcdf variable
+
+    Args:
+        abpath_in (str): absolute file path to nc file.
+        varid (str): id of variable to read.
+    Returns:
+        var (TransientVariable): 4d TransientVariable.
+    '''
+
+    import cdms2 as cdms
+    import numpy as np
+    import MV2 as MV
+
+    print('\n# <readVar>: Read in file:\n',abpath_in)
+    fin=cdms.open(abpath_in,'r')
+    var=fin(varid)
+
+    if np.ndim(var) not in [3, 4]:
+        raise Exception("Rank of <var> needs to be 3 or 4. Either (time, lat, lon) or (time, lev, lat, lon)")
+
+    #-----------------Try get latitude-----------------
+    try:
+        latax=var.getLatitude()
+        if latax is None:
+            raise Exception("latax is None")
+    except:
+        raise Exception("Failed to fetch latitude axis in data.")
+
+    #-----------------Try get longitude-----------------
+    try:
+        lonax=var.getLongitude()
+        if lonax is None:
+            raise Exception("lonax is None")
+    except:
+        raise Exception("Failed to fetch longitude axis in data.")
+
+    #----------------Try get time axis----------------
+    try:
+        timeax=var.getTime()
+        if timeax is None:
+            raise Exception("timeax is None")
+    except:
+        raise Exception("Failed to fetch time axis in data.")
+
+    levax=cdms.createAxis([0,])
+    levax.designateLevel()
+    levax.id='z'
+    levax.name='level'
+    levax.units=''
+
+    ndim=np.ndim(var)
+    axislist=[timeax, levax, latax, lonax]
+
+    if ndim==3:
+        var=MV.reshape(var, (len(timeax), 1, len(latax), len(lonax)))
+
+    var.setAxisList(axislist)
+    fin.close()
+
+    return var

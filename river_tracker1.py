@@ -130,7 +130,6 @@ from skimage import morphology
 from utils import funcs,plot
 from river_tracker1_funcs import areaFilt, maskToGraph, getARAxis, cropMask,\
         partPeaks, getARData, uvDecomp, save2DF, plotAR
-from compute_thr_singlefile import readVar
 
 
 
@@ -272,11 +271,11 @@ if __name__=='__main__':
     #-----------Read in flux data----------------------
     file_in_name=UQ_FILE_NAME %YEAR
     abpath_in=os.path.join(SOURCEDIR1,file_in_name)
-    qu=readVar(abpath_in, UQ_VAR)
+    qu=funcs.readVar(abpath_in, UQ_VAR)
 
     file_in_name=VQ_FILE_NAME %YEAR
     abpath_in=os.path.join(SOURCEDIR2,file_in_name)
-    qv=readVar(abpath_in, VQ_VAR)
+    qv=funcs.readVar(abpath_in, VQ_VAR)
 
     #-----------------Shift longitude-----------------
     qu=qu(longitude=(SHIFT_LON,SHIFT_LON+360))

@@ -65,65 +65,9 @@ import cdms2 as cdms
 import MV2 as MV
 import numpy as np
 from skimage import morphology
-from cdms2.selectors import Selector
 from utils import funcs
 
 
-def readVar(abpath_in, varid):
-    '''Read in netcdf variable
-
-    Args:
-        abpath_in (str): absolute file path to nc file.
-        varid (str): id of variable to read.
-    '''
-
-    print('\n# <readVar>: Read in file:\n',abpath_in)
-    fin=cdms.open(abpath_in,'r')
-    var=fin(varid)
-
-    #-----------------Try get latitude-----------------
-    try:
-        latax=var.getLatitude()
-        if latax is None:
-            raise Exception("latax is None")
-    except:
-        try:
-            lat=fin('lat')[:,0]
-        except:
-            raise Exception("Can't find latitude axis in data.")
-        else:
-            latax=cdms.createAxis(lat)
-            latax.designateLatitude()
-            latax.id='y'
-            latax.name='latitude'
-            latax.unit='degree_north'
-
-    #-----------------Try get longitude-----------------
-    try:
-        lonax=var.getLongitude()
-        if lonax is None:
-            raise Exception("lonax is None")
-    except:
-        try:
-            lon=fin('lon')[0,:]
-        except:
-            raise Exception("Can't find longitude axis in data.")
-        else:
-            lonax=cdms.createAxis(lon)
-            lonax.designateLongitude()
-            lonax.id='x'
-            lonax.name='longitude'
-            lonax.unit='degree_east'
-
-    axislist=var.getAxisList()
-    axislist[-2]=latax
-    axislist[-1]=lonax
-
-    var.setAxisList(axislist)
-    fin.close()
-
-
-    return var
 
 
 def filterData(ivt,kernel,verbose=True):
@@ -195,7 +139,7 @@ if __name__=='__main__':
         os.makedirs(OUTPUTDIR)
 
     #-----------Read in data----------------------
-    var=readVar(IVT_FILE, 'ivt')
+    var=funcs.readVar(IVT_FILE, 'ivt')
 
     #-----------------Shift longitude-----------------
     var=var(latitude=(LAT1, LAT2))
