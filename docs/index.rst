@@ -28,7 +28,7 @@ processing technique -- `Top-hap by reconstruction (THR) <https://ieeexplore.iee
 Below is an example output figure:
 
 .. figure:: ar_1984-01-04_06:00.png
-    :width: 600px
+    :width: 700px
     :align: center
     :figclass: align-center
 

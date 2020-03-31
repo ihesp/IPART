@@ -33,11 +33,14 @@ one should do some parameter adjustments in such a case.
 
 Data are supposed to saved in `netcdf files <https://www.unidata.ucar.edu/software/netcdf/docs/index.html>`_.
 
+.. _metadata:
+
 Metadata
 ########
 
-**NOTE** that the user is responsible for making sure that the data are saved in the following
-rank order:
+
+.. note:: the user is responsible for making sure that the data are saved in the following rank order:
+
 ::
 
     (time, level, latitude, longitude)
@@ -126,6 +129,8 @@ longitude label should be 360. In such cases, the user should take some extra st
 to make sure that the data have proper metadata associated with them.
 
 
+
+.. _get_ivt:
 
 Get IVT
 #######

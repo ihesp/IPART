@@ -1,6 +1,7 @@
 Perform the THR computation on IVT data
 =======================================
 
+.. _compute_thr:
 
 The Top-hat by Reconstruction (THR) algorithm
 #############################################
@@ -73,6 +74,8 @@ Compute THR
 
 Using the above setup, the THR process is computed using following code:
 ::
+
+    from compute_thr_singlescale import filterData
 
     ivt, ivtrec, ivtano = filterData(ivt_input, [16, 6, 6])
 
