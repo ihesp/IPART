@@ -62,4 +62,4 @@ napoleon_use_rtype = False
 napoleon_include_init_with_doc = True
 
 autodoc_mock_imports = ['numpy', 'scipy', 'cdms2', 'MV2', 'cdutil', 'matplotlib',
-        'pandas', 'networkx', 'skimage', 'basemap', 'genutil', 'mpl_toolits']
+        'pandas', 'networkx', 'skimage', 'basemap', 'genutil', 'mpl_toolkits']

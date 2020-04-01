@@ -163,6 +163,12 @@ The code of this package is hosted at https://github.com/ihesp/AR_tracker.
 For any queries, please contact xugzhi1987@gmail.com.
 
 
+License
+#######
+
+:ref:`license`
+
+
 
 Indices and tables
 ==================

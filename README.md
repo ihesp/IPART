@@ -61,7 +61,9 @@ or download a `zip` archive of the repository by clicking on the **Clone or down
 The package at the moment does not perform any installation, computations are done by executing the Python scripts inside the `AR_tracker` directory.
 
 
+## Documentation
 
+[Documentation](https://ar-tracker.readthedocs.io/en/latest/)
 
 
 
