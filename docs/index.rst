@@ -66,7 +66,7 @@ Then install the above listed dependencies, e.g.
     conda install numpy
 
 
-This installs the current latest version of ``numpy``. Most likely the latest versions will work, in case having compatibility issues, consider forcing a given version of a package, e.g.
+This installs the current latest version of ``numpy``. Most likely the latest versions will work, in case of compatibility issues, consider forcing a given version of a package, e.g.
 ::
 
     conda install matplotlib=2.2.3
@@ -94,12 +94,12 @@ or download a ``zip`` archive of the repository by clicking on the **Clone or do
 Dependencies
 ############
 
-* OS: Linux, not tested in MacOS. Windows is likely not going to work, due to the lack of a Windows version of the CDAT package.
+* OS: Linux or MacOS. Windows is likely not going to work, due to the lack of a Windows version of the CDAT package.
 * Python2.7 or Python3.7.
 * CDAT `Climatic Data Analysis Tool <https://github.com/CDAT/cdat>`_.
 * numpy (developed in 1.16.5 in py2, tested 1.18.1 in py3)
 * scipy (developed in 1.2.1 in py2, tested 1.4.1 in py3)
-* matplotlib (2.2.3 for both py2 and py2, having `issues <https://github.com/matplotlib/matplotlib/issues/12820>`_ with 3.1.3.
+* matplotlib (2.2.3 for both py2 and py3, having `issues <https://github.com/matplotlib/matplotlib/issues/12820>`_ with 3.1.3.
 * basemap (developed in 1.2.0 in py2, tested 1.2.0 in py3)
 * pandas (developed in 0.23.4 in py2, tested 1.0.3 in py3)
 * networkx (developed in 1.11 and 2.2 in py2, tested 2.4 in py3)
@@ -127,14 +127,42 @@ Applications on example data can be found in a series of example notebooks at
 
 .. toctree::
    :maxdepth: 2
-   :caption: Workflow steps:
+   :caption: The automated AR detect/tracking Workflow:
 
    Data-preparation
    Compute-THR
    Detect-ARs
    Find-AR-axis
    Track-ARs
+
+
+
+Main scripts/modules
+####################
    
+
+.. toctree::
+   :maxdepth: 1
+
+   compute_thr_singlefile.py <compute_thr_singlefile>
+   compute_thr_multifile.py <compute_thr_multifile>
+   river_tracker1.py <river_tracker1>
+   river_tracker2.py <river_tracker2>
+   river_tracker1_funcs.py <river_tracker1_funcs>
+   utils.funcs (selected parts) <funcs>
+   utilsl.plot (selected parts) <plot>
+
+
+
+
+Github and Contact
+##################
+
+The code of this package is hosted at https://github.com/ihesp/AR_tracker.
+
+For any queries, please contact xugzhi1987@gmail.com.
+
+
 
 Indices and tables
 ==================

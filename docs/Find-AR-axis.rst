@@ -125,3 +125,46 @@ greater intensity. The found axis is by design directed, which in certain
 applications can provide the necessary information to orient the AR with
 respect to its ambiance, such as the horizontal temperature gradient,
 which relates to the low level jet by the thermal wind relation.
+
+
+Usage in Python scripts
+#######################
+
+
+The following snippet shows the axis finding process:
+::
+
+    from river_tracker1_funcs import maskToGraph, getARAxis
+
+    #----------Convert mask to directed graph----------
+    gii = maskToGraph(maskii, quslab, qvslab, costhetas, sinthetas, edge_eps)
+
+    #--------------Get AR axis from graph--------------
+    axisarrii, axismaskii = getARAxis(gii, quslab, qvslab, maskii)
+
+
+where:
+
+* ``maskii`` is the binary mask denoting the region of an found AR.
+* ``quslab``, ``qvslab`` are the u- and v- component of integrated vapor fluxes at a given time point.
+* ``sinthetas`` and ``costhetas`` are used to compute the azimuthal angles for each grid cell.
+* ``edge_eps`` is the user defined parameter :math:`\epsilon`. This is defined in ``PARAM_DICT``, see :ref:`detect_params`.
+* ``axisarrii`` is an array for the lat/lon coordinates of the found axis.
+* ``axismaskii`` is a binary mask, with the same shape as ``maskii``, showing the found AR axis.
+
+.. seealso:: :py:func:`river_tracker1_funcs.maskToGraph`, :py:func:`river_tracker1_funcs.getARAxis`.
+
+Dedicated Python script
+#######################
+
+No detected Python script is offered for this process, as it is performed in the
+:py:func:`river_tracker1.findARs()` function.
+
+
+
+
+Notebook example
+################
+
+An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/notebooks/3_detect_ARs.ipynb>`_.
+

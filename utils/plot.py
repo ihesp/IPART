@@ -465,66 +465,68 @@ class Isofill(object):
         ql=None,qr=None,cmap=None,verbose=True):
         '''Return an isofill object with specified color scheme.
 
-        <vars>: one or a list of variables, from which the <minlevel>
-                and <maxlevel> is obtained.
-                If <vars> has more than 1 variables, then function calculates
-                the minimum and maximum of all variables, thus the color
-                legend would be unified for all subplots.
-                Note that if <max_level> and/or <min_level> are given,
-                they will override the maximum/minimal levels derived
-                from <vars>.
-        <Num> : is the (maximum) number of isoline levels;
-        <zero>: controls 0 in created <levels>:\
-                -1: 0 is NOT allowed to be a level;
-                1: 0 is permitted to be a level;
-                2: 0 forced to be a level.
-        <split>: int, control behavior of negative and positive values\
-                0: Do not split negatives and positives, map onto entire\
-                   range of [0,1];
-                1: split only when vmin<0 and vmax>0, otherwise\
-                   map onto entire range of [0,1];
-                   If split is to be applied, negative values are mapped onto first half [0,0.5],
-                   and postives onto second half (0.5,1].
-                2: force split, if vmin<0 and vmax>0, same as <split>==1;
-                    If vmin<0 and vmax<0, map onto 1st half [0,0.5];
-                    If vmin>0 and vmax>0, map onto 2nd half (0.5,1].
-        <max_level>,<min_level>: the max/min limits to be plotted out, values
-                                outside the range will be grouped into the
-                                last level intervals on both ends.
-        <ql>,<qr>: extreme percentiles for the lower and upper boundaries.
-                   Could be one of the values in the list:
+        Args:
+            vars: one or a list of variables, from which the <minlevel>
+                    and <maxlevel> is obtained.
+                    If <vars> has more than 1 variables, then function calculates
+                    the minimum and maximum of all variables, thus the color
+                    legend would be unified for all subplots.
+                    Note that if <max_level> and/or <min_level> are given,
+                    they will override the maximum/minimal levels derived
+                    from <vars>.
+        Keyword Args:
+            Num (int): is the (maximum) number of isoline levels;
+            zero (int): controls 0 in created <levels>:\
+                    -1: 0 is NOT allowed to be a level;
+                    1: 0 is permitted to be a level;
+                    2: 0 forced to be a level.
+            split (int): int, control behavior of negative and positive values\
+                    0: Do not split negatives and positives, map onto entire\
+                       range of [0,1];
+                    1: split only when vmin<0 and vmax>0, otherwise\
+                       map onto entire range of [0,1];
+                       If split is to be applied, negative values are mapped onto first half [0,0.5],
+                       and postives onto second half (0.5,1].
+                    2: force split, if vmin<0 and vmax>0, same as <split>==1;
+                        If vmin<0 and vmax<0, map onto 1st half [0,0.5];
+                        If vmin>0 and vmax>0, map onto 2nd half (0.5,1].
+            max_level,min_level (float): the max/min limits to be plotted out, values
+                                    outside the range will be grouped into the
+                                    last level intervals on both ends.
+            ql,qr (float): extreme percentiles for the lower and upper boundaries.
+                       Could be one of the values in the list:
 
-                        percents=[0.001,0.005,0.01,0.025,0.05,0.1]
+                            percents=[0.001,0.005,0.01,0.025,0.05,0.1]
 
-                   E.g. ql=0.001; qr=0.005
-                   means that the 0.1% percentile will be set to the minimum level;
-                   0.005% (from the right most, or 99.95% from the left most) percentil will
-                   be set to the maximum level.
+                       E.g. ql=0.001; qr=0.005
+                       means that the 0.1% percentile will be set to the minimum level;
+                       0.005% (from the right most, or 99.95% from the left most) percentil will
+                       be set to the maximum level.
 
-                   If both <ql> and <min_level> are given, use <min_level>.
-                   If both <qr> and <max_level> are given, use <max_level>.
-        <cmap>: specify a color map. Could be:
-                1) None, a default blue-white-red (bwr) color map will be created.
-                2) a matplotlib cmap obj.
-                3) a string name of a matplotlib cmap obj, to list a few:
+                       If both <ql> and <min_level> are given, use <min_level>.
+                       If both <qr> and <max_level> are given, use <max_level>.
+            cmap: specify a color map. Could be:
+                    1) None, a default blue-white-red (bwr) color map will be created.
+                    2) a matplotlib cmap obj.
+                    3) a string name of a matplotlib cmap obj, to list a few:
 
-                    'bwr':      blue-white-red
-                    'RdBu':     darkred-white-blue
-                    'RdYlBu':   red-yellow-white-blue
-                    'RdYlGn':   red-yellow-white-green
-                    'spectral': purple-yellow-cyan-blue
-                    'seismic':  darkblue-white-darkred
-                    'jet':      rainbow darkblue-darkred
-                    'rainbow':  rainbow purple-red
+                        'bwr':      blue-white-red
+                        'RdBu':     darkred-white-blue
+                        'RdYlBu':   red-yellow-white-blue
+                        'RdYlGn':   red-yellow-white-green
+                        'spectral': purple-yellow-cyan-blue
+                        'seismic':  darkblue-white-darkred
+                        'jet':      rainbow darkblue-darkred
+                        'rainbow':  rainbow purple-red
 
-                Append '_r' to get the reversed colormap.
+                    Append '_r' to get the reversed colormap.
 
-        ###NOTE:###
-        <minlevel> and <maxlevel> are better derived using numpy.min() and\
-                numpy.max(). MV.min() and MV.max() may have problems.
-        Iso levels are computed using vcs function (mkscale()), and a matplotlib
-        colormap is created (if not given), and the colormap will be changed so
-        positive/negative splits (if required) is achieved.
+        Note:
+            <minlevel> and <maxlevel> are better derived using numpy.min() and\
+                    numpy.max(). MV.min() and MV.max() may have problems.
+            Iso levels are computed using vcs function (mkscale()), and a matplotlib
+            colormap is created (if not given), and the colormap will be changed so
+            positive/negative splits (if required) is achieved.
 
         Update time: 2015-04-27 14:55:33
         '''
@@ -599,70 +601,73 @@ class Isofill(object):
         return cmap
 
 
-class Boxfill:
+class Boxfill(object):
     def __init__(self,vars,zero=1,split=2,max_level=None,min_level=None,\
         ql=None,qr=None,cmap=None,verbose=True):
         '''Return an isofill object with specified color scheme.
 
-        <vars>: one or a list of variables, from which the <minlevel>
-                and <maxlevel> is obtained.
-                If <vars> has more than 1 variables, then function calculates
-                the minimum and maximum of all variables, thus the color
-                legend would be unified for all subplots.
-                Note that if <max_level> and/or <min_level> are given,
-                they will override the maximum/minimal levels derived
-                from <vars>.
-        <zero>: controls 0 in created <levels>:\
-                -1: 0 is NOT allowed to be a level;
-                1: 0 is permitted to be a level;
-                2: 0 forced to be a level.
-        <split>: int, control behavior of negative and positive values\
-                0: Do not split negatives and positives, map onto entire\
-                   range of [0,1];
-                1: split only when vmin<0 and vmax>0, otherwise\
-                   map onto entire range of [0,1];
-                   If split is to be applied, negative values are mapped onto first half [0,0.5],
-                   and postives onto second half (0.5,1].
-                2: force split, if vmin<0 and vmax>0, same as <split>==1;
-                    If vmin<0 and vmax<0, map onto 1st half [0,0.5];
-                    If vmin>0 and vmax>0, map onto 2nd half (0.5,1].
-        <max_level>,<min_level>: the max/min limits to be plotted out, values
-                                outside the range will be grouped into the
-                                last level intervals on both ends.
-        <ql>,<qr>: extreme percentiles for the lower and upper boundaries.
-                   Could be one of the values in the list:
+        Args:
+            vars: one or a list of variables, from which the <minlevel>
+                    and <maxlevel> is obtained.
+                    If <vars> has more than 1 variables, then function calculates
+                    the minimum and maximum of all variables, thus the color
+                    legend would be unified for all subplots.
+                    Note that if <max_level> and/or <min_level> are given,
+                    they will override the maximum/minimal levels derived
+                    from <vars>.
+        Keyword Args:
+            zero (int): controls 0 in created <levels>:\
+                    -1: 0 is NOT allowed to be a level;
+                    1: 0 is permitted to be a level;
+                    2: 0 forced to be a level.
+            split (int): int, control behavior of negative and positive values\
+                    0: Do not split negatives and positives, map onto entire\
+                       range of [0,1];
+                    1: split only when vmin<0 and vmax>0, otherwise\
+                       map onto entire range of [0,1];
+                       If split is to be applied, negative values are mapped onto first half [0,0.5],
+                       and postives onto second half (0.5,1].
+                    2: force split, if vmin<0 and vmax>0, same as <split>==1;
+                        If vmin<0 and vmax<0, map onto 1st half [0,0.5];
+                        If vmin>0 and vmax>0, map onto 2nd half (0.5,1].
+        Keyword Args:
+            max_level,min_level (float): the max/min limits to be plotted out, values
+                                    outside the range will be grouped into the
+                                    last level intervals on both ends.
+            ql,qr (float): extreme percentiles for the lower and upper boundaries.
+                       Could be one of the values in the list:
 
-                        percents=[0.001,0.005,0.01,0.025,0.05,0.1]
+                            percents=[0.001,0.005,0.01,0.025,0.05,0.1]
 
-                   E.g. ql=0.001; qr=0.005
-                   means that the 0.1% percentile will be set to the minimum level;
-                   0.005% (from the right most, or 99.95% from the left most) percentil will
-                   be set to the maximum level.
+                       E.g. ql=0.001; qr=0.005
+                       means that the 0.1% percentile will be set to the minimum level;
+                       0.005% (from the right most, or 99.95% from the left most) percentil will
+                       be set to the maximum level.
 
-                   If both <ql> and <min_level> are given, use <min_level>.
-                   If both <qr> and <max_level> are given, use <max_level>.
-        <cmap>: specify a color map. Could be:
-                1) None, a default blue-white-red (bwr) color map will be created.
-                2) a matplotlib cmap obj.
-                3) a string name of a matplotlib cmap obj, to list of few:
+                       If both <ql> and <min_level> are given, use <min_level>.
+                       If both <qr> and <max_level> are given, use <max_level>.
+            cmap: specify a color map. Could be:
+                    1) None, a default blue-white-red (bwr) color map will be created.
+                    2) a matplotlib cmap obj.
+                    3) a string name of a matplotlib cmap obj, to list of few:
 
-                    'bwr':      blue-white-red
-                    'RdBu':     darkred-white-blue
-                    'RdYlBu':   red-yellow-white-blue
-                    'RdYlGn':   red-yellow-white-green
-                    'spectral': purple-yellow-cyan-blue
-                    'seismic':  darkblue-white-darkred
-                    'jet':      rainbow darkblue-darkred
-                    'rainbow':  rainbow purple-red
+                        'bwr':      blue-white-red
+                        'RdBu':     darkred-white-blue
+                        'RdYlBu':   red-yellow-white-blue
+                        'RdYlGn':   red-yellow-white-green
+                        'spectral': purple-yellow-cyan-blue
+                        'seismic':  darkblue-white-darkred
+                        'jet':      rainbow darkblue-darkred
+                        'rainbow':  rainbow purple-red
 
-                Append '_r' to get the reversed colormap.
+                    Append '_r' to get the reversed colormap.
 
-        ###NOTE:###
-        <minlevel> and <maxlevel> are better derived using numpy.min() and\
-                numpy.max(). MV.min() and MV.max() may have problems.
-        Iso levels are computed using vcs function (mkscale()), and a matplotlib
-        colormap is created (if not given), and the colormap will be changed so
-        positive/negative splits (if required) is achieved.
+        NOTE:
+            <minlevel> and <maxlevel> are better derived using numpy.min() and\
+                    numpy.max(). MV.min() and MV.max() may have problems.
+            Iso levels are computed using vcs function (mkscale()), and a matplotlib
+            colormap is created (if not given), and the colormap will be changed so
+            positive/negative splits (if required) is achieved.
 
         Update time: 2015-04-27 14:55:33
         '''
@@ -773,9 +778,26 @@ class Plot2D(object):
     def __init__(self,var,method,ax=None,xarray=None,yarray=None,\
             title=None,latlon=True,latlongrid=False,legend='global',
             legend_ori='horizontal',clean=False):
-        '''
-        <clean>: bool, if True, don't plot continents, boundaries,
-                 lat or lon axes. Useful to overlay plots.
+        '''Utility class for 2D plots
+
+        Args:
+            var (ndarray): variable to plot. At least 2D.
+            method: plotting method, could be an instance of Boxfill, Isofill.
+        Keyword Args:
+            ax: matplotlib axis obj. If None, create a new.
+            xarray (ndarray): 1d array, the array values for the x-axis. If None, use
+                              the int indices for the x-dimension.
+            yarray (ndarray): 1d array, the array values for the y-axis. If None, use
+                              the int indices for the y-dimension.
+            title (str): title to plot at subtitle. If None, plot only an alphabetical index.
+            latlon (bool): plot lat/lon axis labels or not.
+            latlongrid (bool): plot lat/lon grid lines or not.
+            legend (str): location of colorbar. Could be: 'global': all subplots share
+                          the colorbar of the 1st subplot in figure. or
+                          'local': each subplot in figure uses its own colorbar.
+            legend_ori (str): 'horizontal' or 'vertical', colorbar orientation.
+            clean (bool): if True, omit axis labels, colorbar, subtitle, continents, boundaries etc..
+                          Useful to overlay plots.
         '''
         import matplotlib.pyplot as plt
 
@@ -806,6 +828,7 @@ class Plot2D(object):
 
     @classmethod
     def checkBasemap(cls,var,xarray,yarray):
+        '''Check variable should be plotted using basemap or not'''
         import numpy
 
         if type(var)==cls.transient and var.getLatitude() is not None\
@@ -826,13 +849,18 @@ class Plot2D(object):
     def getSlab(cls,var):
         '''Get a 2D slab from variable
 
-        <var>: nd variable. If is transient variable, try to slice
-               its 1st time point.
-               If numpy.ndarray, try to take a slab from its last 2 dimensions.
+        Args:
+            var (ndarray): nd variable. If is transient variable, try to slice
+                   its 1st time point.
+                   If numpy.ndarray, try to take a slab from its last 2 dimensions.
+        Returns:
+            ndarray: 2D slab from input <var> to plot.
 
-        NOTE: if transient variable, var.squeeze() will squeeze
-              but with axes info gone. Therefore treat ndarray and
-              transient variable differently.
+        Note:
+            if transient variable, var.squeeze() will squeeze but with axes
+            info gone. Therefore treat ndarray and transient variable
+            differently.
+
         Update time: 2016-02-05 12:59:55.
         '''
         import numpy
@@ -897,6 +925,7 @@ class Plot2D(object):
 
     #---------------------Get grid---------------------
     def getGrid(self):
+        '''Get lat/lon grid info from data'''
         import numpy
 
         if self.yarray is None:
@@ -1338,6 +1367,31 @@ class Plot2Basemap(Plot2D):
             xarray=None,yarray=None,\
             latlon=True,latlongrid=False,projection='merc',fill_color='0.8',
             legend_ori='horizontal',clean=False,fix_aspect=False):
+        '''Utility class for 2D geographical plots using basemap
+
+        Args:
+            var (ndarray): variable to plot. At least 2D.
+            method: plotting method, could be an instance of Boxfill, Isofill.
+        Keyword Args:
+            ax: matplotlib axis obj. If None, create a new.
+            legend (str): location of colorbar. Could be: 'global': all subplots share
+                          the colorbar of the 1st subplot in figure. or
+                          'local': each subplot in figure uses its own colorbar.
+            title (str): title to plot at subtitle. If None, plot only an alphabetical index.
+            xarray (ndarray): 1d array, the array values for the x-axis. If None, use
+                              the int indices for the x-dimension.
+            yarray (ndarray): 1d array, the array values for the y-axis. If None, use
+                              the int indices for the y-dimension.
+            latlon (bool): plot lat/lon axis labels or not.
+            latlongrid (bool): plot lat/lon grid lines or not.
+            projection (str): map projection, used when plotting with basemap.
+            fill_color: color to fill continent or masked regions.
+            legend_ori (str): 'horizontal' or 'vertical', colorbar orientation.
+            clean (bool): if True, omit axis labels, colorbar, subtitle, continents, boundaries etc..
+                          Useful to overlay plots.
+            fix_aspect (bool): passed to the basemap plotting function (e.g. contourf())
+                               for control of aspect ratio.
+        '''
 
         Plot2D.__init__(self,var,method,ax=ax,\
                 xarray=xarray,yarray=yarray,\
@@ -1619,6 +1673,33 @@ def plot2(var,method,ax=None,legend='global',\
         projection='merc',legend_ori='horizontal',clean=False,
         isbasemap=True,
         fix_aspect=True,verbose=True):
+    '''A helper function for quickly create 2D plots
+
+    Args:
+        var (ndarray): variable to plot. At least 2D.
+        method: plotting method, could be an instance of Boxfill, Isofill.
+    Keyword Args:
+        ax: matplotlib axis obj. If None, create a new.
+        xarray (ndarray): 1d array, the array values for the x-axis. If None, use
+                          the int indices for the x-dimension.
+        yarray (ndarray): 1d array, the array values for the y-axis. If None, use
+                          the int indices for the y-dimension.
+        title (str): title to plot at subtitle. If None, plot only an alphabetical index.
+        latlon (bool): plot lat/lon axis labels or not.
+        latlongrid (bool): plot lat/lon grid lines or not.
+        fill_color: color to fill continent or masked regions.
+        projection (str): map projection, used when plotting with basemap.
+        legend (str): location of colorbar. Could be: 'global': all subplots share
+                      the colorbar of the 1st subplot in figure. or
+                      'local': each subplot in figure uses its own colorbar.
+        legend_ori (str): 'horizontal' or 'vertical', colorbar orientation.
+        clean (bool): if True, omit axis labels, colorbar, subtitle, continents, boundaries etc..
+                      Useful to overlay plots.
+        isbasemap (bool): plot using basemap or not. Usually used to force plot as a normal
+                          2d plot instead of geographical plot using basemap.
+        fix_aspect (bool): passed to the basemap plotting function (e.g. contourf())
+                           for control of aspect ratio.
+    '''
 
     if numpy.ndim(var)==1:
         raise Exception("<var> is 1D")

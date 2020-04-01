@@ -31,7 +31,7 @@ Usage:
         ```
 
 Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
-Update time: 2019-12-06 22:55:33.
+Update time: 2020-04-01 12:14:48.
 '''
 
 from __future__ import print_function
@@ -71,6 +71,18 @@ from utils import funcs
 
 
 def filterData(ivt,kernel,verbose=True):
+    """Perform THR filtering process on 3d data
+
+    Args:
+        ivt (TransientVariable): 3D input IVT data, with dimensions (time, lat, lon) or
+                                 (time, level, lat, lon).
+        kernel (list or tuple): list/tuple of integers specifying the shape of the kernel/structuring
+                                element used in the gray erosion process.
+    Returns:
+        ivt (TransientVariable): 3D array, input <ivt> squeezed.
+        ivtrec (TransientVariable): 3D array, the reconstruction component from the THR process.
+        ivtano (TransientVariable): 3D array, the difference between input <ivt> and <ivtrec>.
+    """
 
     ndim=np.ndim(ivt)
     ivt=ivt(squeeze=1)

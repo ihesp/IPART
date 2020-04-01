@@ -1,4 +1,4 @@
-'''Locate atmospheric rivers (ARs) from integrated water vapor transports
+"""Locate atmospheric rivers (ARs) from integrated water vapor transports
 (IVTs) using Top-hat by reconstruction (THR) algorithm.
 
 # Input data
@@ -36,10 +36,9 @@ NOTE: data should have proper time, latitude and longitude axes!
 
 Take only northern hemisphere, shift longitude to 80 E.
 
-
 Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
-Update time: 2019-12-02 11:31:01.
-'''
+Update time: 2020-04-01 12:15:12.
+"""
 
 from __future__ import print_function
 

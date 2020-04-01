@@ -86,21 +86,20 @@ import MV2 as MV
 import numpy as np
 from cdms2.selectors import Selector
 from utils import funcs
-from compute_thr_singlefile import filterData, readVar
+from compute_thr_singlefile import filterData
 
 
 
 def rotatingFiltering(filelist,varin,selector,kernel,outputdir,verbose=True):
     '''Compute time filtering on data in different files.
 
-    <filelist>: list of abs paths to data files. User is responsible to
-                make sure files in list have correct chronological order.
-                Note that time axis in data files should be at the 1st axis.
-    <varin>: str, variable id in files.
-    <selector>: selector obj to select subset of data.
-    <outputdir>: str, path to folder to save outputs.
-
-    Return None
+    Args:
+        filelist (list): list of abs paths to data files. User is responsible to
+                    make sure files in list have correct chronological order.
+                    Note that time axis in data files should be at the 1st axis.
+        varin (str): variable id in files.
+        selector: selector obj to select subset of data.
+        outputdir (str): path to folder to save outputs.
 
     Designed to perform temporal filtering on data that are too large to fit
     into memory, e.g. high-resolution data across multiple decades.
@@ -114,9 +113,6 @@ def rotatingFiltering(filelist,varin,selector,kernel,outputdir,verbose=True):
     The filtering function <func> is assumed to apply a filtering window with
     odd length n, and truncates (n-1)/2 points from both ends. If the function
     doesn't truncate data, will raise an exception.
-
-    Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
-    Update time: 2018-09-30 15:39:19.
     '''
 
     #----------------Check input files----------------
@@ -125,7 +121,7 @@ def rotatingFiltering(filelist,varin,selector,kernel,outputdir,verbose=True):
     for ii, fii in enumerate(filelist[:-1]):
 
         if ii==0:
-            var1=readVar(fii, varin)
+            var1=funcs.readVar(fii, varin)
             var1=var1(selector)
             var1=var1(longitude=(SHIFT_LON,SHIFT_LON+360))
         else:
@@ -133,7 +129,7 @@ def rotatingFiltering(filelist,varin,selector,kernel,outputdir,verbose=True):
             del var2
 
         fii2=filelist[ii+1]
-        var2=readVar(fii2, varin)
+        var2=funcs.readVar(fii2, varin)
         var2=var2(selector)
         var2=var2(longitude=(SHIFT_LON,SHIFT_LON+360))
 

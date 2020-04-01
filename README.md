@@ -8,7 +8,7 @@
 * CDAT (Climatic Data Analysis Tool): (https://github.com/CDAT/cdat).
 * numpy (developed in 1.16.5 in py2, tested 1.18.1 in py3)
 * scipy (developed in 1.2.1 in py2, tested 1.4.1 in py3)
-* matplotlib (2.2.3 for both py2 and py2, having [issues](https://github.com/matplotlib/matplotlib/issues/12820) with 3.1.3)
+* matplotlib (2.2.3 for both py2 and py3, having [issues](https://github.com/matplotlib/matplotlib/issues/12820) with 3.1.3)
 * basemap (developed in 1.2.0 in py2, tested 1.2.0 in py3)
 * pandas (developed in 0.23.4 in py2, tested 1.0.3 in py3)
 * networkx (developed in 1.11 and 2.2 in py2, tested 2.4 in py3)
@@ -34,7 +34,7 @@ Then install the above listed dependencies, e.g.
 conda install numpy
 ```
 
-This installs the current latest version of `numpy`. Most likely the latest versions will work, in case having compatibility issues, consider forcing a given version of a package, e.g.
+This installs the current latest version of `numpy`. Most likely the latest versions will work, in case of compatibility issues, consider forcing a given version of a package, e.g.
 
 ```
 conda install matplotlib=2.2.3

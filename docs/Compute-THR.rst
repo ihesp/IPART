@@ -7,11 +7,11 @@ The Top-hat by Reconstruction (THR) algorithm
 #############################################
 
 The AR detection method is inspired by the image processing technique
-**top-hat by reconstruction} (THR)**.
-
-The THR algorithm consists of
+**top-hat by reconstruction (THR)**, which consists of
 subtracting from the original image a **greyscale reconstruction by
 dilation** image.
+Some more details of the THR algorithm and its applications
+can be found in this work of [Vicent1993]_.
 
 In the context of AR detection, the greyscale image in question is
 the non-negative IVT distribution, denoted as :math:`I`.
@@ -24,8 +24,6 @@ The difference
 between :math:`I` and :math:`\delta(I)` gives the transient IVT component, from
 which AR candidates are searched.
 
-Some more details of the THR algorithm and its applications
-can be found in this work of [Vicent1993]_.
 
 .. note:: we made a modification based on the THR algorithm as descripted in [Vicent1993]_.  The **marker** image used in this package is obtained by a grey scale erosion [#erosion]_ with a structuring element :math:`E`, while in a standard THR process as in [Vicent1993]_, the **marker** image is obtained by a global substraction :math:`I - \delta h`, where :math:`\delta h` is the pixel intensity subtracted globally from the original input image :math:`I`.
 
@@ -63,7 +61,7 @@ scale is about a week, giving :math:`t = 4 \, days` (recall that :math:`t` is on
 The typical width of
 ARs is within :math:`1000 \, km`,
 therefore :math:`s = 6 \, grids` is chosen. Given the :math:`0.75 \,^{\circ}`
-resolution of the ERA-I data, this corresponds to a distance of about
+resolution of data, this corresponds to a distance of about
 :math:`80 km/grid \times (6 \times 2 + 1) grids = 1040 \, km`. An extra grid
 is added to ensure an odd numbered grid length, same for the :math:`t`
 parameter: the number of time steps is :math:`4\, steps/day \times 4 days \times 2 + 1\, step = 33\, steps`.
@@ -75,17 +73,23 @@ Compute THR
 Using the above setup, the THR process is computed using following code:
 ::
 
-    from compute_thr_singlescale import filterData
+    from compute_thr_singlefile import filterData
 
     ivt, ivtrec, ivtano = filterData(ivt_input, [16, 6, 6])
 
 where ``ivt_input`` is the input IVT data, ``ivtrec`` is the reconstruction component, and ``ivtano`` is
 the anomalous component.
 
+.. seealso:: :py:func:`compute_thr_singlefile.filterData`.
+
+
+Dedicated Python script
+#######################
+
 The package provides two script to help doing this computation:
 
-* ``compute_thr_singlefile.py``: when your IVT data are saved in a single file.
-* ``compute_thr_multifile.py``: when your IVT data are too large to fit in a single file, e.g. data spanning
+* :py:mod:`compute_thr_singlefile`: when your IVT data are saved in a single file.
+* :py:mod:`compute_thr_multifile`: when your IVT data are too large to fit in a single file, e.g. data spanning
   multiple decades and saved into one-file-per year. Like in the case of a simple moving average,
   discontinuity at the end of one year and the beginning of the next may introduce some errors. When
   the data are too large to fit into RAM, one possible solution is to read in 2 years at a time,
@@ -94,10 +98,24 @@ The package provides two script to help doing this computation:
   rotates on untill all years are processed.
 
 
+Example output
+##############
+
+.. figure:: fig3.png
+    :width: 700px
+    :align: center
+    :figclass: align-center
+
+    (a) The IVT field in kg/m/s at 1984-01-26 00:00 UTC over the North
+    Hemisphere. (b) the IVT reconstruction field (:math:`\delta(I)`) at the same time point. (c)
+    the IVT anomaly field (:math:`I-\delta(I)`) from the THR process at the same time point.
+
+
+
 Notebook example
 ################
 
-An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/notebooks/2 compute_THR.ipynb>`_.
+An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/notebooks/2_compute_THR.ipynb>`_.
 
 
 

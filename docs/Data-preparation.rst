@@ -122,18 +122,18 @@ The expected outputs would look like this:
 Pay some attention to the values listed in the **latitude** and **longitude** axes
 blocks, to make sure the values make physical sense. For high resolution data,
 the input variable may have a fairly large size, e.g. a longitude axis of length 720 (if
-your data have a resolution of :math:`0.5 \times 0.5 ^{\circ}`. If the longitude
+your data have a resolution of :math:`0.5 \times 0.5 ^{\circ}`). If the longitude
 axis reports a ``Last: 720``, it is probably reporting the size of the longitude
-dimension, rather than the actual longitude label, as the maximum possible
-longitude label should be 360. In such cases, the user should take some extra steps
+dimension, rather than the actual longitude label (as the maximum possible
+longitude label should be 360). In such cases, the user should take some extra steps
 to make sure that the data have proper metadata associated with them.
 
 
 
 .. _get_ivt:
 
-Get IVT
-#######
+Compute IVT
+###########
 
 
 With :math:`F_u` and :math:`F_v`, compute the IVT as

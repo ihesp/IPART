@@ -1,7 +1,7 @@
 '''Functions used in river_tracker1.py
 
 Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
-Update time: 2019-05-10 11:03:36.
+Update time: 2020-04-01 12:14:56.
 '''
 
 from __future__ import print_function
@@ -49,6 +49,7 @@ def areaFilt(mask,area,min_area=None,max_area=None):
     Args:
         mask (ndarray): 2D binary mask with detected objects shown as 1s.
         area (ndarray): 2D map showing grid cell areas in km^2.
+    Keyword Args:
         min_area (float or None): if not None, minimum area to filter objects
                                   in <mask>.
         max_area (float or None): if not None, maximum area to filter objects
@@ -100,8 +101,10 @@ def cart2Spherical(x,y,z, shift_lon):
 
 
 def computeTheta(p1,p2):
-    '''Tangent line to the arc |p1-p2|
-    <p1>,<p2>: (lat,lon) coordinates
+    r'''Tangent line to the arc \|p1-p2\|
+
+    Args:
+        p1,p2 (float): (lat,lon) coordinates
     '''
     p1=spherical2Cart(p1[0],p1[1])
     p2=spherical2Cart(p2[0],p2[1])
@@ -418,7 +421,7 @@ def cropMask(mask, edge=4):
         edge (int): number of pixels as edge at 4 sides.
 
     Returns:
-        mask[y1:y2, x1:x2] (ndarray): a sub region cut from <mask> surrouding
+        mask[y1:y2,x1:x2] (ndarray): a sub region cut from <mask> surrouding
                                       regions with value=1.
         (yy,xx): y-, x- indices of the box of the cut region. Can later by
                  used in applyCropIdx(new_slab, (yy,xx)) to crop out the same
@@ -490,7 +493,7 @@ def insertCropSlab(shape, cropslab, cropidx, axislist=None):
         cropslab (ndarray): 2D array to insert.
         cropidx (tuple): (y, x) coordinate indices, output from cropMask(),
                          defines where <cropslab> will be inserted into.
-    Kwargs:
+    Keyword Args:
         axislist (list or None): if list, a list of cdms.TransientAxis objs.
 
     Returns:
@@ -948,7 +951,6 @@ def save2DF(result_dict):
     return result_df
 
 
-
 def plotAR(ardf, ax, bmap):
     '''Helper function to plot the regions and axes of ARs
 
@@ -1037,7 +1039,6 @@ def getNormalVectors(point_list, idx):
     return normi,thetai
 
 
-
 def crossSectionFlux(mask, quslab, qvslab, axis_rdp):
     '''Compute setion-wise orientation differences and cross-section fluxes
     in an AR
@@ -1053,18 +1054,22 @@ def crossSectionFlux(mask, quslab, qvslab, axis_rdp):
                            rdp-simplified AR axis.
 
     Returns:
+
         angles (TransientVariable): 2D map with the same shape as <mask>,
                                     showing section-wise orientation
                                     differences between horizontal flux (as
                                     in <quslab>, <qvslab>) and the AR axis of
                                     that section. In degrees. Regions outside
                                     of AR (0s in <mask>) are masked.
+
         anglesmean (float): area-weighted averaged of <angles> inside <mask>.
+
         crossflux (TransientVariable): 2D map with the same shape as <mask>,
                                        the section-wise cross-section fluxes
                                        in the AR, defined as the projection
                                        of fluxes onto the AR axis, i.e. flux
                                        multiplied by the cos of <angles>.
+
         seg_thetas (list): list of (x, y, z) Cartesian coordinates of the
                            tangent vectors along section boundaries.
     '''

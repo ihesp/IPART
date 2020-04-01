@@ -6,10 +6,8 @@ Input data:
 1. AR records at individual time steps. This should be the output from
 river_tracker1.py in csv format.
 
-
-
 Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
-Update time: 2018-12-05 13:19:09.
+Update time: 2020-04-01 12:15:03.
 '''
 
 from __future__ import print_function
@@ -67,10 +65,17 @@ import matplotlib.patches as patches
 #######################################################################
 
 class AR(object):
-    '''Ojbect representing an AR'''
+    '''Ojbect representing an AR
+    '''
+
     total_count=0
 
     def __init__(self,id,data):
+        '''
+        Args:
+            id (int): a numeric id for each AR.
+            data (pandas.DataFrame): DataFrame storing an AR's records.
+        '''
         self.id=id
         self.data=data
         self.finish=False
@@ -79,6 +84,7 @@ class AR(object):
 
     @property
     def coor(self):
+        '''ndarray: (Nx3) ndarray, (time, lat_centroid, lon_centroid) coordinates of an AR track.'''
         ts=self.data['time']
         ys=self.data['centroid_y']
         xs=self.data['centroid_x']
@@ -86,57 +92,103 @@ class AR(object):
 
     @property
     def lats(self):
+        '''ndarray: 1d array, the latitude coordinates of the AR axis in the latest
+        record in an AR's track.
+        '''
         return self.data['axis_y'].iloc[-1]
 
     @property
     def lons(self):
+        '''ndarray: 1d array, the longitude coordinates of the AR axis in the latest
+        record in an AR's track.
+        '''
         return self.data['axis_x'].iloc[-1]
 
     @property
     def rdp_lats(self):
+        '''ndarray: 1d array, the latitude coordinates of the simplified AR axis in
+        the latest record in an AR's track.
+        '''
         return self.data['axis_rdp_y'].iloc[-1]
 
     @property
     def rdp_lons(self):
+        '''ndarray: 1d array, the longitude coordinates of the simplified AR axis in
+        the latest record in an AR's track.
+        '''
         return self.data['axis_rdp_x'].iloc[-1]
 
     @property
     def anchor_lats(self):
+        '''ndarray: 1d array, get the latitude coordinates from roughly evenly spaced
+        points from the AR axis.
+        '''
         return getAnchors(self.lats)
 
     @property
     def anchor_lons(self):
+        '''ndarray: 1d array, get the longitude coordinates from roughly evenly spaced
+        points from the AR axis.
+        '''
         return getAnchors(self.lons)
 
     @property
     def times(self):
+        '''Series: sorted time stamps of an AR track.'''
         self.data=self.data.sort_values(by='time')
         return self.data.time
 
     @property
     def latest(self):
+        '''Series: the AR record of the latest time point in an AR track.'''
         self.data=self.data.sort_values(by='time')
         return self.data.iloc[-1]
 
     @property
     def duration(self):
+        '''int: track duration in hours.'''
         return self.latest.time-self.data.time.iloc[0]
 
     def forwardHausdorff(self,lats,lons):
+        '''Compute forward Hausdorff distance from the lastest record to given axis
+
+        Args:
+            lats (ndarray): 1d array, the target axis's latitude coordinates.
+            lons (ndarray): 1d array, the target axis's longitude coordinates.
+        Returns:
+            float: forward Hausdorff distance from this AR to the given axis.
+        '''
 
         return forwardHausdorff(self.anchor_lats,self.anchor_lons,lats,lons)
 
     def backwardHausdorff(self,lats,lons):
+        '''Compute backward Hausdorff distance from the lastest record to given axis
+
+        Args:
+            lats (ndarray): 1d array, the target axis's latitude coordinates.
+            lons (ndarray): 1d array, the target axis's longitude coordinates.
+        Returns:
+            float: backward Hausdorff distance from this AR to the given axis.
+        '''
 
         return forwardHausdorff(lats,lons,self.anchor_lats,self.anchor_lons)
 
     def Hausdorff(self,lats,lons):
+        '''Compute modified Hausdorff distance from the lastest record to given axis
+
+        Args:
+            lats (ndarray): 1d array, the target axis's latitude coordinates.
+            lons (ndarray): 1d array, the target axis's longitude coordinates.
+        Returns:
+            float: modified Hausdorff distance from this AR to the given axis.
+        '''
 
         fh=self.forwardHausdorff(lats,lons)
         bh=self.backwardHausdorff(lats,lons)
         return max(fh,bh)
 
     def append(self,ar):
+        '''Add new records to the AR track'''
         if not self.finish:
             if type(ar) is AR:
                 ar=ar.data
@@ -182,7 +234,19 @@ def getAnchors(arr):
 
 
 def plotHD(y1,x1,y2,x2,timelabel=None,linkflag='',ax=None,show=True):
-    '''Plot Hausdorff links'''
+    '''Plot Hausdorff links
+
+    Args:
+        y1,x1 (ndarray): 1d array, y, x coordinates of AR axis A.
+        y2,x2 (ndarray): 1d array, y, x coordinates of AR axis B.
+    Keyword Args:
+        timelabel (str or None): string of the time stamp. If given, plot as subplot title.
+        linkflag (str): a single char to denote the type of linking,
+                        used in generated plot. '' for initial linking,
+                        'M' for a merging, 'S' for a splitting.
+        ax (plt axis obj): if not give, create a new axis to plot with.
+        show (bool): whether to show the figure or not.
+    '''
 
     if ax is None:
         figure=plt.figure(figsize=(12,6),dpi=100)
@@ -266,7 +330,7 @@ def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',ma
     Args:
         arlist (list): list of AR objects to plot.
 
-    Kwargs:
+    Keyword Args:
         full (bool): if True, plot tracks of an AR from its entire lifecycle.
                      if False, plot only the track of the last time step.
         ax (matplotlib.axis): axis to plot onto.
@@ -412,7 +476,7 @@ def matchCenters2(tr_list, newrec, params, isplot=False, plot_dir=None,
         newrec (DataFrame): new center data at time t=t+1.
         params (dict): tracking parameters.
 
-    Kwargs:
+    Keyword Args:
         isplot (bool): create schematic plot or not.
         plot_dir (str): folder to save schematic plot. Only used if isplot=True.
 

@@ -479,20 +479,21 @@ def increasingLatitude(slab,verbose=False):
 def dLongitude(var,side='c',R=6371000):
     '''Return a slab of longitudinal increment (meter) delta_x.
 
-    <var>: variable from which latitude axis is obtained;
-    <side>: 'n': northern boundary of each latitudinal band;
-            's': southern boundary of each latitudinal band;
-            'c': central line of latitudinal band;
+    Args:
+        var (TransientVariable): variable from which latitude axis is obtained;
+        side (str): 'n': northern boundary of each latitudinal band;
+                    's': southern boundary of each latitudinal band;
+                    'c': central line of latitudinal band;
 
-             -----     'n'
-            /-----\     'c'
-           /_______\     's'
+                 -----     'n'
+                /-----\     'c'
+               /_______\     's'
 
 
-    <R>: radius of Earth;
+        R (float): radius of Earth;
 
-    Return <delta_x>, a 2-D slab with grid information copied from\
-            <var>.
+    Returns:
+        delta_x (TransientVariable): a 2-D slab with grid information copied from <var>.
 
     UPDATE: 2014-08-05 11:12:27:
         In computing <delta_x>, the longitudinal increment should be taken
@@ -536,10 +537,12 @@ def dLongitude(var,side='c',R=6371000):
 def dLatitude(var,R=6371000,verbose=True):
     '''Return a slab of latitudinal increment (meter) delta_y.
 
-    <var>: variable from which latitude axis is abtained;
-    <R>: radius of Earth;
+    Args:
+        var (TransientVariable): variable from which latitude axis is abtained;
+        R (float): radius of Earth;
 
-    Return <delta_y>, a 2-D slab with grid information copied from\
+    Returns:
+        delta_y (TransientVariable): a 2-D slab with grid information copied from\
             <var>.
     '''
 
@@ -723,14 +726,16 @@ def getBearing(lat1,lon1,lat2,lon2):
 def getCrossTrackDistance(lat1,lon1,lat2,lon2,lat3,lon3,r=None):
     '''Compute cross-track distance
 
-    <lat1>, <lon1>: scalar float or nd-array, latitudes and longitudes in
-                    degree, start point of the great circle.
-    <lat2>, <lon2>: scalar float or nd-array, latitudes and longitudes in
-                    degree, end point of the great circle.
-    <lat3>, <lon3>: scalar float or nd-array, latitudes and longitudes in
-                    degree, a point away from the great circle.
+    Args:
+        lat1, lon1 (float): scalar float or nd-array, latitudes and longitudes in
+                        degree, start point of the great circle.
+        lat2, lon2 (float): scalar float or nd-array, latitudes and longitudes in
+                        degree, end point of the great circle.
+        lat3, lon3 (float): scalar float or nd-array, latitudes and longitudes in
+                        degree, a point away from the great circle.
 
-    Return <dxt>: great cicle distance between point P3 to the closest point
+    Returns:
+        dxt (float): great cicle distance between point P3 to the closest point
                   on great circle that connects P1 and P2.
 
                   NOTE that the sign of dxt tells which side of the 3rd point
