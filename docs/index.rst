@@ -122,7 +122,7 @@ specific workflow for the automated AR detection/tracking task:
 More details regarding these steps are provided in separate pages below.
 
 Applications on example data can be found in a series of example notebooks at
-`github repository <https://github.com/ihesp/AR_tracker/tree/master/notebooks>`_.
+`github repository <https://github.com/ihesp/AR_tracker/blob/master/notebooks/Index.ipynb>`_.
 
 
 .. toctree::
@@ -150,7 +150,7 @@ Main scripts/modules
    river_tracker2.py <river_tracker2>
    river_tracker1_funcs.py <river_tracker1_funcs>
    utils.funcs (selected parts) <funcs>
-   utilsl.plot (selected parts) <plot>
+   utils.plot (selected parts) <plot>
 
 
 
