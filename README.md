@@ -79,6 +79,9 @@ The package at the moment does not perform any installation, computations are do
 * river_tracker1.py: detect ARs on individual time steps. Requires outputs from `compute_thr.py`.
 * river_tracker2.py: track individual AR records across time. Requires outputs from `river_tracker1.py`.
 * river_tracker1_funcs.py: utility functions used in `river_tracker1.py`.
+* test_data.py: utility script to check input netcdf file sanity.
+* docs: readthedocs documentation.
+* notebooks: a series of jupyter notebooks illustrating the major functionalities of the package.
 
 
 ## Contribution
