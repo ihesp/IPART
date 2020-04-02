@@ -154,7 +154,7 @@ The tracking process is handled by the :py:func:`river_tracker2.trackARs2` funct
 ::
 
         from river_tracker2 import trackARs2
-        track_list = trackARs2(ardf, TRACK_PARAMS, plot_dir)
+        track_list = trackARs2(ardf, TRACK_PARAMS, isplot=True, plot_dir=plot_dir)
 
 where ``ardf`` is a ``pandas.DataFrame`` object containing the AR records at individual time points.
 Such an object can be obtained using:
@@ -162,12 +162,6 @@ Such an object can be obtained using:
 
         import pandas as pd
         from river_tracker2 import convarray 
-
-        keys=['id', 'time', 'contour_y', 'contour_x', 'centroid_y', 'centroid_x',
-                'axis_y', 'axis_x', 'axis_rdp_y', 'axis_rdp_x',
-                'area', 'length', 'width', 'iso_quotient', 'LW_ratio',
-                'strength', 'strength_ano', 'strength_std',
-                'mean_angle', 'is_relaxed']
 
         convkeys=['contour_y', 'contour_x',
                 'axis_y', 'axis_x', 'axis_rdp_y', 'axis_rdp_x']

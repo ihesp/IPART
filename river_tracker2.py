@@ -633,12 +633,14 @@ def matchCenters2(tr_list, newrec, params, isplot=False, plot_dir=None,
     return tr_list, allocated_recs
 
 
-def trackARs2(record, parameter, plot_dir, verbose=True):
+def trackARs2(record, parameter, isplot=False, plot_dir=None, verbose=True):
     '''Group records to form tracks
 
     Args:
         record (DataFrame): AR records at different time slices.
         parameter (dict): tracking parameteres defined in the global preamble.
+    Keyword Args:
+        isplot (bool): whether to create schematic plots of linking.
         plot_dir (str): folder to save schematic plot.
 
     Returns:
@@ -685,7 +687,7 @@ def trackARs2(record, parameter, plot_dir, verbose=True):
         #-------------------Link tracks-------------------
         all_rec_id=recii.id.tolist()
         track_list,allocated_recs=matchCenters2(track_list, recii, parameter,
-                isplot=SCHEMATIC, plot_dir=plot_dir)
+                isplot=isplot, plot_dir=plot_dir, verbose=verbose)
 
         #-----------------Create a new ar for left-overs-----------------
         left_rec_id=set(all_rec_id).difference(allocated_recs)
@@ -781,7 +783,7 @@ if __name__=='__main__':
             os.makedirs(plot_dir)
 
     #-------------------Track ars-------------------
-    track_list=trackARs2(ardf,TRACK_PARAMS,plot_dir)
+    track_list=trackARs2(ardf,TRACK_PARAMS,SCHEMATIC,plot_dir)
 
     #------------------Filter tracks------------------
     track_list=filterTracks(track_list,TRACK_PARAMS)
