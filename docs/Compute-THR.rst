@@ -115,7 +115,7 @@ Example output
 Notebook example
 ################
 
-An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/notebooks/2_compute_THR.ipynb>`_.
+An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/blob/master/notebooks/2_compute_THR.ipynb>`_.
 
 
 

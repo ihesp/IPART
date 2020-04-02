@@ -122,7 +122,7 @@ specific workflow for the automated AR detection/tracking task:
 More details regarding these steps are provided in separate pages below.
 
 Applications on example data can be found in a series of example notebooks at
-`github repository <https://github.com/ihesp/AR_tracker/notebooks>`_.
+`github repository <https://github.com/ihesp/AR_tracker/tree/master/notebooks>`_.
 
 
 .. toctree::

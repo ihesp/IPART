@@ -242,7 +242,8 @@ One example output figure is shown below:
 Notebook example
 ################
 
-An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/notebooks/3 detect ARs.ipynb>`_.
+An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/blob/master/notebooks/3_detect_ARs.ipynb>`_.
+
 
 
 

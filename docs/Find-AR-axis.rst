@@ -166,5 +166,6 @@ No detected Python script is offered for this process, as it is performed in the
 Notebook example
 ################
 
-An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/notebooks/3_detect_ARs.ipynb>`_.
+An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/blob/master/notebooks/3_detect_ARs.ipynb>`_.
+
 

@@ -178,7 +178,7 @@ Such an object can be obtained using:
         ardf = pd.read_csv(RECORD_FILE, dtype=dtypes, converters=converters)
 
 where ``RECORD_FILE`` is the path to the ``csv`` file saving the individual AR records. Refer to
-`this notebook <https://github.com/ihesp/AR_tracker/notebooks/3_detect_ARs.ipynb>`_
+`this notebook <https://github.com/ihesp/AR_tracker/blob/master/notebooks/3_detect_ARs.ipynb>`_
 for more information on the creation of this file.
 
 ``track_list`` is a list of ``AR objects``, each stores a sequence of AR
@@ -239,5 +239,6 @@ You can use the ``river_tracker2.py`` (:py:mod:`river_tracker2`) script for AR t
 Notebook example
 ################
 
-An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/notebooks/4_track_ARs.ipynb>`_.
+An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/blob/master/notebooks/4_track_ARs.ipynb>`_.
+
 
