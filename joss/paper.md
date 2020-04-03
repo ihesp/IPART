@@ -58,10 +58,13 @@ moisture level stays unchanged throughout the analysis period.  Such an
 assumption may not be fully justifiable under a warming climate as the
 atmospheric moisture level is expected to increase.
 
-In this package we propose a suite of new detection/tracking to help solve the
-above difficulties.  Through a systematic analysis using 7 years of Reanalysis
-data [@Dee2011], we have found that the proposed detection algorithm has
-reduced sensitivity to parameters and data resolution.  Long-lived ARs spanning
+In this package we propose a new approach to help solve the above difficulties.
+Instead of thresholding vapor content magnitudes, the new method detects
+features that conform to a specific spatio-temporal scale, which is a more
+stable attribute that ties with the underlying physical mechanism responsible
+for generating ARs.  Through a systematic analysis using 7 years of
+observational data, we are able to show that the proposed detection algorithm has reduced
+sensitivity to parameters and data resolution.  Long-lived ARs spanning
 multiple days, having cross-continent or cross-basin tracks can be more
 reliably traced through their tropical/sub-tropical origins to high-latitude
 landfalls.
@@ -106,6 +109,12 @@ indicate this AR's evolution.
 
 ![Locations of a track labelled "198424" found in year 1984. Black to yellow color scheme indicates the evolution.\label{fig:track}](ar_track_198424.png)
 
+Liu et al. in the Texas A&M University have been using this package to explore the
+responses of atmospheric rivers to meso-scale features in the sea surface temperature,
+the resolution of climate models and to the future climate changes. Their data cover
+both observational and simulations from different models with different configurations.
+The relaxation on magnitude thresholding in the detection process helps
+achieve more consistent results across different experiments.
 
 # External libraries used
 
@@ -123,7 +132,7 @@ This work is supported by the National Key Research and Development Program of
 China with grant NO. 2017YFC1404000.  This work is also supported by the
 National Science Foundation of China (NSFC) with grant No. 41490644 (41490640).
 This is a collaborative project between the Ocean University of China (OUC),
-Texas A\&M University (TAMU) and the National Center for Atmospheric Research
+Texas A&M University (TAMU) and the National Center for Atmospheric Research
 (NCAR) and completed through the International Laboratory for High Resolution
 Earth System Prediction (iHESP)- a collaboration by the Qingdao National
 Laboratory for Marine Science and Technology Development Center, Texas A&M
