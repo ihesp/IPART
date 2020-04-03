@@ -32,14 +32,14 @@ enhanced water vapor content in the lower troposphere.  The term was coined as
 an analogy to the terrestrial rivers in a sense that when viewed from satellite
 imagery or large scale atmospheric observation, they appear as narrow and
 elongated vapor filaments, representing transient intensified horizontal
-moisture fluxes (e.g. `@Gimeno2014`, `@Dettinger2011`). A typical atmospheric
-river can carry 7-15 times the water in the Mississippi River `[@Ralph2011]`,
+moisture fluxes (e.g. @Gimeno2014, @Dettinger2011). A typical atmospheric
+river can carry 7-15 times the water in the Mississippi River [@Ralph2011],
 and at any time in winter, there are four to five such systems in the Northern
-Hemisphere alone `[@Zhu1998]`, accounting for $80-90 \,\%$ of the total
-north-south integrated vapor transport `[@Guan2015; @Zhu1998]`.  Its dual
+Hemisphere alone [@Zhu1998], accounting for $80-90 \,\%$ of the total
+north-south integrated vapor transport [@Guan2015; @Zhu1998].  Its dual
 hydrological role, both as a fresh water source for some water-stressed areas
-`[@Dettinger2011; @Dettinger2013; @Rutz2012]` and as a potential trigger for
-floods `[@Lavers2012; @Lavers2013; @Neiman2008; @Moore2012]`, has granted it
+[@Dettinger2011; @Dettinger2013; @Rutz2012] and as a potential trigger for
+floods [@Lavers2012; @Lavers2013; @Neiman2008; @Moore2012], has granted it
 increasing attentions among the research community.  And their long-term change
 in a warming climate also stands as pressing research question. However, an
 important prerequisite to answer such questions is a robust and consistent
@@ -49,10 +49,10 @@ ensure better efficiency, consistency and objectivity compared with human
 identification.
 
 In many existing applications, a magnitude thresholding approach is used. For
-instance, `@Ralph2004`, `@Neiman2008`, `@Hagos2015` and `@Dettinger2011`
+instance, @Ralph2004, @Neiman2008, @Hagos2015 and @Dettinger2011
 identified ARs by first locating regions where the Integrated Water Vapor (IWV)
 is greater than $20\, mm$.  A $250 \, kg/m/s$ threshold on the Integrated Vapor
-Transport (IVT) was used by `@Rutz2014` and `@Rutz2015`.  However, an implicit
+Transport (IVT) was used by @Rutz2014 and @Rutz2015.  However, an implicit
 assumption with this magnitude thresholding approach is that the atmospheric
 moisture level stays unchanged throughout the analysis period.  Such an
 assumption may not be fully justifiable under a warming climate as the
@@ -60,7 +60,7 @@ atmospheric moisture level is expected to increase.
 
 In this package we propose a suite of new detection/tracking to help solve the
 above difficulties.  Through a systematic analysis using 7 years of Reanalysis
-data `[@Dee2011]`, we have found that the proposed detection algorithm has
+data [@Dee2011], we have found that the proposed detection algorithm has
 reduced sensitivity to parameters and data resolution.  Long-lived ARs spanning
 multiple days, having cross-continent or cross-basin tracks can be more
 reliably traced through their tropical/sub-tropical origins to high-latitude
@@ -86,7 +86,7 @@ The AR detection algorithm is inspired and modified from the image processing
 algorithm *Top-hap by Reconstruction (THR)*, which consists of subtracting from
 the original image a *greyscale reconstruction by dilation* image.  Some more
 details of the THR algorithm and its applications can be found in this work of
-`[@Vicent1993]`.
+[@Vicent1993].
 
 In the context of AR detection, the greyscale image in question is the
 non-negative IVT distribution, denoted as $I$.  The greyscale reconstruction by
@@ -120,12 +120,12 @@ indicate this AR's evolution.
 
 # External libraries used
 
-Manipulation of the NetCDF data is achieved using the *CDAT* `[@CDAT]`, *numpy*
-`[@numpy]` and *scipy* `[@scipy]` packages.  Detection process utilizes the
-image-processing package *scikit-image* `[@scikit-image]`.  AR axis finding
-process utilizes the *networkx* package `[@networkx]`.  Generated outputs are
-further manipulated with *pandas* `[@pandas]` and displayed using *matplotlib*
-`[@matplotlib]`.
+Manipulation of the NetCDF data is achieved using the *CDAT* [@CDAT], *numpy*
+[@numpy] and *scipy* [@scipy] packages.  Detection process utilizes the
+image-processing package *scikit-image* [@scikit-image].  AR axis finding
+process utilizes the *networkx* package [@networkx].  Generated outputs are
+further manipulated with *pandas* [@pandas] and displayed using *matplotlib*
+[@matplotlib].
 
 
 # Acknowledgements
