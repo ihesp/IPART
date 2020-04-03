@@ -86,7 +86,7 @@ The AR detection algorithm is inspired and modified from the image processing
 algorithm *Top-hap by Reconstruction (THR)*, which consists of subtracting from
 the original image a *greyscale reconstruction by dilation* image.  Some more
 details of the THR algorithm and its applications can be found in this work of
-[@Vicent1993].
+[@Vincent1993].
 
 In the context of AR detection, the greyscale image in question is the
 non-negative IVT distribution, denoted as $I$.  The greyscale reconstruction by
