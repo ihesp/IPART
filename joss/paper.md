@@ -66,18 +66,7 @@ multiple days, having cross-continent or cross-basin tracks can be more
 reliably traced through their tropical/sub-tropical origins to high-latitude
 landfalls.
 
-The *AR_tracker* package includes a collection of Python functions/classes
-designed for an analysis workflow covering the detection of ARs, the
-simplification of the AR's geographical location, to the subsequent tracking
-through time.  The algorithms are implemented using the Python programming
-language as a wrapper to some well-established numeric packages including
-*numpy* ,*scikit-image* and *networkx* etc..  The input and output data use the
-NetCDF format, an industry standard in the geoscience field. Optional graphical
-outputs can also be saved, making it suitable for production usage and
-educational purposes as well.  A series of [Jupyter
-notebooks](https://github.com/ihesp/AR_tracker/tree/master/notebooks) are also
-included to help guide the users through the entire workflow and quickly build
-their own production scripts.
+The *AR_tracker* package includes a collection of Python functions/classes designed for an analysis workflow covering the detection of ARs, the simplification of the AR's geographical location, to the subsequent tracking through time.  The algorithms are implemented using the Python programming language as a wrapper to some well-established numeric packages including *numpy* ,*scikit-image* and *networkx* etc..  The input and output data use the NetCDF format, an industry standard in the geoscience field. Optional graphical outputs can also be saved, making it suitable for production usage and educational purposes as well.  A series of [Jupyter notebooks](https://github.com/ihesp/AR_tracker/tree/master/notebooks) are also included to help guide the users through the entire workflow and quickly build their own production scripts.
 
 
 # Example use case
