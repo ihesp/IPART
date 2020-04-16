@@ -71,7 +71,7 @@ Further documentation can be found at [https://ar-tracker.readthedocs.io/en/late
 
 | ![fig3](joss/fig3.png) |
 | :--: |
-|*(a) The IVT field in kg/m/s at 1984-01-26 00:00 UTC over the North Hemisphere. (b) the IVT reconstruction field ($\delta(I)$) at the same time point. (c) the IVT anomaly field ($I-\delta(I)$) from the THR process at the same time point.*|
+|*(a) The IVT field in kg/m/s at 1984-01-26 00:00 UTC over the North Hemisphere. (b) the IVT reconstruction field (IVT_rec) at the same time point. (c) the IVT anomaly field (IVT_ano) from the THR process at the same time point.*|
 
 | ![](joss/ar_track_198424.png) |
 | :--: |
