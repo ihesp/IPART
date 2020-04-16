@@ -63,7 +63,16 @@ The package at the moment does not perform any installation, computations are do
 
 ## Documentation
 
-[Documentation](https://ar-tracker.readthedocs.io/en/latest/)
+Further documentation can be found at [https://ar-tracker.readthedocs.io/en/latest/](https://ar-tracker.readthedocs.io/en/latest/).
+
+
+## Example use case
+
+
+![(a) The IVT field in kg/m/s at 1984-01-26 00:00 UTC over the North Hemisphere. (b) the IVT reconstruction field ($\delta(I)$) at the same time point. (c) the IVT anomaly field ($I-\delta(I)$) from the THR process at the same time point.](joss/fig3.png)
+
+
+![Locations of a track labelled "198424" found in year 1984. Black to yellow color scheme indicates the evolution.](joss/ar_track_198424.png)
 
 
 

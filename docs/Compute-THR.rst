@@ -11,7 +11,7 @@ The AR detection method is inspired by the image processing technique
 subtracting from the original image a **greyscale reconstruction by
 dilation** image.
 Some more details of the THR algorithm and its applications
-can be found in this work of [Vicent1993]_.
+can be found in this work of [Vincent1993]_.
 
 In the context of AR detection, the greyscale image in question is
 the non-negative IVT distribution, denoted as :math:`I`.
@@ -25,7 +25,7 @@ between :math:`I` and :math:`\delta(I)` gives the transient IVT component, from
 which AR candidates are searched.
 
 
-.. note:: we made a modification based on the THR algorithm as descripted in [Vicent1993]_.  The **marker** image used in this package is obtained by a grey scale erosion [#erosion]_ with a structuring element :math:`E`, while in a standard THR process as in [Vicent1993]_, the **marker** image is obtained by a global substraction :math:`I - \delta h`, where :math:`\delta h` is the pixel intensity subtracted globally from the original input image :math:`I`.
+.. note:: we made a modification based on the THR algorithm as descripted in [Vincent1993]_.  The **marker** image used in this package is obtained by a grey scale erosion [#erosion]_ with a structuring element :math:`E`, while in a standard THR process as in [Vincent1993]_, the **marker** image is obtained by a global substraction :math:`I - \delta h`, where :math:`\delta h` is the pixel intensity subtracted globally from the original input image :math:`I`.
 
 The introduction of the grey scale erosion process allows us to have a control
 over on what spatio-temporal scales ARs are to be detected.
@@ -128,5 +128,5 @@ References
 
 .. [#erosion] Greyscale erosion (also known as minimum filtering) can be understood by analogy with a moving average. Instead of the average within a neighborhood, erosion replaces the central value with the neighborhood minimum. Similarly, dilation replaces with the maximum. And the neighborhood is defined by the structuring element :math:`E`.
 
-.. [Vicent1993]   L. Vincent, "Morphological grayscale reconstruction in image analysis: applications and efficient algorithms," in IEEE Transactions on Image Processing, vol. 2, no. 2, pp. 176-201, April 1993.
+.. [Vincent1993]   L. Vincent, "Morphological grayscale reconstruction in image analysis: applications and efficient algorithms," in IEEE Transactions on Image Processing, vol. 2, no. 2, pp. 176-201, April 1993.
 
