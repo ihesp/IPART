@@ -7,7 +7,7 @@ tags:
   - image processing
 authors:
   - name: Guangzhi XU
-	orcid: 0000-0001-5877-5608
+    orcid: 0000-0001-5877-5608
     affiliation: 1
   - name: Xiaohui MA
     affiliation: "1, 3"
