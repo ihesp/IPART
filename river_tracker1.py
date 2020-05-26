@@ -432,9 +432,9 @@ if __name__=='__main__':
     print('\n### <river_tracker1>: Saving output to:\n',abpath_out)
     # Necessary: to remove ... in csv file
     if sys.version_info.major==2:
-        np.set_printoptions(threshold='nan')
+        np.set_printoptions(threshold=np.inf)
     elif sys.version_info.major==3:
-        np.set_printoptions(threshold=9223372036854775807)
+        np.set_printoptions(threshold=sys.maxsize)
     result_df.to_csv(abpath_out,index=False)
 
 
