@@ -64,7 +64,7 @@ moisture level stays unchanged throughout the analysis period.  Such
 an assumption may not be fully justifiable under a warming climate as
 the atmospheric moisture level is expected to increase.
 
-In this package we propose a suite of new detection/tracking
+In this package we propose a suite of new detection/tracking algorithms
 to help solve the above difficulties.
 Through a
 systematic analysis using 7 years of Reanalysis data [@Dee2011], we
@@ -103,12 +103,12 @@ reconstruction by dilation component corresponds to the background IVT
 component, denoted as $\delta(I)$.  The difference $I - \delta(I)$
 gives the transient IVT component, from which AR candidates are
 searched. \autoref{fig:thr} shows this decomposition process.  It
-could be seen that after this separation of back/transient components,
+could be seen that after this separation of background/transient components,
 it comes trivial to locate AR-like features.
 
 ![(a) The IVT field in kg/m/s at 1984-01-26 00:00 UTC over the North Hemisphere. (b) the IVT reconstruction field ($\delta(I)$) at the same time point. (c) the IVT anomaly field ($I-\delta(I)$) from the THR process at the same time point.\label{fig:thr}](fig3.png)
 
-After locating ARs at various time steps, an single curve is sought for
+After locating ARs at various time steps, a single curve is sought for
 each AR as a summary of its location. A directed planar graph model
 is used in this process, and weighted Dijkstra path searching
 algorithm is used to find this "AR axis". Further details can be found
