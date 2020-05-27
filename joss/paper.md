@@ -1,5 +1,5 @@
 ---
-title: 'AR tracker: A Python package for detecting and tracking atmospheric rivers using image-processing'
+title: 'AR tracker: A Python Package for Detecting and Tracking Atmospheric Rivers Using Image-Processing'
 tags:
   - Python
   - meteorology
