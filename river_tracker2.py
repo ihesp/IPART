@@ -46,7 +46,7 @@ TRACK_PARAMS['min_nonrelax']=1
 
 
 #--------Import modules-------------------------
-import os
+import os, sys
 import numpy as np
 import pandas as pd
 from utils import funcs,plot
@@ -819,4 +819,8 @@ if __name__=='__main__':
     #--------Save------------------------------------
     abpath_out=os.path.join(OUTPUTDIR,'ar_tracks_%d.csv' %YEAR)
     print('\n### <river_tracker2>: Saving output to:\n',abpath_out)
+    if sys.version_info.major==2:
+        np.set_printoptions(threshold=np.inf)
+    elif sys.version_info.major==3:
+        np.set_printoptions(threshold=sys.maxsize)
     trackdf.to_csv(abpath_out,index=False)

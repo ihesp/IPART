@@ -26,6 +26,14 @@ Input:
 
     NOTE: data should have proper time, latitude and longitude axes.
 
+Optional input:
+
+    Orographic data providing the surface terrain elevations, that correspond
+    to the IVT data. This is used to perform some extra computations over
+    high terrain regions to enhance the inland penetration of ARs. The mostly
+    affected area is the western coast of North America. Other areas are mostly
+    not affected.
+
 Usage:
 
     Change global parameters in the Globals section to point to the storage
@@ -70,6 +78,15 @@ KERNEL=[16,6,6]   # half length of time (time steps), and half length of spatial
 
 SHIFT_LON=80  # shift longitudinally to center Pacific and Altantic
 
+# Orographic file, providing surface terrain elevation info.
+# This is optional, can be used to enhance the continent-penetration
+# of landfalling ARs.
+ORO_FILE='/home/guangzhi/datasets/oro_s_a_1900_erai-cea-proj.nc'
+HIGH_TERRAIN=600 # surface height (in m) above which land surface is defined
+                 # as high terrain. Extra computations are performed over
+                 # high terrain areas to enhance continent-penetration of
+                 # landfalling ARs.
+
 #------------------Output folder------------------
 OUTPUTDIR='/home/guangzhi/datasets/erai/ivt_thr/'
 
@@ -90,7 +107,8 @@ from compute_thr_singlefile import filterData
 
 
 
-def rotatingFiltering(filelist,varin,selector,kernel,outputdir,verbose=True):
+def rotatingFiltering(filelist, varin, selector, kernel, outputdir, oro=None,
+        high_terrain=600, verbose=True):
     '''Compute time filtering on data in different files.
 
     Args:
@@ -100,6 +118,18 @@ def rotatingFiltering(filelist,varin,selector,kernel,outputdir,verbose=True):
         varin (str): variable id in files.
         selector: selector obj to select subset of data.
         outputdir (str): path to folder to save outputs.
+
+    Keyword Args:
+        oro (TransientVariable): 2D array, surface orographic data in meters.
+            This additional surface height info is used to perform a separate
+            reconstruction computation for areas with high elevations, and
+            the results can be used to enhance the continent-penetration
+            ability of landfalling ARs. Sensitivity in landfalling ARs is
+            enhanced, other areas are not affected. Needs to have compatible
+            shape as <ivt>.
+        high_terrain (float): minimum orographic height to define as high
+            terrain area, within which a separate reconstruction is performed.
+            Only used if <oro> is not None.
 
     Designed to perform temporal filtering on data that are too large to fit
     into memory, e.g. high-resolution data across multiple decades.
@@ -143,7 +173,8 @@ def rotatingFiltering(filelist,varin,selector,kernel,outputdir,verbose=True):
         n1=var1.shape[0]
 
         vartmp=funcs.cat(var1,var2,axis=0)
-        vartmp,vartmp_rec,vartmp_ano=filterData(vartmp,kernel)
+        vartmp, vartmp_rec, vartmp_ano=filterData(vartmp, kernel, oro=oro,
+            high_terrain=high_terrain)
 
         # crop end points
         dt=kernel[0]
@@ -199,7 +230,7 @@ def rotatingFiltering(filelist,varin,selector,kernel,outputdir,verbose=True):
 
         #-----------------------Save-----------------------
         fname=os.path.split(fii)[1]
-        file_out_name='%s-minimal-rec-ano-kernel-t%d-s%d.nc'\
+        file_out_name='%s-THR-kernel-t%d-s%d.nc'\
                 %(os.path.splitext(fname)[0], kernel[0], kernel[1])
 
         abpath_out=os.path.join(outputdir,file_out_name)
@@ -241,7 +272,7 @@ def rotatingFiltering(filelist,varin,selector,kernel,outputdir,verbose=True):
 
             #-----------------------Save-----------------------
             fname=os.path.split(fii2)[1]
-            file_out_name='%s-minimal-rec-ano-kernel-t%d-s%d.nc'\
+            file_out_name='%s-THR-kernel-t%d-s%d.nc'\
                     %(os.path.splitext(fname)[0], kernel[0], kernel[1])
             abpath_out=os.path.join(outputdir,file_out_name)
             print('\n### <testrotatingfilter>: Saving output to:\n',abpath_out)
@@ -265,6 +296,11 @@ if __name__=='__main__':
     if not os.path.exists(OUTPUTDIR):
         os.makedirs(OUTPUTDIR)
 
+    #--------------------Read in orographic data--------------------
+    oro=funcs.readVar(ORO_FILE, 'oro')
+    oro=oro(latitude=(LAT1, LAT2))
+    oro=oro(longitude=(SHIFT_LON,SHIFT_LON+360))(squeeze=1)
+
     for year in YEARS:
         #-----------Read in data----------------------
         file_in_name=FILE1_BASE %(year)
@@ -275,5 +311,6 @@ if __name__=='__main__':
         raise Exception("Need to give at least 2 files. For single file, use compute_thr_singlefile.py")
 
     selector=Selector(latitude=(LAT1,LAT2))
-    rotatingFiltering(filelist,VARIN,selector,KERNEL,OUTPUTDIR)
+    rotatingFiltering(filelist, VARIN, selector, KERNEL, OUTPUTDIR,
+            oro=oro, high_terrain=HIGH_TERRAIN)
 
