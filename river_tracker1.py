@@ -49,23 +49,24 @@ from __future__ import print_function
 #######################################################################
 
 #--------------------Time range--------------------
-YEAR=1984
+YEAR=2007
 TIME_START='%d-01-01 00:00:00' %YEAR
-TIME_END='%d-06-30 18:00:00' %YEAR
+TIME_END='%d-12-31 18:00:00' %YEAR
 
 #-----------u-qflux----------------------
-SOURCEDIR1='/home/guangzhi/datasets/erai/ERAI_AR_THR'
-UQ_FILE_NAME='uflux_m1-60_6_%d_crop.nc'
+SOURCEDIR1='/home/guangzhi/datasets/erai_qflux/'
+UQ_FILE_NAME='uflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
 UQ_VAR='uflux'
 
 #-----------v-qflux----------------------
-SOURCEDIR2='/home/guangzhi/datasets/erai/ERAI_AR_THR'
-VQ_FILE_NAME='vflux_m1-60_6_%d_crop.nc'
+SOURCEDIR2='/home/guangzhi/datasets/erai_qflux'
+VQ_FILE_NAME='vflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
 VQ_VAR='vflux'
 
 #-----------------ivt reconstruction and anomalies-----------------
 SOURCEDIR3='/home/guangzhi/datasets/erai/ERAI_AR_THR/'
-IVT_FILE_NAME='ivt_m1-60_6_%d_crop-minimal-rec-ano-kernel-t16-s6.nc'
+IVT_FILE_NAME='ivt_m1-60_6_%d_cln-cea-proj-THR-kernel-t16-s6.nc' %YEAR
+
 
 #------------------Output folder------------------
 OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/%d/' %YEAR
@@ -73,7 +74,6 @@ OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/%d/' %YEAR
 
 
 PLOT=True          # create maps of found ARs or not
-SINGLE_DOME=False  # do peak partition or not
 
 LAT1=0; LAT2=90      # degree, latitude domain
 # NOTE: this has to match the domain seletion in compute_thr_singlefile.py
@@ -105,8 +105,11 @@ PARAM_DICT={
     'rdp_thres': 2,
     # grids. Remove small holes in AR contour.
     'fill_radius': max(1,int(4*0.75/RESO)),
-    # max prominence/height ratio of a local peak. Only used when SINGLE_DOME=True
-    'max_ph_ratio': 0.4,
+    # do peak partition or not, used to separate systems that are merged
+    # together with an outer contour.
+    'single_dome': False,
+    # max prominence/height ratio of a local peak. Only used when single_dome=True
+    'max_ph_ratio': 0.6,
     # minimal proportion of flux component in a direction to total flux to
     # allow edge building in that direction
     'edge_eps': 0.4
@@ -135,37 +138,22 @@ from river_tracker1_funcs import areaFilt, maskToGraph, getARAxis, cropMask,\
 
 
 
-def findARs(anoslab, quslab, qvslab, areas, costhetas, sinthetas, param_dict):
+def findARs(anoslab, areas, param_dict):
     '''Find ARs from a time snap
 
     Args:
         anoslab (cdms.TransientVariable): (n * m) 2D anomalous IVT slab, in kg/m/s.
-        quslab (cdms.TransientVariable): (n * m) 2D u-flux slab, in kg/m/s.
-        qvslab (cdms.TransientVariable): (n * m) 2D v-flux slab, in kg/m/s.
         areas (cdms.TransientVariable): (n * m) 2D grid cell area slab, in km^2.
-        costhetas (cdms.TransientVariable): (n * m) 2D slab of grid cell shape:
-                                          cos=dx/sqrt(dx^2+dy^2).
-        sinthetas (cdms.TransientVariable): (n * m) 2D slab of grid cell shape:
-                                          sin=dy/sqrt(dx^2+dy^2).
         param_dict (dict): parameter dict defined in Global preamble.
 
     Returns:
         masks (list): list of 2D binary masks, each with the same shape as
                       <anoslab> etc., and with 1s denoting the location of a
                       found AR.
-        axes (list): list of AR axis coordinates. Each coordinate is defined
-                     as a Nx2 ndarray storing (y, x) indices of the axis
-                     (indices defined in the matrix of corresponding mask
-                     in <masks>.)
-        mask2 (ndarray): 2D binary mask showing all ARs in <masks> merged into
+        armask (ndarray): 2D binary mask showing all ARs in <masks> merged into
                          one map.
-        axismask (ndarray): 2D binary mask showing all axes in <axes> merged
-                            into one map. Overlaying <axismask> over <mask2>
-                            would show all the ARs at this time step, with
-                            their axes.
 
-        If no ARs are found, <masks> and <axes> will be []. <mask2> and
-        <axismask> will be zeros.
+        If no ARs are found, <masks> will be []. <armask> will be zeros.
     '''
 
     # fetch parameters
@@ -174,58 +162,68 @@ def findARs(anoslab, quslab, qvslab, areas, costhetas, sinthetas, param_dict):
     max_area=param_dict['max_area']
     min_lat=param_dict['min_lat']
     max_lat=param_dict['max_lat']
-    fill_radius=param_dict['fill_radius']
+    single_dome=param_dict['single_dome']
     max_ph_ratio=param_dict['max_ph_ratio']
-    edge_eps=param_dict['edge_eps']
     max_isoq_hard=param_dict['max_isoq_hard']
+    fill_radius=param_dict['fill_radius']
+    latax=anoslab.getLatitude()
+
+    def paddedClosing(mask, ele, pad):
+        # pad
+        padmask=np.pad(mask, (pad,pad), mode='constant', constant_values=0)
+        # closing
+        padmask=morphology.closing(padmask, selem=ele)
+        # trim
+        padmask=padmask[slice(pad,-pad), slice(pad,-pad)]
+        return padmask
 
     mask0=np.where(anoslab>thres_low,1,0)
-    mask0=areaFilt(mask0,areas,min_area,max_area)
+    if single_dome:
+        # NOTE: if using single_dome, should not filter max_area here.
+        mask0=areaFilt(mask0,areas,min_area,np.inf)
+    else:
+        mask0=areaFilt(mask0,areas,min_area,max_area)
 
     # prepare outputs
     masks=[]
-    axes=[]
-    mask2=np.zeros(mask0.shape)
-    axismask=np.zeros(mask0.shape)
+    armask=np.zeros(mask0.shape)
 
     if mask0.max()==0:
-        return masks, axes, mask2, axismask
+        return masks, armask
 
+    #---------------Separate grouped peaks---------------
+    if single_dome:
+        labels=measure.label(mask0,connectivity=2)
+        mask1=np.zeros(mask0.shape)
 
-    #---------------Separate local peaks---------------
-    labels=measure.label(mask0,connectivity=2)
-    mask1=np.zeros(mask0.shape)
-    latax=anoslab.getLatitude()
+        for ii in range(labels.max()):
+            maskii=np.where(labels==ii+1,1,0)
 
-    for ii in range(labels.max()):
-        ii+=1
-        maskii=np.where(labels==ii,1,0)
+            #-------------Skip if latitude too low or too high---------
+            latsii=np.where(maskii==1)[0]
+            latmaxii=latax[np.max(latsii)]
+            if latmaxii<min_lat:
+                continue
+            latminii=latax[np.min(latsii)]
+            if latminii>max_lat:
+                continue
 
-        #-------------Skip if latitude too low or too high---------
-        rpii=measure.regionprops(maskii, intensity_image=np.array(anoslab))[0]
-        centroidy,centroidx=rpii.weighted_centroid
-        centroidy=latax[int(centroidy)]
-        min_lat_idx=np.argmin(np.abs(latax[:]-min_lat))
-
-        if (centroidy<=min_lat and maskii[:min_lat_idx].sum()/float(maskii.sum())>=0.5)\
-                or centroidy>=max_lat:
-            continue
-
-        if SINGLE_DOME:
             cropmask,cropidx=cropMask(maskii)
             maskii2=partPeaks(cropmask,cropidx,anoslab,max_ph_ratio)
+            # should I revert to maskii if the peak separation results in
+            # a large area loss?
             mask1=mask1+maskii2
-        else:
-            mask1=mask1+maskii
+    else:
+        mask1=mask0
 
     mask1=areaFilt(mask1,areas,min_area,max_area)
 
     if mask1.max()==0:
-        return masks, axes, mask2, axismask
+        return masks, armask
 
-    #--------------------Find axes--------------------
+    #-------Latitude and iso_quotient filtering-------
     labels=measure.label(mask1,connectivity=2)
-    filldisk=morphology.disk(fill_radius)
+    mask1=np.zeros(mask0.shape)
 
     for ii in range(labels.max()):
         maskii=np.where(labels==ii+1,1,0)
@@ -236,7 +234,8 @@ def findARs(anoslab, quslab, qvslab, areas, costhetas, sinthetas, param_dict):
         centroidy=latax[int(centroidy)]
         min_lat_idx=np.argmin(np.abs(latax[:]-min_lat))
 
-        if (centroidy<=min_lat and maskii[:min_lat_idx].sum()/float(maskii.sum())>=0.5)\
+        if (centroidy<=min_lat and\
+                maskii[:min_lat_idx].sum()/float(maskii.sum())>=0.5)\
                 or centroidy>=max_lat:
             continue
 
@@ -246,8 +245,56 @@ def findARs(anoslab, quslab, qvslab, areas, costhetas, sinthetas, param_dict):
         if isoquoii>=max_isoq_hard:
             continue
 
-        #-----------------Fill small holes-----------------
-        maskii=morphology.closing(maskii,selem=filldisk)
+        mask1=mask1+maskii
+
+    if mask1.max()==0:
+        return masks, armask
+
+    #--------Fill some small holes and make the contour smoother--------
+    labels=measure.label(mask1,connectivity=2)
+    filldisk=morphology.disk(fill_radius)
+
+    for ii in range(labels.max()):
+        maskii=np.where(labels==ii+1,1,0)
+        maskii=paddedClosing(maskii, filldisk, fill_radius)
+        masks.append(maskii)
+        armask=armask+maskii
+
+    return masks, armask
+
+
+def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
+        verbose=True):
+    '''Find AR axis
+
+    Args:
+        quslab (cdms.TransientVariable): (n * m) 2D u-flux slab, in kg/m/s.
+        qvslab (cdms.TransientVariable): (n * m) 2D v-flux slab, in kg/m/s.
+        armask_list (list): list of 2D binary masks, each with the same shape
+            as <quslab> etc., and with 1s denoting the location of a found AR.
+        costhetas (cdms.TransientVariable): (n * m) 2D slab of grid cell shape:
+                                          cos=dx/sqrt(dx^2+dy^2).
+        sinthetas (cdms.TransientVariable): (n * m) 2D slab of grid cell shape:
+                                          sin=dy/sqrt(dx^2+dy^2).
+        param_dict (dict): parameter dict defined in Global preamble.
+
+    Returns:
+        axes (list): list of AR axis coordinates. Each coordinate is defined
+                     as a Nx2 ndarray storing (y, x) indices of the axis
+                     (indices defined in the matrix of corresponding mask
+                     in <armask_list>.)
+        axismask (ndarray): 2D binary mask showing all axes in <axes> merged
+                            into one map.
+    '''
+
+    edge_eps=param_dict['edge_eps']
+
+    #-----------------Prepare outputs-----------------
+    axismask=np.zeros(armask.shape)
+    axes=[]
+
+    #--------------------Find axes--------------------
+    for maskii in armask_list:
 
         #----------Convert mask to directed graph----------
         gii=maskToGraph(maskii,quslab,qvslab,costhetas,sinthetas,edge_eps)
@@ -255,12 +302,9 @@ def findARs(anoslab, quslab, qvslab, areas, costhetas, sinthetas, param_dict):
         #--------------Get AR axis from graph--------------
         axisarrii,axismaskii=getARAxis(gii,quslab,qvslab,maskii)
         axes.append(axisarrii)
-        masks.append(maskii)
         axismask=axismask+axismaskii
-        mask2=mask2+maskii
 
-    return masks, axes, mask2, axismask
-
+    return axes, axismask
 
 
 #-------------Main---------------------------------
@@ -268,11 +312,11 @@ if __name__=='__main__':
 
 
     #-----------Read in flux data----------------------
-    file_in_name=UQ_FILE_NAME %YEAR
+    file_in_name=UQ_FILE_NAME
     abpath_in=os.path.join(SOURCEDIR1,file_in_name)
     qu=funcs.readVar(abpath_in, UQ_VAR)
 
-    file_in_name=VQ_FILE_NAME %YEAR
+    file_in_name=VQ_FILE_NAME
     abpath_in=os.path.join(SOURCEDIR2,file_in_name)
     qv=funcs.readVar(abpath_in, VQ_VAR)
 
@@ -281,7 +325,7 @@ if __name__=='__main__':
     qv=qv(longitude=(SHIFT_LON,SHIFT_LON+360))
 
     #-------------------Read in ivt-------------------
-    file_in_name=IVT_FILE_NAME %YEAR
+    file_in_name=IVT_FILE_NAME
     abpath_in=os.path.join(SOURCEDIR3,file_in_name)
     print('\n### <river_tracker1>: Read in file:\n',abpath_in)
     fin=cdms.open(abpath_in,'r')
@@ -355,16 +399,19 @@ if __name__=='__main__':
         quslab=qu[ii]
         qvslab=qv[ii]
 
-        # decompose background-transient
-        qurec,quano,qvrec,qvano=uvDecomp(quslab,qvslab,slabrec,slabano)
-
         # find ARs
-        mask_list,axis_list,armask,axismask=findARs(slabano,quano,qvano,
-                areamap,costhetas,sinthetas,PARAM_DICT)
+        mask_list,armask=findARs(slabano, areamap, PARAM_DICT)
 
         # skip if none
         if armask.sum()==0:
             continue
+
+        # find AR axis
+        axis_list, axismask=findARAxis(quslab, qvslab, mask_list, costhetas,
+                sinthetas, PARAM_DICT)
+
+        # decompose background-transient
+        qurec,quano,qvrec,qvano=uvDecomp(quslab,qvslab,slabrec,slabano)
 
         # fetch AR related data
         labels,angles,crossfluxes,ardf=getARData(

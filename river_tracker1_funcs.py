@@ -970,7 +970,7 @@ def plotAR(ardf, ax, bmap):
         py=vv['contour_y']
 
         px,py=bmap(px,py)
-        linewidth=1 if isrelaxkk else 1
+        linewidth=1.5 if isrelaxkk else 1.5
         linestyle=':' if isrelaxkk else '-'
         ax.plot(px,py,color='k',linestyle=linestyle,linewidth=linewidth)
 
@@ -979,7 +979,7 @@ def plotAR(ardf, ax, bmap):
         py=vv['axis_y']
 
         px,py=bmap(px,py)
-        ax.plot(px,py,'g:',linewidth=1.5)
+        ax.plot(px,py,'g:',linewidth=2.0)
 
         # plot cross flux text
         '''

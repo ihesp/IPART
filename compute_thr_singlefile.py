@@ -9,6 +9,14 @@ Input:
 
     NOTE: data should have proper time, latitude and longitude axes.
 
+Optional input:
+
+    Orographic data providing the surface terrain elevations, that correspond
+    to the IVT data. This is used to perform some extra computations over
+    high terrain regions to enhance the inland penetration of ARs. The mostly
+    affected area is the western coast of North America. Other areas are mostly
+    not affected.
+
 Usage:
 
     Change global parameters in the Globals section to point to the storage
@@ -40,7 +48,7 @@ from __future__ import print_function
 #--------------Globals------------------------------------------
 
 #-----------IVT data----------------------
-IVT_FILE='/home/guangzhi/datasets/erai/ERAI_AR_THR/ivt_m1-60_6_1984_crop.nc'
+IVT_FILE='/home/guangzhi/datasets/erai_qflux/ivt_m1-60_6_2007_cln-cea-proj.nc'
 VARIN='ivt'          # data id in nc file
 
 LAT1=0; LAT2=90      # degree, latitude domain
@@ -49,6 +57,15 @@ LAT1=0; LAT2=90      # degree, latitude domain
 KERNEL=[16,6,6]   # half length of time (time steps), and half length of spatial (number of grids)
 
 SHIFT_LON=80  # shift longitudinally to center Pacific and Altantic
+
+# Orographic file, providing surface terrain elevation info.
+# This is optional, can be used to enhance the continent-penetration
+# of landfalling ARs.
+ORO_FILE='/home/guangzhi/datasets/oro_s_a_1900_erai-cea-proj.nc'
+HIGH_TERRAIN=600 # surface height (in m) above which land surface is defined
+                 # as high terrain. Extra computations are performed over
+                 # high terrain areas to enhance continent-penetration of
+                 # landfalling ARs.
 
 #------------------Output folder------------------
 OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/'
@@ -69,15 +86,25 @@ from utils import funcs
 
 
 
-
-def filterData(ivt,kernel,verbose=True):
+def filterData(ivt, kernel, oro=None, high_terrain=600, verbose=True):
     """Perform THR filtering process on 3d data
 
     Args:
-        ivt (TransientVariable): 3D input IVT data, with dimensions (time, lat, lon) or
-                                 (time, level, lat, lon).
-        kernel (list or tuple): list/tuple of integers specifying the shape of the kernel/structuring
-                                element used in the gray erosion process.
+        ivt (TransientVariable): 3D input IVT data, with dimensions
+            (time, lat, lon) or (time, level, lat, lon).
+        kernel (list or tuple): list/tuple of integers specifying the shape of
+            the kernel/structuring element used in the gray erosion process.
+    Keyword Args:
+        oro (TransientVariable): 2D array, surface orographic data in meters.
+            This additional surface height info is used to perform a separate
+            reconstruction computation for areas with high elevations, and
+            the results can be used to enhance the continent-penetration
+            ability of landfalling ARs. Sensitivity in landfalling ARs is
+            enhanced, other areas are not affected. Needs to have compatible
+            shape as <ivt>.
+        high_terrain (float): minimum orographic height to define as high
+            terrain area, within which a separate reconstruction is performed.
+            Only used if <oro> is not None.
     Returns:
         ivt (TransientVariable): 3D array, input <ivt> squeezed.
         ivtrec (TransientVariable): 3D array, the reconstruction component from the THR process.
@@ -89,12 +116,19 @@ def filterData(ivt,kernel,verbose=True):
 
     #-------------------3d ellipsoid-------------------
     ele=funcs.get3DEllipse(*kernel)
-    #dt=kernel[0] # half length in time dimesion
 
     #################### use a cube to speed up ##############
-    if kernel[0]>=10 or kernel[1]>=6:
+    # empirical
+    if kernel[0]>=16 or kernel[1]>=6:
         ele=np.ones(ele.shape)
     ##########################################################
+
+    # reconstruction element: a 6-connectivity element
+    rec_ele=np.zeros([3,3,3])
+    rec_ele[0,1,1]=1
+    rec_ele[1,:,1]=1
+    rec_ele[1,1,:]=1
+    rec_ele[2,1,1]=1
 
     if verbose:
         print('\n# <filterData>: Computing erosion ...')
@@ -104,11 +138,21 @@ def filterData(ivt,kernel,verbose=True):
     if verbose:
         print('\n# <filterData>: Computing reconstruction ...')
 
-    ivtrec=morphology.reconstruction(lm,ivt,method='dilation')
-    ivtrec=MV.array(ivtrec)
-    ivtano=ivt-ivtrec
-    ivtano=MV.array(ivtano)
-    ivtrec=MV.array(ivtrec)
+    ivtrec=morphology.reconstruction(lm, ivt, method='dilation', selem=rec_ele)
+
+    # perform an extra reconstruction over land
+    if oro is not None:
+        oro_rs=MV.where(oro>=high_terrain, 1, 0)
+        oro_rs=funcs.addExtraAxis(oro_rs,axis=0)
+        oro_rs=np.repeat(oro_rs, len(ivt), axis=0)
+
+        ivtrec_oro=morphology.reconstruction(lm*oro_rs, ivt, method='dilation',
+                selem=rec_ele)
+        ivtano=MV.maximum(ivt-ivtrec, (ivt-ivtrec_oro)*oro_rs)
+    else:
+        ivtano=ivt-ivtrec
+
+    ivtrec=ivt-ivtano
 
     if ndim==4:
         levax=cdms.createAxis([0,])
@@ -118,27 +162,26 @@ def filterData(ivt,kernel,verbose=True):
         levax.units=''
 
         ivt=funcs.addExtraAxis(ivt,levax,1)
-        ivtano=funcs.addExtraAxis(ivtano,levax,1)
         ivtrec=funcs.addExtraAxis(ivtrec,levax,1)
+        ivtano=funcs.addExtraAxis(ivtano,levax,1)
 
     axislist=ivt.getAxisList()
-    ivtano.setAxisList(axislist)
     ivtrec.setAxisList(axislist)
+    ivtano.setAxisList(axislist)
 
     ivtrec.id='ivt_rec'
-    ivtrec.long_name='Integrated moisture transport, minimal reconstruction'
+    ivtrec.long_name='Integrated moisture transport, THR reconstruction'
     ivtrec.standard_name=ivtrec.long_name
     ivtrec.title=ivtrec.long_name
     ivtrec.units=ivt.units
 
     ivtano.id='ivt_ano'
-    ivtano.long_name='Integreated moisture transport, anomaly wrt minimal reconstruction'
+    ivtano.long_name='Integreated moisture transport, anomaly wrt THR reconstruction'
     ivtano.standard_name=ivtano.long_name
     ivtano.title=ivtano.long_name
     ivtano.units=ivt.units
 
     return ivt, ivtrec, ivtano
-
 
 
 
@@ -153,16 +196,22 @@ if __name__=='__main__':
     #-----------Read in data----------------------
     var=funcs.readVar(IVT_FILE, 'ivt')
 
+    #--------------------Read in orographic data--------------------
+    oro=funcs.readVar(ORO_FILE, 'oro')
+
     #-----------------Shift longitude-----------------
     var=var(latitude=(LAT1, LAT2))
     var=var(longitude=(SHIFT_LON,SHIFT_LON+360))
+    oro=oro(latitude=(LAT1, LAT2))
+    oro=oro(longitude=(SHIFT_LON,SHIFT_LON+360))(squeeze=1)
 
     #----------------------Do THR----------------------
-    ivt, ivtrec, ivtano=filterData(var, KERNEL)
+    ivt, ivtrec, ivtano=filterData(var, KERNEL, oro=oro,
+            high_terrain=HIGH_TERRAIN)
 
     #--------Save------------------------------------
     fname=os.path.split(IVT_FILE)[1]
-    file_out_name='%s-minimal-rec-ano-kernel-t%d-s%d.nc'\
+    file_out_name='%s-THR-kernel-t%d-s%d.nc'\
             %(os.path.splitext(fname)[0], KERNEL[0], KERNEL[1])
 
     abpath_out=os.path.join(OUTPUTDIR,file_out_name)
@@ -172,5 +221,4 @@ if __name__=='__main__':
     fout.write(ivtrec,typecode='f')
     fout.write(ivtano,typecode='f')
     fout.close()
-
 
