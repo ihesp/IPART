@@ -820,6 +820,7 @@ def readVar(abpath_in, varid):
     if ndim==3:
         var=MV.reshape(var, (len(timeax), 1, len(latax), len(lonax)))
 
+    var.id=varid
     var.setAxisList(axislist)
     fin.close()
 
