@@ -1,7 +1,7 @@
-'''Functions used in river_tracker1.py
+'''AR detection functions.
 
 Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
-Update time: 2020-04-01 12:14:56.
+Update time: 2020-06-05 23:21:24.
 '''
 
 from __future__ import print_function
@@ -18,9 +18,9 @@ import MV2 as MV
 from genutil import statistics as stats
 import cdutil
 
-from utils import rdp
-from utils import funcs
-from utils import peak_prominence2d as pp2d
+from .utils import rdp
+from .utils import funcs
+from .utils import peak_prominence2d as pp2d
 
 NX_VERSION=nx.__version__[0]
 
@@ -659,8 +659,7 @@ def partPeaks(cropmask, cropidx, orislab, max_ph_ratio):
 
 
 def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
-        mask_list, axis_list, timestr, param_dict, shift_lon, isplot,
-        outputdir):
+        mask_list, axis_list, timestr, param_dict):
     '''Fetch AR related data
 
     Args:
@@ -683,12 +682,6 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
                      in <masks>.)
         timestr (str): string of time snap.
         param_dict (dict): parameter dict defined in Global preamble.
-        shift_lon (float): starting longitude of data domain, defined in Global
-                           preamble.
-        isplot (bool): if True, create plot of AR axis, flux orientation and
-                       cross-sectional flux for each AR.
-        outputdir (str): folder to save plots. If None, don't save. If <isplot>
-                         is False, not relevant.
 
     Returns:
         labels (cdms.TransientVariable): (n * m) 2D int map showing all ARs
@@ -787,7 +780,7 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
 
         # compute angles and cross-section flux of total flux
         cropmask,cropidx=cropMask(maskii)
-        cropskelii=skelii-np.array([cropidx[0].min(), cropidx[1].min()])
+        #cropskelii=skelii-np.array([cropidx[0].min(), cropidx[1].min()])
 
         cropu=applyCropIdx(quslab,cropidx)
         cropv=applyCropIdx(qvslab,cropidx)
@@ -796,8 +789,8 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
                 cropmask, cropu, cropv, axis_rdpii)
 
         # create plots
-        if isplot:
-            pass
+        #if isplot:
+            #pass
             #plotARCrosssectionFlux(cropmask, cropu, cropv, cropskelii, axis_rdpii,
                     #'%s AR-%d' %(timestr, ii+1), shift_lon, anglesii, anglesmeanii,
                     #crossfluxii, seg_thetasii, outputdir)
@@ -1173,5 +1166,323 @@ def crossSectionFlux(mask, quslab, qvslab, axis_rdp):
 
     return angles,anglesmean,crossflux,seg_thetas
 
+
+
+
+def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
+        verbose=True):
+    '''Find AR axis
+
+    Args:
+        quslab (cdms.TransientVariable): (n * m) 2D u-flux slab, in kg/m/s.
+        qvslab (cdms.TransientVariable): (n * m) 2D v-flux slab, in kg/m/s.
+        armask_list (list): list of 2D binary masks, each with the same shape
+            as <quslab> etc., and with 1s denoting the location of a found AR.
+        costhetas (cdms.TransientVariable): (n * m) 2D slab of grid cell shape:
+                                          cos=dx/sqrt(dx^2+dy^2).
+        sinthetas (cdms.TransientVariable): (n * m) 2D slab of grid cell shape:
+                                          sin=dy/sqrt(dx^2+dy^2).
+        param_dict (dict): parameter dict defined in Global preamble.
+
+    Returns:
+        axes (list): list of AR axis coordinates. Each coordinate is defined
+                     as a Nx2 ndarray storing (y, x) indices of the axis
+                     (indices defined in the matrix of corresponding mask
+                     in <armask_list>.)
+        axismask (ndarray): 2D binary mask showing all axes in <axes> merged
+                            into one map.
+    '''
+
+    edge_eps=param_dict['edge_eps']
+
+    #-----------------Prepare outputs-----------------
+    axismask=np.zeros(quslab.shape)
+    axes=[]
+
+    #--------------------Find axes--------------------
+    for maskii in armask_list:
+
+        #----------Convert mask to directed graph----------
+        gii=maskToGraph(maskii,quslab,qvslab,costhetas,sinthetas,edge_eps)
+
+        #--------------Get AR axis from graph--------------
+        axisarrii,axismaskii=getARAxis(gii,quslab,qvslab,maskii)
+        axes.append(axisarrii)
+        axismask=axismask+axismaskii
+
+    return axes, axismask
+
+
+
+
+def _findARs(anoslab, areas, param_dict):
+    '''Find ARs from THR results at a time snap
+
+    Args:
+        anoslab (cdms.TransientVariable): (n * m) 2D anomalous IVT slab, in kg/m/s.
+        areas (cdms.TransientVariable): (n * m) 2D grid cell area slab, in km^2.
+        param_dict (dict): parameter dict defined in Global preamble.
+
+    Returns:
+        masks (list): list of 2D binary masks, each with the same shape as
+                      <anoslab> etc., and with 1s denoting the location of a
+                      found AR.
+        armask (ndarray): 2D binary mask showing all ARs in <masks> merged into
+                         one map.
+
+        If no ARs are found, <masks> will be []. <armask> will be zeros.
+    '''
+
+    # fetch parameters
+    thres_low=param_dict['thres_low']
+    min_area=param_dict['min_area']
+    max_area=param_dict['max_area']
+    min_lat=param_dict['min_lat']
+    max_lat=param_dict['max_lat']
+    single_dome=param_dict['single_dome']
+    max_ph_ratio=param_dict['max_ph_ratio']
+    max_isoq_hard=param_dict['max_isoq_hard']
+    fill_radius=param_dict['fill_radius']
+    latax=anoslab.getLatitude()
+
+    def paddedClosing(mask, ele, pad):
+        # pad
+        padmask=np.pad(mask, (pad,pad), mode='constant', constant_values=0)
+        # closing
+        padmask=morphology.closing(padmask, selem=ele)
+        # trim
+        padmask=padmask[slice(pad,-pad), slice(pad,-pad)]
+        return padmask
+
+    mask0=np.where(anoslab>thres_low,1,0)
+    if single_dome:
+        # NOTE: if using single_dome, should not filter max_area here.
+        mask0=areaFilt(mask0,areas,min_area,np.inf)
+    else:
+        mask0=areaFilt(mask0,areas,min_area,max_area)
+
+    # prepare outputs
+    masks=[]
+    armask=np.zeros(mask0.shape)
+
+    if mask0.max()==0:
+        return masks, armask
+
+    #---------------Separate grouped peaks---------------
+    if single_dome:
+        labels=measure.label(mask0,connectivity=2)
+        mask1=np.zeros(mask0.shape)
+
+        for ii in range(labels.max()):
+            maskii=np.where(labels==ii+1,1,0)
+
+            #-------------Skip if latitude too low or too high---------
+            latsii=np.where(maskii==1)[0]
+            latmaxii=latax[np.max(latsii)]
+            if latmaxii<min_lat:
+                continue
+            latminii=latax[np.min(latsii)]
+            if latminii>max_lat:
+                continue
+
+            cropmask,cropidx=cropMask(maskii)
+            maskii2=partPeaks(cropmask,cropidx,anoslab,max_ph_ratio)
+            # should I revert to maskii if the peak separation results in
+            # a large area loss?
+            mask1=mask1+maskii2
+    else:
+        mask1=mask0
+
+    mask1=areaFilt(mask1,areas,min_area,max_area)
+
+    if mask1.max()==0:
+        return masks, armask
+
+    #-------Latitude and iso_quotient filtering-------
+    labels=measure.label(mask1,connectivity=2)
+    mask1=np.zeros(mask0.shape)
+
+    for ii in range(labels.max()):
+        maskii=np.where(labels==ii+1,1,0)
+
+        #-------------Skip if latitude too low or too high---------
+        rpii=measure.regionprops(maskii, intensity_image=np.array(anoslab))[0]
+        centroidy,centroidx=rpii.weighted_centroid
+        centroidy=latax[int(centroidy)]
+        min_lat_idx=np.argmin(np.abs(latax[:]-min_lat))
+
+        if (centroidy<=min_lat and\
+                maskii[:min_lat_idx].sum()/float(maskii.sum())>=0.5)\
+                or centroidy>=max_lat:
+            continue
+
+        # filter by isoperimetric quotient
+        isoquoii=4*np.pi*rpii.area/rpii.perimeter**2
+
+        if isoquoii>=max_isoq_hard:
+            continue
+
+        mask1=mask1+maskii
+
+    if mask1.max()==0:
+        return masks, armask
+
+    #--------Fill some small holes and make the contour smoother--------
+    labels=measure.label(mask1,connectivity=2)
+    filldisk=morphology.disk(fill_radius)
+
+    for ii in range(labels.max()):
+        maskii=np.where(labels==ii+1,1,0)
+        maskii=paddedClosing(maskii, filldisk, fill_radius)
+        masks.append(maskii)
+        armask=armask+maskii
+
+    return masks, armask
+
+
+def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
+        times=None, ref_time='days since 1900-01-01',
+        verbose=True):
+
+    time_idx=[]
+    result_dict={}
+    labels_all=[]
+    angles_all=[]
+    crossfluxes_all=[]
+
+    finder_gen = findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
+            param_dict, times=times, ref_time=ref_time, verbose=verbose)
+    next(finder_gen)  # prime the generator to prepare metadata
+
+    for (tidx, timett, label, angle, cross, ardf) in finder_gen:
+
+        time_idx.append(tidx)
+        labels_all.append(label)
+        angles_all.append(angle)
+        crossfluxes_all.append(cross)
+        result_dict[timett]=ardf
+
+    labels_all=MV.concatenate(labels_all, axis=0)
+    angles_all=MV.concatenate(angles_all, axis=0)
+    crossfluxes_all=MV.concatenate(crossfluxes_all, axis=0)
+
+    labels_all.id='labels'
+    labels_all.long_name='AR labels'
+    labels_all.standard_name=labels_all.long_name
+    labels_all.title=labels_all.long_name
+    labels_all.units=''
+
+    angles_all.id='angles'
+    angles_all.long_name='AR moisture flux orientation difference'
+    angles_all.standard_name=angles_all.long_name
+    angles_all.title=angles_all.long_name
+    angles_all.units='degree'
+
+    crossfluxes_all.id='ivt_cross'
+    crossfluxes_all.long_name='AR total cross sectional moisture flux'
+    crossfluxes_all.standard_name=crossfluxes_all.long_name
+    crossfluxes_all.title=crossfluxes_all.long_name
+    crossfluxes_all.units=getattr(ivt, 'units', '')
+
+    result_df=save2DF(result_dict)
+
+    return time_idx, labels_all, angles_all, crossfluxes_all, result_df
+
+
+def prepareMeta(lats, lons, times, ntime, nlat, nlon,
+        ref_time='days since 1900-01-01', verbose=True):
+
+    #-------------------Check inputs-------------------
+    lats=np.asarray(lats).squeeze()
+    lons=np.asarray(lons).squeeze()
+    if np.ndim(lats) != 1:
+        raise Exception("<lats> needs to be an 1-D array.")
+    if np.ndim(lons) != 1:
+        raise Exception("<lons> needs to be an 1-D array.")
+    if len(lats) != nlat:
+        raise Exception("Length of <lats> doesn't equal <nlat>.")
+    if len(lons) != nlon:
+        raise Exception("Length of <lons> doesn't equal <nlon>.")
+
+    #------------------Get time axis------------------
+    timeax=funcs.getTimeAxis(times, ntime, ref_time).asComponentTime()
+
+    #-------------Compute grid geometries-------------
+    dxs=funcs.dLongitude2(lats, lons, R=6371)
+    dys=funcs.dLatitude2(lats, lons, R=6371)
+    areamap=dxs*dys # km^2
+    costhetas=dxs/np.sqrt(dxs**2+dys**2)
+    sinthetas=dys/np.sqrt(dxs**2+dys**2)
+
+    if verbose:
+        print('\n# <prepareMeta>: Metadata created.')
+
+    return timeax, areamap, costhetas, sinthetas
+
+
+def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
+        times=None, ref_time='days since 1900-01-01',
+        verbose=True):
+
+    #-----------------Get coordinate metadata-----------------
+    timeax, areamap, costhetas, sinthetas = prepareMeta(lats, lons, times,
+            ivt.shape[0], ivt.shape[1], ivt.shape[2], ref_time=ref_time,
+            verbose=verbose)
+    yield # this bare yield prepares the generator by advancing it to the 1st yield
+
+    #######################################################################
+    #                          Start processing                           #
+    #######################################################################
+
+    #----------------Loop through time----------------
+    for ii, timett in enumerate(timeax):
+
+        timett_str='%d-%02d-%02d %02d:00' %(timett.year,timett.month,\
+                timett.day,timett.hour)
+
+        if verbose:
+            print('\n# <findARsGen>: Processing time: %s' %timett_str)
+
+        slab=ivt[ii]
+        slabano=ivtano[ii]
+        slabrec=ivtrec[ii]
+        quslab=qu[ii]
+        qvslab=qv[ii]
+
+        # find ARs
+        mask_list,armask=_findARs(slabano, areamap, param_dict)
+
+        # skip if none
+        if armask.sum()==0:
+            continue
+
+        # find AR axis
+        axis_list, axismask=findARAxis(quslab, qvslab, mask_list, costhetas,
+                sinthetas, param_dict)
+
+        # decompose background-transient
+        qurec,quano,qvrec,qvano=uvDecomp(quslab,qvslab,slabrec,slabano)
+
+        # fetch AR related data
+        labels,angles,crossfluxes,ardf=getARData(
+                slab,quslab,qvslab,
+                slabano,quano,qvano,
+                areamap,
+                mask_list,axis_list,timett_str,param_dict)
+
+        if verbose:
+            print('# <findARsGen>: NO. of ARs found =  %d' %len(ardf))
+
+        # prepare nc output
+        timeaxii=cdms.createAxis([timett.torel('days since 1900-1-1').value])
+        timeaxii.designateTime()
+        timeaxii.id='time'
+        timeaxii.units='days since 1900-1-1'
+
+        labels=funcs.addExtraAxis(labels,timeaxii)
+        angles=funcs.addExtraAxis(angles,timeaxii)
+        crossfluxes=funcs.addExtraAxis(crossfluxes,timeaxii)
+
+        yield ii, timett_str, labels, angles, crossfluxes, ardf
 
 

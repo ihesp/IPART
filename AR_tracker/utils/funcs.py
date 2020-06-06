@@ -1,3 +1,8 @@
+'''Utility functions
+
+Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Update time: 2020-06-05 23:23:22.
+'''
 from __future__ import print_function
 
 
@@ -533,6 +538,69 @@ def dLongitude(var,side='c',R=6371000):
 
     return delta_x
 
+def dLongitude2(lats, lons, side='c', R=6371000):
+    '''Return a slab of longitudinal increment (meter) delta_x.
+
+    Args:
+        var (TransientVariable): variable from which latitude axis is obtained;
+        side (str): 'n': northern boundary of each latitudinal band;
+                    's': southern boundary of each latitudinal band;
+                    'c': central line of latitudinal band;
+
+                 -----     'n'
+                /-----\     'c'
+               /_______\     's'
+
+
+        R (float): radius of Earth;
+
+    Returns:
+        delta_x (TransientVariable): a 2-D slab with grid information copied from <var>.
+
+    UPDATE: 2014-08-05 11:12:27:
+        In computing <delta_x>, the longitudinal increment should be taken
+        from the actual longitude axis (bounds).
+        Fortunately this is not affecting any previous computations which are all
+        globally.
+
+    '''
+
+    import numpy
+    import cdms2 as cdms
+
+    latax=cdms.createAxis(lats)
+    latax.designateLatitude()
+    latax.id='y'
+    latax.name='latitude'
+    latax.units='degree north'
+
+    lons=numpy.sort(lons)
+    lonax=cdms.createAxis(lons)
+    lonax.designateLongitude()
+    lonax.id='x'
+    lonax.name='longitude'
+    lonax.units='degree east'
+
+    #----------Get bounds---------------------
+    latax_bounds=latax.getBounds()
+    lonax_bounds=lonax.getBounds()
+    lon_increment=numpy.ptp(lonax_bounds,axis=1)*numpy.pi/180.
+
+    if side=='n':
+        lats=latax_bounds.max(axis=1)
+    elif side=='c':
+        lats=latax[:]
+    elif side=='s':
+        lats=latax_bounds.min(axis=1)
+
+    lats=abs(lats)*numpy.pi/180.
+    delta_x=R*numpy.cos(lats)[:,None]*lon_increment[None,:]
+    delta_x=numpy.where(delta_x<=1e-8,1,delta_x)
+
+    #delta_x.setAxisList((latax,lonax))
+
+    return delta_x
+
 #----------Delta_Longitude----------------------------
 def dLatitude(var,R=6371000,verbose=True):
     '''Return a slab of latitudinal increment (meter) delta_y.
@@ -559,6 +627,45 @@ def dLatitude(var,R=6371000,verbose=True):
     #-------Repeat array to get slab---------------
     delta_y=MV.repeat(delta_y[:,None],len(lonax),axis=1)
     delta_y.setAxisList((latax,lonax))
+
+    return delta_y
+
+#----------Delta_Longitude----------------------------
+def dLatitude2(lats, lons, R=6371000,verbose=True):
+    '''Return a slab of latitudinal increment (meter) delta_y.
+
+    Args:
+        var (TransientVariable): variable from which latitude axis is abtained;
+        R (float): radius of Earth;
+
+    Returns:
+        delta_y (TransientVariable): a 2-D slab with grid information copied from\
+            <var>.
+    '''
+
+    import numpy
+    import cdms2 as cdms
+
+    latax=cdms.createAxis(lats)
+    latax.designateLatitude()
+    latax.id='y'
+    latax.name='latitude'
+    latax.units='degree north'
+
+    lons=numpy.sort(lons)
+    lonax=cdms.createAxis(lons)
+    lonax.designateLongitude()
+    lonax.id='x'
+    lonax.name='longitude'
+    lonax.units='degree east'
+
+    #---------Get axes and bounds-------------------
+    latax_bounds=latax.getBounds()
+    delta_y=latax_bounds.ptp(axis=1)*numpy.pi/180.*R
+
+    #-------Repeat array to get slab---------------
+    delta_y=numpy.repeat(delta_y[:,None],len(lonax),axis=1)
+    #delta_y.setAxisList((latax,lonax))
 
     return delta_y
 
@@ -762,7 +869,6 @@ def getCrossTrackDistance(lat1,lon1,lat2,lon2,lat3,lon3,r=None):
     return dxt
 
 
-
 def readVar(abpath_in, varid):
     '''Read in netcdf variable
 
@@ -825,3 +931,53 @@ def readVar(abpath_in, varid):
     fin.close()
 
     return var
+
+
+def getTimeAxis(times, ntime, ref_time='days since 1900-01-01'):
+
+    import sys
+    import pandas as pd
+    import numpy as np
+    import cdtime
+    import cdms2 as cdms
+    import warnings
+
+    if times is None:
+        times=np.arange(ntime)/4.
+        warnings.warn("No time stamps are given. Default to 6-houly time steps since 1900-01-01.")
+
+    if not isinstance(times, (tuple, list, pd.core.series.Series,\
+            np.ndarray)):
+        times=[times,]
+
+    if len(times) != ntime:
+        raise Exception("Length of <times> doesn't equal <ntime>.")
+
+    isstr=lambda x: isinstance(x, str if sys.version_info[0]>=3 else basestring)
+    datetime2Comp=lambda x: cdtime.s2c('%4d-%2d-%2d %2d:%2d:%2d'\
+            %(x.year, x.month, x.day, x.hour, x.minute, x.second))
+
+    if all([isstr(ii) for ii in times]):
+        # times is all strs
+        # try convert to cdtime
+        try:
+            dt=[pd.to_datetime(ii) for ii in times]
+            result=[datetime2Comp(ii) for ii in dt]
+        except:
+            raise Exception("Failed to convert times to time axis. Pls check your <times> input.")
+        else:
+            result=[ii.torel(ref_time).value for ii in result]
+            result=cdms.createAxis(result)
+            result.designateTime()
+            result.id='time'
+            result.units=ref_time
+    else:
+        try:
+            result=cdms.createAxis(times)
+            result.designateTime()
+            result.id='time'
+            result.units=ref_time
+        except:
+            raise Exception("Failed to convert times to time axis. Pls check your <times> input.")
+
+    return result

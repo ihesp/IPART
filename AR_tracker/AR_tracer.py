@@ -1,52 +1,13 @@
-'''Link ARs found in different time slices to form tracks
-
-
-Input data:
-
-1. AR records at individual time steps. This should be the output from
-river_tracker1.py in csv format.
+'''Functions to compute Hausdorff distance between AR axes pairs and link
+ARs across time steps to form tracks.
 
 Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
-Update time: 2020-04-01 12:15:03.
+Update time: 2020-06-05 22:46:19.
 '''
 
-from __future__ import print_function
-
-#--------------Globals------------------------------------------
-YEAR=1984
-
-SOURCEDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/1984/'
-RECORD_FILE='ar_records_1984-01-01_00-00-00-1984-06-30_18-00-00.csv'
-OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/1984/'
-
-SCHEMATIC=True   # plot schematic or not
-
-LAT1=0; LAT2=90; LON1=80; LON2=440         # domain to plot
-
-TRACK_PARAMS={}
-# Int, hours, gap allowed to link 2 records. Should be the time resolution of
-# the data.
-TRACK_PARAMS['time_gap_allow']=6
-# int, number of anchor points along the axis
-TRACK_PARAMS['num_anchors']=7
-# tracking scheme. 'simple': all tracks are simple paths.
-# 'full': use the network scheme, tracks are connected by their joint points.
-TRACK_PARAMS['track_scheme']='simple'  # 'simple' | 'full'
-# int, max Hausdorff distance in km to define a neighborhood relationship
-TRACK_PARAMS['max_dist_allow']=1200  # km
-# int, min duration in hrs to keep a track.
-TRACK_PARAMS['min_duration']=24
-# int, min number of non-relaxed records in a track to keep a track.
-TRACK_PARAMS['min_nonrelax']=1
-
-
-
-
-
-
-
 #--------Import modules-------------------------
-import os, sys
+from __future__ import print_function
+import os
 import numpy as np
 import pandas as pd
 from utils import funcs,plot
@@ -54,10 +15,6 @@ import copy
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 import matplotlib.patches as patches
-
-
-
-
 
 
 #######################################################################
@@ -217,8 +174,7 @@ def forwardHausdorff(lats1,lons1,lats2,lons2):
 
     return np.max(dists)
 
-
-def getAnchors(arr):
+def getAnchors(arr, num_anchors=7):
     '''Get anchor points along from an axis.
 
     Args:
@@ -227,11 +183,13 @@ def getAnchors(arr):
         (ndarray): 1D array of the sampled anchor points from <arr>.
     '''
 
-    nn=min(len(arr), TRACK_PARAMS['num_anchors'])
+    if num_anchors<2:
+        raise Exception("Need at least 2 anchor points.")
+
+    nn=min(len(arr), num_anchors)
     idx=np.around(np.linspace(0,len(arr)-1,nn),0).astype('int')
 
     return np.take(arr,idx)
-
 
 def plotHD(y1,x1,y2,x2,timelabel=None,linkflag='',ax=None,show=True):
     '''Plot Hausdorff links
@@ -323,8 +281,8 @@ def plotHD(y1,x1,y2,x2,timelabel=None,linkflag='',ax=None,show=True):
 
     return
 
-
-def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',marker=None):
+def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',
+        marker=None):
     '''Plot AR tracks
 
     Args:
@@ -426,7 +384,6 @@ def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',ma
 
     return
 
-
 def getDistMatrix(tr_list,newlats,newlons):
     '''Compute distance matrix among track axis anchors
 
@@ -454,12 +411,37 @@ def getDistMatrix(tr_list,newlats,newlons):
 
     return dists
 
+def readCSVRecord(abpath_in):
+    '''Read in individual AR records from .csv file
 
-def convarray(text):
-    text=text.replace('[','').replace(']','')
-    array=np.array(text.split()).astype('float')
+    Args:
+        abpath_in (str): absolute file path to AR record file.
 
-    return array
+    Returns:
+        ardf (pandas.DataFrame): record saved in DataFrame.
+    '''
+
+    def convarray(text):
+        '''Convert array texts to ndarray'''
+        text=text.replace('[','').replace(']','')
+        array=np.array(text.split()).astype('float')
+        return array
+
+    convkeys=['contour_y', 'contour_x',
+            'axis_y', 'axis_x', 'axis_rdp_y', 'axis_rdp_x']
+
+    converters=dict([(keyii, convarray) for keyii in convkeys])
+
+    dtypes={'id': 'int', 'time': 'str',
+            'area': np.float64, 'length': np.float64, 'width': np.float64,
+            'iso_quotient': np.float64, 'LW_ratio': np.float64,
+            'strength': np.float64, 'strength_ano': np.float64,
+            'strength_std': np.float64,
+            'mean_angle': np.float64, 'is_relaxed': 'bool'}
+
+    ardf=pd.read_csv(abpath_in,dtype=dtypes,converters=converters)
+
+    return ardf
 
 
 
@@ -467,16 +449,21 @@ def convarray(text):
 #                         Tracking functions                          #
 #######################################################################
 
-def matchCenters2(tr_list, newrec, params, isplot=False, plot_dir=None,
-        verbose=True):
+def matchCenters(tr_list, newrec, time_gap_allow, max_dist_allow,
+        track_scheme='simple', isplot=False, plot_dir=None, verbose=True):
     '''Match and link nearby centers at 2 consecutive time steps
 
     Args:
         tr_list (list): list of AR objs, existing systems at time t=t.
         newrec (DataFrame): new center data at time t=t+1.
-        params (dict): tracking parameters.
+        time_gap_allow (int): max allowed gap between 2 records, in number of
+                              hours.
+        max_dist_allow (float): max allowed Hausdorff distance allowed between
+                                2 records, in km.
 
     Keyword Args:
+        track_scheme (str): tracking scheme. 'simple': all tracks are simple paths.
+            'full': use the network scheme, tracks are connected by their joint points.
         isplot (bool): create schematic plot or not.
         plot_dir (str): folder to save schematic plot. Only used if isplot=True.
 
@@ -490,9 +477,6 @@ def matchCenters2(tr_list, newrec, params, isplot=False, plot_dir=None,
     Matching is based on geo-distances and uses nearest neighbour strategy.
     '''
 
-    time_gap_allow=params['time_gap_allow']
-    max_dist_allow=params['max_dist_allow']
-    track_scheme=params['track_scheme']
     time_gap_allow=pd.Timedelta(hours=time_gap_allow)
 
     # coordinates at t+1
@@ -619,27 +603,31 @@ def matchCenters2(tr_list, newrec, params, isplot=False, plot_dir=None,
         if len(mask_row1)>0:
             timestr='%s' %(newrec.time.iloc[0])
             suffix=timestr.replace(':','-').replace(' ','_')
-            plot_save_name='linkages_scheme_%s_%s' %(track_scheme,suffix)
+            plot_save_name='linkage_scheme_%s_%s' %(track_scheme,suffix)
             plot_save_name=os.path.join(plot_dir,plot_save_name)
-            print('\n# <river_tracker2>: Save figure to', plot_save_name)
+            print('\n# <matchCenters>: Save figure to', plot_save_name)
             figure.savefig(plot_save_name+'.png',dpi=100,bbox_inches='tight')
             #figure.savefig(plot_save_name+'.pdf',dpi=100,bbox_inches='tight')
 
         plt.close(figure)
 
     allocated_recs=[newrec.iloc[ii].id for ii in mask_row1+mask_row2+mask_row3]
-    #allocated_tracks=[tr_list[ii].id for ii in mask_col1+mask_col2+mask_col3]
 
     return tr_list, allocated_recs
 
-
-def trackARs2(record, parameter, isplot=False, plot_dir=None, verbose=True):
+def trackARs(record, time_gap_allow, max_dist_allow, track_scheme='simple',
+        isplot=False, plot_dir=None, verbose=True):
     '''Group records to form tracks
 
     Args:
         record (DataFrame): AR records at different time slices.
-        parameter (dict): tracking parameteres defined in the global preamble.
+        time_gap_allow (int): max allowed gap between 2 records, in number of
+                              hours.
+        max_dist_allow (float): max allowed Hausdorff distance allowed between
+                                2 records, in km.
     Keyword Args:
+        track_scheme (str): tracking scheme. 'simple': all tracks are simple paths.
+            'full': use the network scheme, tracks are connected by their joint points.
         isplot (bool): whether to create schematic plots of linking.
         plot_dir (str): folder to save schematic plot.
 
@@ -647,8 +635,7 @@ def trackARs2(record, parameter, isplot=False, plot_dir=None, verbose=True):
         finished_list (list): list of AR objs. Found tracks.
     '''
 
-    time_gap_allow=parameter['time_gap_allow']
-    time_gap_allow=pd.Timedelta(hours=time_gap_allow)
+    _time_gap_allow=pd.Timedelta(hours=time_gap_allow)
 
     record.loc[:,'time']=pd.to_datetime(record.time)
     timelist=record.time.dropna(how='any').unique()
@@ -676,7 +663,7 @@ def trackARs2(record, parameter, isplot=False, plot_dir=None, verbose=True):
         #------------End existing ars if gap too long---------------
         if len(track_list)>0:
             for trjj in track_list:
-                if tnow-trjj.latest.time>time_gap_allow:
+                if tnow-trjj.latest.time>_time_gap_allow:
                     trjj.finish=True
                     finished_list.append(trjj)
                     track_list.remove(trjj)
@@ -686,7 +673,8 @@ def trackARs2(record, parameter, isplot=False, plot_dir=None, verbose=True):
 
         #-------------------Link tracks-------------------
         all_rec_id=recii.id.tolist()
-        track_list,allocated_recs=matchCenters2(track_list, recii, parameter,
+        track_list,allocated_recs=matchCenters(track_list, recii,
+                time_gap_allow, max_dist_allow, track_scheme=track_scheme,
                 isplot=isplot, plot_dir=plot_dir, verbose=verbose)
 
         #-----------------Create a new ar for left-overs-----------------
@@ -703,27 +691,22 @@ def trackARs2(record, parameter, isplot=False, plot_dir=None, verbose=True):
 
     return finished_list
 
-
-def filterTracks(tr_list,parameter,verbose=True):
+def filterTracks(tr_list, min_duration, min_nonrelax ,verbose=True):
     '''Filter tracks
 
     Args:
         tr_list (list): list of AR objects, found tracks.
-        parameter (dict): tracking parameteres defined in the global preamble.
+        min_duration (int): min duration in hrs to keep a track.
+        min_nonrelax (int): min number of non-relaxed records in a track to
+                            keep a track.
 
     Returns:
         tr_list (list): list of AR objects, filtered tracks.
 
     Tracks that are filtered:
         * tracks that are too short, controlled by 'min_duration'
-        * tracks that start over land (all rdp axis points are over land at
-          t=0).
         * tracks that consist of solely relaxed records.
-        * tracks outside of latitude region, not in use.
     '''
-
-    min_duration=parameter['min_duration']
-    min_nonrelax=parameter['min_nonrelax']
 
     #---------------Remove short tracks---------------
     new_list=[ii for ii in tr_list if ii.duration>=\
@@ -742,85 +725,3 @@ def filterTracks(tr_list,parameter,verbose=True):
     return tr_list
 
 
-
-
-
-
-
-#-------------Main---------------------------------
-if __name__=='__main__':
-
-    #-----------Read in records---------------------
-    abpath_in=os.path.join(SOURCEDIR,RECORD_FILE)
-    print('\n### <river_tracker2>: Read in file:\n',abpath_in)
-
-    keys=['id', 'time', 'contour_y', 'contour_x', 'centroid_y', 'centroid_x',
-            'axis_y', 'axis_x', 'axis_rdp_y', 'axis_rdp_x',
-            'area', 'length', 'width', 'iso_quotient', 'LW_ratio',
-            'strength', 'strength_ano', 'strength_std',
-            'mean_angle', 'is_relaxed']
-
-    convkeys=['contour_y', 'contour_x',
-            'axis_y', 'axis_x', 'axis_rdp_y', 'axis_rdp_x']
-
-    converters=dict([(keyii, convarray) for keyii in convkeys])
-
-    dtypes={'id': 'int', 'time': 'str',
-            'area': np.float64, 'length': np.float64, 'width': np.float64,
-            'iso_quotient': np.float64, 'LW_ratio': np.float64,
-            'strength': np.float64, 'strength_ano': np.float64,
-            'strength_std': np.float64,
-            'mean_angle': np.float64, 'is_relaxed': 'bool'}
-
-    ardf=pd.read_csv(abpath_in,dtype=dtypes,converters=converters)
-
-    if not os.path.exists(OUTPUTDIR):
-        os.makedirs(OUTPUTDIR)
-
-    if SCHEMATIC:
-        plot_dir=os.path.join(OUTPUTDIR, 'plots')
-        if not os.path.exists(plot_dir):
-            os.makedirs(plot_dir)
-
-    #-------------------Track ars-------------------
-    track_list=trackARs2(ardf,TRACK_PARAMS,SCHEMATIC,plot_dir)
-
-    #------------------Filter tracks------------------
-    track_list=filterTracks(track_list,TRACK_PARAMS)
-
-    #-------------------Save output-------------------
-    latax=np.arange(LAT1, LAT2)
-    lonax=np.arange(LON1, LON2)
-
-    for ii in range(len(track_list)):
-        tii=track_list[ii]
-        trackidii='%d%d' %(tii.data.loc[0,'time'].year, ii+1)
-        tii.data.loc[:,'trackid']=trackidii
-        tii.trackid=trackidii
-
-        if ii==0:
-            trackdf=tii.data
-        else:
-            trackdf=pd.concat([trackdf,tii.data],ignore_index=True)
-
-        figure=plt.figure(figsize=(12,6),dpi=100)
-        ax=figure.add_subplot(111)
-        plotAR(tii,latax,lonax,True,ax=ax)
-
-        #----------------- Save plot------------
-        plot_save_name='ar_track_%s' %trackidii
-        plot_save_name=os.path.join(plot_dir,plot_save_name)
-        print('\n# <river_tracker2>: Save figure to', plot_save_name)
-        figure.savefig(plot_save_name+'.png',dpi=100,bbox_inches='tight')
-
-        plt.close(figure)
-
-
-    #--------Save------------------------------------
-    abpath_out=os.path.join(OUTPUTDIR,'ar_tracks_%d.csv' %YEAR)
-    print('\n### <river_tracker2>: Saving output to:\n',abpath_out)
-    if sys.version_info.major==2:
-        np.set_printoptions(threshold=np.inf)
-    elif sys.version_info.major==3:
-        np.set_printoptions(threshold=sys.maxsize)
-    trackdf.to_csv(abpath_out,index=False)

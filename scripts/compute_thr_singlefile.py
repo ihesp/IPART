@@ -79,110 +79,8 @@ OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/'
 #--------Import modules-------------------------
 import os
 import cdms2 as cdms
-import MV2 as MV
-import numpy as np
-from skimage import morphology
-from utils import funcs
-
-
-
-def filterData(ivt, kernel, oro=None, high_terrain=600, verbose=True):
-    """Perform THR filtering process on 3d data
-
-    Args:
-        ivt (TransientVariable): 3D input IVT data, with dimensions
-            (time, lat, lon) or (time, level, lat, lon).
-        kernel (list or tuple): list/tuple of integers specifying the shape of
-            the kernel/structuring element used in the gray erosion process.
-    Keyword Args:
-        oro (TransientVariable): 2D array, surface orographic data in meters.
-            This additional surface height info is used to perform a separate
-            reconstruction computation for areas with high elevations, and
-            the results can be used to enhance the continent-penetration
-            ability of landfalling ARs. Sensitivity in landfalling ARs is
-            enhanced, other areas are not affected. Needs to have compatible
-            shape as <ivt>.
-        high_terrain (float): minimum orographic height to define as high
-            terrain area, within which a separate reconstruction is performed.
-            Only used if <oro> is not None.
-    Returns:
-        ivt (TransientVariable): 3D array, input <ivt> squeezed.
-        ivtrec (TransientVariable): 3D array, the reconstruction component from the THR process.
-        ivtano (TransientVariable): 3D array, the difference between input <ivt> and <ivtrec>.
-    """
-
-    ndim=np.ndim(ivt)
-    ivt=ivt(squeeze=1)
-
-    #-------------------3d ellipsoid-------------------
-    ele=funcs.get3DEllipse(*kernel)
-
-    #################### use a cube to speed up ##############
-    # empirical
-    if kernel[0]>=16 or kernel[1]>=6:
-        ele=np.ones(ele.shape)
-    ##########################################################
-
-    # reconstruction element: a 6-connectivity element
-    rec_ele=np.zeros([3,3,3])
-    rec_ele[0,1,1]=1
-    rec_ele[1,:,1]=1
-    rec_ele[1,1,:]=1
-    rec_ele[2,1,1]=1
-
-    if verbose:
-        print('\n# <filterData>: Computing erosion ...')
-
-    lm=morphology.erosion(ivt.data,selem=ele)
-
-    if verbose:
-        print('\n# <filterData>: Computing reconstruction ...')
-
-    ivtrec=morphology.reconstruction(lm, ivt, method='dilation', selem=rec_ele)
-
-    # perform an extra reconstruction over land
-    if oro is not None:
-        oro_rs=MV.where(oro>=high_terrain, 1, 0)
-        oro_rs=funcs.addExtraAxis(oro_rs,axis=0)
-        oro_rs=np.repeat(oro_rs, len(ivt), axis=0)
-
-        ivtrec_oro=morphology.reconstruction(lm*oro_rs, ivt, method='dilation',
-                selem=rec_ele)
-        ivtano=MV.maximum(ivt-ivtrec, (ivt-ivtrec_oro)*oro_rs)
-    else:
-        ivtano=ivt-ivtrec
-
-    ivtrec=ivt-ivtano
-
-    if ndim==4:
-        levax=cdms.createAxis([0,])
-        levax.designateLevel()
-        levax.id='z'
-        levax.name='level'
-        levax.units=''
-
-        ivt=funcs.addExtraAxis(ivt,levax,1)
-        ivtrec=funcs.addExtraAxis(ivtrec,levax,1)
-        ivtano=funcs.addExtraAxis(ivtano,levax,1)
-
-    axislist=ivt.getAxisList()
-    ivtrec.setAxisList(axislist)
-    ivtano.setAxisList(axislist)
-
-    ivtrec.id='ivt_rec'
-    ivtrec.long_name='Integrated moisture transport, THR reconstruction'
-    ivtrec.standard_name=ivtrec.long_name
-    ivtrec.title=ivtrec.long_name
-    ivtrec.units=ivt.units
-
-    ivtano.id='ivt_ano'
-    ivtano.long_name='Integreated moisture transport, anomaly wrt THR reconstruction'
-    ivtano.standard_name=ivtano.long_name
-    ivtano.title=ivtano.long_name
-    ivtano.units=ivt.units
-
-    return ivt, ivtrec, ivtano
-
+from AR_tracker.utils import funcs
+from AR_tracker import thr
 
 
 
@@ -206,7 +104,7 @@ if __name__=='__main__':
     oro=oro(longitude=(SHIFT_LON,SHIFT_LON+360))(squeeze=1)
 
     #----------------------Do THR----------------------
-    ivt, ivtrec, ivtano=filterData(var, KERNEL, oro=oro,
+    ivt, ivtrec, ivtano=thr.THR(var, KERNEL, oro=oro,
             high_terrain=HIGH_TERRAIN)
 
     #--------Save------------------------------------

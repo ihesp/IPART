@@ -1,120 +1,126 @@
-'''Compute 3d THR on IVT. Process multiple data files too large to fit into
-RAM.
-
-Difference from compute_thr_singlefile.py:
-
-    this is for computing THR process on multiple data files that are too
-    large to fit into RAM. Like a moving average, the THR process is
-    less accurate at the ends of the data domain. For data saved into multiple
-    files (usually separated by time), this may create some discontinuity
-    at the ends of each file. To overcome this, 2 files are read in at a time,
-    data are concatenated in time dimension, therefore the transition
-    between these 2 data files is "smooth". Then the 3rd file is read in to
-    form a smooth transition between the 2nd and the 3rd files. Then the same
-    process rotates on. The outputs are saved one for a year.
-
-Input:
-    IVT (integrated Vapor Transport) in netCDF format, one file for a year
-    (or a month, depending on your specific organization of data files).
-    The file name is assumed to have a format that there is a field that
-    specifies the year, e.g. "ivt_m1-60_6_%d_cln.nc". The %d field is replaced
-    by a year, e.g. 2000.
-
-    Data are assumed to be in the format: (time, level, latitude, longitude)
-    dimensions (level dimension is optional, if present, should be a
-    singleton axis of length 1).
-
-    NOTE: data should have proper time, latitude and longitude axes.
-
-Optional input:
-
-    Orographic data providing the surface terrain elevations, that correspond
-    to the IVT data. This is used to perform some extra computations over
-    high terrain regions to enhance the inland penetration of ARs. The mostly
-    affected area is the western coast of North America. Other areas are mostly
-    not affected.
-
-Usage:
-
-    Change global parameters in the Globals section to point to the storage
-    location of IVT data, and specificy an output folder to save results.
-
-    Specify the latitudinal domain in LAT1, LAT2.
-
-    The KERNEL parameter specifies the $t$ and $s$ parameters of the
-    structuring element size.
-    $t$ is in number time steps, $s$ is number of grid cells.
-    See paper for more details, but basically the choices of $t$ and $s$
-    should correspond to the synoptic temporal and spatial scales.
-
-    SHIFT_LON shifts the longitude by a given degree of longitudes, so
-    that the Pacific and Atlantic basins can be centered.
-
-    Run the script as:
-        ```
-        python compute_thr_multifile.py
-        ```
+'''Perform THR computation on IVT data
 
 Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
-Update time: 2019-12-06 22:55:40.
+Update time: 2020-06-03 09:14:14.
 '''
 
 from __future__ import print_function
-
-
-#--------------Globals------------------------------------------
-#--------------------Year range--------------------
-YEARS=range(2003,2006)
-
-#-----------IVT data----------------------
-SOURCEDIR1='/home/guangzhi/datasets/erai/erai_qflux'
-FILE1_BASE='ivt_m1-60_6_%d_cln.nc'
-VARIN='ivt'          # data id in nc file
-
-LAT1=0; LAT2=90      # degree, latitude domain
-
-#-------Structuring element for erosion (E)-------
-KERNEL=[16,6,6]   # half length of time (time steps), and half length of spatial (number of grids)
-
-SHIFT_LON=80  # shift longitudinally to center Pacific and Altantic
-
-# Orographic file, providing surface terrain elevation info.
-# This is optional, can be used to enhance the continent-penetration
-# of landfalling ARs.
-ORO_FILE='/home/guangzhi/datasets/oro_s_a_1900_erai-cea-proj.nc'
-HIGH_TERRAIN=600 # surface height (in m) above which land surface is defined
-                 # as high terrain. Extra computations are performed over
-                 # high terrain areas to enhance continent-penetration of
-                 # landfalling ARs.
-
-#------------------Output folder------------------
-OUTPUTDIR='/home/guangzhi/datasets/erai/ivt_thr/'
-
-
-
-
-
-
-
-#--------Import modules-------------------------
 import os
+import numpy as np
 import cdms2 as cdms
 import MV2 as MV
-import numpy as np
-from cdms2.selectors import Selector
-from utils import funcs
-from compute_thr_singlefile import filterData
+from skimage import morphology
+from AR_tracker.utils import funcs
 
 
+def THR(ivt, kernel, oro=None, high_terrain=600, verbose=True):
+    """Perform THR filtering process on 3d data
 
-def rotatingFiltering(filelist, varin, selector, kernel, outputdir, oro=None,
+    Args:
+        ivt (TransientVariable): 3D or 4D input IVT data, with dimensions
+            (time, lat, lon) or (time, level, lat, lon).
+        kernel (list or tuple): list/tuple of integers specifying the shape of
+            the kernel/structuring element used in the gray erosion process.
+
+    Keyword Args:
+        oro (TransientVariable): 2D array, surface orographic data in meters.
+            This additional surface height info is used to perform a separate
+            reconstruction computation for areas with high elevations, and
+            the results can be used to enhance the continent-penetration
+            ability of landfalling ARs. Sensitivity in landfalling ARs is
+            enhanced, other areas are not affected. Needs to have compatible
+            shape as <ivt>.
+        high_terrain (float): minimum orographic height (in m) to define as high
+            terrain area, within which a separate reconstruction is performed.
+            Only used if <oro> is not None.
+
+    Returns:
+        ivt (TransientVariable): 3D or 4D array, input <ivt>.
+        ivtrec (TransientVariable): 3D or 4D array, the reconstruction component from the THR process.
+        ivtano (TransientVariable): 3D or 4D array, the difference between input <ivt> and <ivtrec>.
+    """
+
+    ndim=np.ndim(ivt)
+    ivt=ivt(squeeze=1)
+
+    #-------------------3d ellipsoid-------------------
+    ele=funcs.get3DEllipse(*kernel)
+
+    #################### use a cube to speed up ##############
+    # empirical
+    #if kernel[0]>=16 or kernel[1]>=6:
+        #ele=np.ones(ele.shape)
+    ##########################################################
+
+    # reconstruction element: a 6-connectivity element
+    rec_ele=np.zeros([3,3,3])
+    rec_ele[0,1,1]=1
+    rec_ele[1,:,1]=1
+    rec_ele[1,1,:]=1
+    rec_ele[2,1,1]=1
+
+    if verbose:
+        print('\n# <THR>: Computing erosion ...')
+
+    lm=morphology.erosion(ivt.data,selem=ele)
+
+    if verbose:
+        print('\n# <THR>: Computing reconstruction ...')
+
+    ivtrec=morphology.reconstruction(lm, ivt, method='dilation', selem=rec_ele)
+
+    # perform an extra reconstruction over land
+    if oro is not None:
+        oro_rs=MV.where(oro>=high_terrain, 1, 0)
+        oro_rs=funcs.addExtraAxis(oro_rs,axis=0)
+        oro_rs=np.repeat(oro_rs, len(ivt), axis=0)
+
+        ivtrec_oro=morphology.reconstruction(lm*oro_rs, ivt, method='dilation',
+                selem=rec_ele)
+        ivtano=MV.maximum(ivt-ivtrec, (ivt-ivtrec_oro)*oro_rs)
+    else:
+        ivtano=ivt-ivtrec
+
+    ivtrec=ivt-ivtano
+
+    if ndim==4:
+        levax=cdms.createAxis([0,])
+        levax.designateLevel()
+        levax.id='z'
+        levax.name='level'
+        levax.units=''
+
+        ivt=funcs.addExtraAxis(ivt,levax,1)
+        ivtrec=funcs.addExtraAxis(ivtrec,levax,1)
+        ivtano=funcs.addExtraAxis(ivtano,levax,1)
+
+    axislist=ivt.getAxisList()
+    ivtrec.setAxisList(axislist)
+    ivtano.setAxisList(axislist)
+
+    ivtrec.id='ivt_rec'
+    ivtrec.long_name='%s, THR reconstruction' %(getattr(ivt, 'long_name', ''))
+    ivtrec.standard_name=ivtrec.long_name
+    ivtrec.title=ivtrec.long_name
+    ivtrec.units=ivt.units
+
+    ivtano.id='ivt_ano'
+    ivtano.long_name='%s, THR anomaly' %(getattr(ivt, 'long_name', ''))
+    ivtano.standard_name=ivtano.long_name
+    ivtano.title=ivtano.long_name
+    ivtano.units=ivt.units
+
+    return ivt, ivtrec, ivtano
+
+
+def rotatingTHR(filelist, varin, selector, kernel, outputdir, oro=None,
         high_terrain=600, verbose=True):
     '''Compute time filtering on data in different files.
 
     Args:
         filelist (list): list of abs paths to data files. User is responsible to
                     make sure files in list have correct chronological order.
-                    Note that time axis in data files should be at the 1st axis.
+                    Note that time axis in data files should be the 1st axis.
         varin (str): variable id in files.
         selector: selector obj to select subset of data.
         outputdir (str): path to folder to save outputs.
@@ -153,7 +159,7 @@ def rotatingFiltering(filelist, varin, selector, kernel, outputdir, oro=None,
         if ii==0:
             var1=funcs.readVar(fii, varin)
             var1=var1(selector)
-            var1=var1(longitude=(SHIFT_LON,SHIFT_LON+360))
+            #var1=var1(longitude=(SHIFT_LON,SHIFT_LON+360))
         else:
             var1=var2
             del var2
@@ -161,7 +167,7 @@ def rotatingFiltering(filelist, varin, selector, kernel, outputdir, oro=None,
         fii2=filelist[ii+1]
         var2=funcs.readVar(fii2, varin)
         var2=var2(selector)
-        var2=var2(longitude=(SHIFT_LON,SHIFT_LON+360))
+        #var2=var2(longitude=(SHIFT_LON,SHIFT_LON+360))
 
         timeidx=funcs.interpretAxis('time',var1)
         if timeidx!=0:
@@ -173,7 +179,7 @@ def rotatingFiltering(filelist, varin, selector, kernel, outputdir, oro=None,
         n1=var1.shape[0]
 
         vartmp=funcs.cat(var1,var2,axis=0)
-        vartmp, vartmp_rec, vartmp_ano=filterData(vartmp, kernel, oro=oro,
+        vartmp, vartmp_rec, vartmp_ano=THR(vartmp, kernel, oro=oro,
             high_terrain=high_terrain)
 
         # crop end points
@@ -185,9 +191,9 @@ def rotatingFiltering(filelist, varin, selector, kernel, outputdir, oro=None,
             raise Exception("dt<=0 not supported yet")
 
         if verbose:
-            print('\n# <rotatingFiltering>: Concatenated var shape:',vartmp.shape)
-            print('# <rotatingFiltering>: Filtered var shape:',vartmp_rec.shape)
-            print('# <rotatingFiltering>: Length difference:',dt)
+            print('\n# <rotatingTHR>: Concatenated var shape:',vartmp.shape)
+            print('# <rotatingTHR>: Filtered var shape:',vartmp_rec.shape)
+            print('# <rotatingTHR>: Length difference:',dt)
 
         if ii==0:
             #----------------------Pad 0s----------------------
@@ -208,18 +214,18 @@ def rotatingFiltering(filelist, varin, selector, kernel, outputdir, oro=None,
         var1=vartmp[:n1]
 
         if verbose:
-            print('\n# <rotatingFiltering>: Shape of left section after padding:', rec1.shape)
+            print('\n# <rotatingTHR>: Shape of left section after padding:', rec1.shape)
 
         rec1.setAxisList(var1.getAxisList())
         rec1.id=vartmp_rec.id
-        rec1.long_name=var1.long_name+' rotating filtered'
+        rec1.long_name='%s, THR reconstruction' %(getattr(var1, 'long_name', ''))
         rec1.standard_name=rec1.long_name
         rec1.title=rec1.long_name
         rec1.units=var1.units
 
         ano1.setAxisList(var1.getAxisList())
         ano1.id=vartmp_ano.id
-        ano1.long_name=var1.long_name+' rotating filtered'
+        ano1.long_name='%s, THR anomaly' %(getattr(var1, 'long_name', ''))
         ano1.standard_name=ano1.long_name
         ano1.title=ano1.long_name
         ano1.units=var1.units
@@ -254,18 +260,18 @@ def rotatingFiltering(filelist, varin, selector, kernel, outputdir, oro=None,
             var2=vartmp[n1:]
 
             if verbose:
-                print('\n# <rotatingFiltering>: Shape of last section after padding:', ano2.shape)
+                print('\n# <rotatingTHR>: Shape of last section after padding:', ano2.shape)
 
             rec2.setAxisList(var2.getAxisList())
             rec2.id=vartmp_rec.id
-            rec2.long_name=var2.long_name+' rotating filtered'
+            rec2.long_name='%s, THR reconstruction' %(getattr(var1, 'long_name', ''))
             rec2.standard_name=rec2.long_name
             rec2.title=rec2.long_name
             rec2.units=var2.units
 
             ano2.setAxisList(var2.getAxisList())
             ano2.id=vartmp_ano.id
-            ano2.long_name=var2.long_name+' rotating filtered'
+            ano2.long_name='%s, THR anomaly' %(getattr(var2, 'long_name', ''))
             ano2.standard_name=ano2.long_name
             ano2.title=ano2.long_name
             ano2.units=var2.units
@@ -284,33 +290,3 @@ def rotatingFiltering(filelist, varin, selector, kernel, outputdir, oro=None,
 
 
     return
-
-
-
-
-#-------------Main---------------------------------
-if __name__=='__main__':
-
-
-    filelist=[]
-    if not os.path.exists(OUTPUTDIR):
-        os.makedirs(OUTPUTDIR)
-
-    #--------------------Read in orographic data--------------------
-    oro=funcs.readVar(ORO_FILE, 'oro')
-    oro=oro(latitude=(LAT1, LAT2))
-    oro=oro(longitude=(SHIFT_LON,SHIFT_LON+360))(squeeze=1)
-
-    for year in YEARS:
-        #-----------Read in data----------------------
-        file_in_name=FILE1_BASE %(year)
-        abpath_in=os.path.join(SOURCEDIR1,file_in_name)
-        filelist.append(abpath_in)
-
-    if len(filelist)<2:
-        raise Exception("Need to give at least 2 files. For single file, use compute_thr_singlefile.py")
-
-    selector=Selector(latitude=(LAT1,LAT2))
-    rotatingFiltering(filelist, VARIN, selector, KERNEL, OUTPUTDIR,
-            oro=oro, high_terrain=HIGH_TERRAIN)
-
