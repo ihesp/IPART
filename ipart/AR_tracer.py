@@ -8,13 +8,14 @@ Update time: 2020-06-05 22:46:19.
 #--------Import modules-------------------------
 from __future__ import print_function
 import os
+import copy
 import numpy as np
 import pandas as pd
-from utils import funcs,plot
-import copy
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 import matplotlib.patches as patches
+
+from .utils import funcs, plot
 
 
 #######################################################################
@@ -22,7 +23,7 @@ import matplotlib.patches as patches
 #######################################################################
 
 class AR(object):
-    '''Ojbect representing an AR
+    '''Ojbect representing an AR entity
     '''
 
     total_count=0
@@ -153,7 +154,7 @@ class AR(object):
             self.data=self.data.sort_values(by='time')
 
 
-def forwardHausdorff(lats1,lons1,lats2,lons2):
+def forwardHausdorff(lats1, lons1, lats2, lons2):
     '''Compute forward Hausdorff distance betweem 2 tracks
 
     Args:
@@ -161,6 +162,7 @@ def forwardHausdorff(lats1,lons1,lats2,lons2):
         lons1 (list or 1D array): longitudes of track1.
         lats2 (list or 1D array): latitudes of track2.
         lons2 (list or 1D array): longitudes of track2.
+
     Returns:
         forward Hausdorff distance in km.
     '''
@@ -179,6 +181,7 @@ def getAnchors(arr, num_anchors=7):
 
     Args:
         arr (ndarray): 1D array from which to sample the anchor points.
+
     Returns:
         (ndarray): 1D array of the sampled anchor points from <arr>.
     '''
@@ -384,7 +387,7 @@ def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',
 
     return
 
-def getDistMatrix(tr_list,newlats,newlons):
+def getDistMatrix(tr_list, newlats, newlons):
     '''Compute distance matrix among track axis anchors
 
     Args:
@@ -617,7 +620,7 @@ def matchCenters(tr_list, newrec, time_gap_allow, max_dist_allow,
 
 def trackARs(record, time_gap_allow, max_dist_allow, track_scheme='simple',
         isplot=False, plot_dir=None, verbose=True):
-    '''Group records to form tracks
+    '''Track ARs at consecutive time points to form tracks
 
     Args:
         record (DataFrame): AR records at different time slices.
@@ -625,6 +628,7 @@ def trackARs(record, time_gap_allow, max_dist_allow, track_scheme='simple',
                               hours.
         max_dist_allow (float): max allowed Hausdorff distance allowed between
                                 2 records, in km.
+
     Keyword Args:
         track_scheme (str): tracking scheme. 'simple': all tracks are simple paths.
             'full': use the network scheme, tracks are connected by their joint points.
@@ -720,7 +724,6 @@ def filterTracks(tr_list, min_duration, min_nonrelax ,verbose=True):
         if relaxed.count(True)>=min_nonrelax:
             new_list.append(tt)
     tr_list=new_list
-
 
     return tr_list
 

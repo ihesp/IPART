@@ -10,7 +10,7 @@ import numpy as np
 import cdms2 as cdms
 import MV2 as MV
 from skimage import morphology
-from AR_tracker.utils import funcs
+from ipart.utils import funcs
 
 
 def THR(ivt, kernel, oro=None, high_terrain=600, verbose=True):
@@ -24,20 +24,22 @@ def THR(ivt, kernel, oro=None, high_terrain=600, verbose=True):
 
     Keyword Args:
         oro (TransientVariable): 2D array, surface orographic data in meters.
-            This additional surface height info is used to perform a separate
+            This optional surface height info is used to perform a separate
             reconstruction computation for areas with high elevations, and
             the results can be used to enhance the continent-penetration
             ability of landfalling ARs. Sensitivity in landfalling ARs is
             enhanced, other areas are not affected. Needs to have compatible
-            shape as <ivt>.
+            (lat, lon) shape as <ivt>.
         high_terrain (float): minimum orographic height (in m) to define as high
             terrain area, within which a separate reconstruction is performed.
             Only used if <oro> is not None.
 
     Returns:
         ivt (TransientVariable): 3D or 4D array, input <ivt>.
-        ivtrec (TransientVariable): 3D or 4D array, the reconstruction component from the THR process.
-        ivtano (TransientVariable): 3D or 4D array, the difference between input <ivt> and <ivtrec>.
+        ivtrec (TransientVariable): 3D or 4D array, the reconstruction
+            component from the THR process.
+        ivtano (TransientVariable): 3D or 4D array, the difference between
+            input <ivt> and <ivtrec>.
     """
 
     ndim=np.ndim(ivt)
@@ -62,7 +64,7 @@ def THR(ivt, kernel, oro=None, high_terrain=600, verbose=True):
     if verbose:
         print('\n# <THR>: Computing erosion ...')
 
-    lm=morphology.erosion(ivt.data,selem=ele)
+    lm=morphology.erosion(ivt.data, selem=ele)
 
     if verbose:
         print('\n# <THR>: Computing reconstruction ...')

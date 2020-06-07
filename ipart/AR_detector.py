@@ -26,7 +26,7 @@ NX_VERSION=nx.__version__[0]
 
 
 
-def plotGraph(graph,ax=None,show=True):
+def plotGraph(graph, ax=None, show=True):
     '''Helper func to plot the graph of an AR coordinates
     '''
 
@@ -43,7 +43,7 @@ def plotGraph(graph,ax=None,show=True):
     return
 
 
-def areaFilt(mask,area,min_area=None,max_area=None):
+def areaFilt(mask, area, min_area=None, max_area=None):
     '''Filter AR binary masks by region areas
 
     Args:
@@ -77,7 +77,7 @@ def areaFilt(mask,area,min_area=None,max_area=None):
     return result
 
 
-def spherical2Cart(lat,lon):
+def spherical2Cart(lat, lon):
     clat=(90-lat)*np.pi/180.
     lon=lon*np.pi/180.
     x=np.cos(lon)*np.sin(clat)
@@ -87,7 +87,7 @@ def spherical2Cart(lat,lon):
     return np.array([x,y,z])
 
 
-def cart2Spherical(x,y,z, shift_lon):
+def cart2Spherical(x, y, z, shift_lon):
 
     r=np.sqrt(x**2+y**2+z**2)
     clat=np.arccos(z/r)/np.pi*180
@@ -100,7 +100,7 @@ def cart2Spherical(x,y,z, shift_lon):
     return np.array([lat,lon,np.ones(lat.shape)])
 
 
-def computeTheta(p1,p2):
+def computeTheta(p1, p2):
     r'''Tangent line to the arc \|p1-p2\|
 
     Args:
@@ -115,7 +115,7 @@ def computeTheta(p1,p2):
     return theta
 
 
-def wind2Cart(u,v,lats,lons):
+def wind2Cart(u, v, lats, lons):
     '''Convert u,v winds to Cartesian, consistent with spherical2Cart.
     '''
 
@@ -131,7 +131,7 @@ def wind2Cart(u,v,lats,lons):
     return vs
 
 
-def cart2Wind(vs,lats,lons):
+def cart2Wind(vs, lats, lons):
     '''Convert winds in Cartesian to u,v, inverse to wind2Cart.
     '''
 
@@ -1167,8 +1167,6 @@ def crossSectionFlux(mask, quslab, qvslab, axis_rdp):
     return angles,anglesmean,crossflux,seg_thetas
 
 
-
-
 def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
         verbose=True):
     '''Find AR axis
@@ -1213,6 +1211,58 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
     return axes, axismask
 
 
+def prepareMeta(lats, lons, times, ntime, nlat, nlon,
+        ref_time='days since 1900-01-01', verbose=True):
+    '''Prepare metadata for AR detection function calls
+
+    Args:
+        lats (ndarray): 1D, latitude coordinates, the length needs to equal
+            <nlat>.
+        lons (ndarray): 1D, longitude coordinates, the length needs to equal
+            <nlon>.
+        times (list or array): time stamps of the input data as a list of strings,
+            e.g. ['2007-01-01 06:00:00', '2007-01-01 12:00', ...].
+            Needs to have the a length of <ntime>.
+
+    Keyword Args:
+        ref_time (str): reference time point to create time axis.
+
+    Returns:
+        timeax (cdms2.axis.TransientAxis): a time axis obj created from strings
+            in <times>.
+        areamap (ndarray): grid cell areas in km^2, with shape (<nlat> x <nlon>).
+        costhetas (ndarray): ratios of dx/sqrt(dx^2 + dy^2) for all grid cells.
+            with shape (<nlat> x <nlon>).
+        sinthetas (ndarray): ratios of dy/sqrt(dx^2 + dy^2) for all grid cells.
+            with shape (<nlat> x <nlon>).
+    '''
+
+    #-------------------Check inputs-------------------
+    lats=np.asarray(lats).squeeze()
+    lons=np.asarray(lons).squeeze()
+    if np.ndim(lats) != 1:
+        raise Exception("<lats> needs to be an 1-D array.")
+    if np.ndim(lons) != 1:
+        raise Exception("<lons> needs to be an 1-D array.")
+    if len(lats) != nlat:
+        raise Exception("Length of <lats> doesn't equal <nlat>.")
+    if len(lons) != nlon:
+        raise Exception("Length of <lons> doesn't equal <nlon>.")
+
+    #------------------Get time axis------------------
+    timeax=funcs.getTimeAxis(times, ntime, ref_time).asComponentTime()
+
+    #-------------Compute grid geometries-------------
+    dxs=funcs.dLongitude2(lats, lons, R=6371)
+    dys=funcs.dLatitude2(lats, lons, R=6371)
+    areamap=dxs*dys # km^2
+    costhetas=dxs/np.sqrt(dxs**2+dys**2)
+    sinthetas=dys/np.sqrt(dxs**2+dys**2)
+
+    if verbose:
+        print('\n# <prepareMeta>: Metadata created.')
+
+    return timeax, areamap, costhetas, sinthetas
 
 
 def _findARs(anoslab, areas, param_dict):
@@ -1221,16 +1271,16 @@ def _findARs(anoslab, areas, param_dict):
     Args:
         anoslab (cdms.TransientVariable): (n * m) 2D anomalous IVT slab, in kg/m/s.
         areas (cdms.TransientVariable): (n * m) 2D grid cell area slab, in km^2.
-        param_dict (dict): parameter dict defined in Global preamble.
+        param_dict (dict): parameter dict controlling the detection process.
 
     Returns:
         masks (list): list of 2D binary masks, each with the same shape as
-                      <anoslab> etc., and with 1s denoting the location of a
+                      <anoslab>, and with 1s denoting the location of a
                       found AR.
         armask (ndarray): 2D binary mask showing all ARs in <masks> merged into
                          one map.
 
-        If no ARs are found, <masks> will be []. <armask> will be zeros.
+    If no ARs are found, <masks> will be []. <armask> will be zeros.
     '''
 
     # fetch parameters
@@ -1343,6 +1393,51 @@ def _findARs(anoslab, areas, param_dict):
 def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
         times=None, ref_time='days since 1900-01-01',
         verbose=True):
+    '''Find ARs from THR results, get all results in one go.
+
+    Args:
+        ivt (TransientVariable): 3D or 4D input IVT data, with dimensions
+            (time, lat, lon) or (time, level, lat, lon).
+        ivtrec (TransientVariable): 3D or 4D array, the reconstruction
+            component from the THR process.
+        ivtano (TransientVariable): 3D or 4D array, the difference between
+            input <ivt> and <ivtrec>.
+        qu (TransientVariable): 3D or 4D array, zonal component of
+            integrated moisture flux.
+        qv (TransientVariable): 3D or 4D array, meridional component of
+            integrated moisture flux.
+        lats (ndarray): 1D, latitude coordinates, the length needs to be the
+            same as the lat dimension of <ivt>.
+        lons (ndarray): 1D, longitude coordinates, the length needs to be the
+            same as the lon dimension of <ivt>.
+        param_dict (dict): parameter dict controlling the detection process.
+
+    Keyword Args:
+        times (list or array): time stamps of the input data as a list of strings,
+            e.g. ['2007-01-01 06:00:00', '2007-01-01 12:00', ...].
+            Needs to have the same length as the time dimension of <ivt>.
+            If None, default to create a dummy 6-hourly time axis, using
+            <ref_time> as start, with a length as the time dimension of <ivt>.
+        ref_time (str): reference time point to create dummy time axis, if
+            no time stamps are given in <times>.
+
+    Returns:
+        time_idx (list): indices of the time dimension when any AR is found.
+        labels_all (TransientVariable): 3D array, with dimension
+            (time, lat, lon). At each time slice, a unique int label is assign
+            to each detected AR at that time, and the AR region is filled
+            out with the label value in the (lat, lon) map.
+        angles_all (TransientVariable): 3D array showing orientation
+            differences between AR axes and fluxes, for all ARs. In degrees.
+        crossfluxes_all (TransientVariable): 3D array showing cross-
+            sectional fluxes in all ARs. In kg/m/s.
+        result_df (DataFrame): AR record table. Each row is an AR, see code
+            in getARData() for columns.
+
+    See also:
+        findARsGen(): generator version, yields results at time points
+                      separately.
+    '''
 
     time_idx=[]
     result_dict={}
@@ -1389,40 +1484,55 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
     return time_idx, labels_all, angles_all, crossfluxes_all, result_df
 
 
-def prepareMeta(lats, lons, times, ntime, nlat, nlon,
-        ref_time='days since 1900-01-01', verbose=True):
-
-    #-------------------Check inputs-------------------
-    lats=np.asarray(lats).squeeze()
-    lons=np.asarray(lons).squeeze()
-    if np.ndim(lats) != 1:
-        raise Exception("<lats> needs to be an 1-D array.")
-    if np.ndim(lons) != 1:
-        raise Exception("<lons> needs to be an 1-D array.")
-    if len(lats) != nlat:
-        raise Exception("Length of <lats> doesn't equal <nlat>.")
-    if len(lons) != nlon:
-        raise Exception("Length of <lons> doesn't equal <nlon>.")
-
-    #------------------Get time axis------------------
-    timeax=funcs.getTimeAxis(times, ntime, ref_time).asComponentTime()
-
-    #-------------Compute grid geometries-------------
-    dxs=funcs.dLongitude2(lats, lons, R=6371)
-    dys=funcs.dLatitude2(lats, lons, R=6371)
-    areamap=dxs*dys # km^2
-    costhetas=dxs/np.sqrt(dxs**2+dys**2)
-    sinthetas=dys/np.sqrt(dxs**2+dys**2)
-
-    if verbose:
-        print('\n# <prepareMeta>: Metadata created.')
-
-    return timeax, areamap, costhetas, sinthetas
-
-
 def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
         times=None, ref_time='days since 1900-01-01',
         verbose=True):
+    '''Find ARs from THR results, generator version
+
+    Args:
+        ivt (TransientVariable): 3D or 4D input IVT data, with dimensions
+            (time, lat, lon) or (time, level, lat, lon).
+        ivtrec (TransientVariable): 3D or 4D array, the reconstruction
+            component from the THR process.
+        ivtano (TransientVariable): 3D or 4D array, the difference between
+            input <ivt> and <ivtrec>.
+        qu (TransientVariable): 3D or 4D array, zonal component of
+            integrated moisture flux.
+        qv (TransientVariable): 3D or 4D array, meridional component of
+            integrated moisture flux.
+        lats (ndarray): 1D, latitude coordinates, the length needs to be the
+            same as the lat dimension of <ivt>.
+        lons (ndarray): 1D, longitude coordinates, the length needs to be the
+            same as the lon dimension of <ivt>.
+        param_dict (dict): parameter dict controlling the detection process.
+
+    Keyword Args:
+        times (list or array): time stamps of the input data as a list of strings,
+            e.g. ['2007-01-01 06:00:00', '2007-01-01 12:00', ...].
+            Needs to have the same length as the time dimension of <ivt>.
+            If None, default to create a dummy 6-hourly time axis, using
+            <ref_time> as start, with a length as the time dimension of <ivt>.
+        ref_time (str): reference time point to create dummy time axis, if
+            no time stamps are given in <times>.
+
+    Returns:
+        ii (int): index of the time dimension when any AR is found.
+        timett_str (str): time when any AR is found, in string format.
+        labels (TransientVariable): 2D array, with dimension
+            (lat, lon). A unique int label is assign
+            to each detected AR at the time, and the AR region is filled
+            out with the label value in the (lat, lon) map.
+        angles (TransientVariable): 2D array showing orientation
+            differences between AR axes and fluxes, for all ARs. In degrees.
+        crossfluxes (TransientVariable): 2D array showing cross-
+            sectional fluxes in all ARs. In kg/m/s.
+        ardf (DataFrame): AR record table. Each row is an AR, see code
+            in getARData() for columns.
+
+    See also:
+        findARs(): collect and return all results in one go.
+
+    '''
 
     #-----------------Get coordinate metadata-----------------
     timeax, areamap, costhetas, sinthetas = prepareMeta(lats, lons, times,

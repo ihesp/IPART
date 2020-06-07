@@ -1,43 +1,85 @@
-"""Locate atmospheric rivers (ARs) from integrated water vapor transports
+"""Detect atmospheric rivers (ARs) from integrated water vapor transports
 (IVTs) using Top-hat by reconstruction (THR) algorithm.
+
+In this script, read in some input data, detect ARs, and the detection results
+are yielded once for each time step, and the results are saved to disk as long
+as they are computed.
+
+See also detect_ARs.py, where the detection results are collected and saved
+to disk in one go.
 
 # Input data
 
 1. uflux, vflux:
 
-    6-hourly vertically integrated moisture flux, in kg/m/s.
-    Data should be formatted into 4D (time, singleton_z, latitude, longitue),
+    Instantaneous vertically integrated moisture flux, in kg/m/s.
+    Data should be formatted into 4D (time, singleton_z, latitude, longitude),
     or 3D (time, latitude, longitude).
 
 2. IVT:
 
-    6-hourly THR reconstruction and anomalies of IVT, in kg/m/s.
-    File names:
+    This is the magnitude of vertically integrated moisture flux, i.e.
+    IVT^2 = uflux^2 + vflux^2.
 
-        ivt_m1-60_6_<year>_cln-minimal-rec-ano-kernel-t<T>-s<S>.nc
+3. THR results:
 
-    Where:
-        <year>: year in yyyy.
-        <T>: kernel size in time dimension.
-        <S>: kernel size in space (horizontal) dimension.
+    Instantaneous THR reconstruction and anomalies of IVT, in kg/m/s.
+    This is the outcome of the THR process. See compute_thr_singlefile.py,
+    compute_thr_multifile.py for scripts to perform this process.
+    The THR algorithm is implemented in ipart.thr.THR.
 
-    E.g.:
+uflux, vflux, IVT, and THR result data should be formatted into 4D
+(time, singleton_z, latitude, longitude) or 3D (time, latitude, longitude),
+and have compatible shapes.
 
-        ivt_m1-60_6_2000_cln-minimal-rec-ano-kernel-t12-s8.nc
-
-    These are generated in compute_thr_singlefile.py or compute_thr_multifile.py
-
-    Data should be formatted into 4D (time, singleton_z, latitude, longitue),
-    or 3D (time, latitude, longitude).
-
-NOTE: data should have proper time, latitude and longitude axes!
+The user also needs to provide time, latitude and longitude axes metadata.
+In this script, these data are read in from the netCDF files using the
+CDAT (aka UVCDAT, CDAT8) package. If you are using some other package, e.g.
+netcdf4, xarray, iris or something else, please adjust the relevant code
+accordingly.
 
 # Domain
 
 Take only northern hemisphere, shift longitude to 80 E.
 
+# Output data
+
+1. labels:
+
+    Labels of detected ARs. This is a 3D ndarray with dimension
+    (time, lat, lon). At each time point, a unique integer label is assign
+    to each detected AR, and the AR region is filled with the label value in
+    the (lat, lon) map.
+
+2. angles:
+
+    Orientation differences between AR axes and horizontal moisture fluxes,
+    measured in degrees.
+
+3. crossfluxes:
+
+    Cross-sectional moisture fluxes in all ARs, in kg/m/s, computed as
+    the projection of the total moisture flux onto the local AR axis.
+
+labels, angles and crossfluxes have the same dimension and are saved into a
+netCDF file.
+
+4. result_df:
+
+    Table of detected AR records. The columns of the table includes:
+
+        id, time, centroid_x, centroid_y, axis_x, axis_y, ... etc.
+
+    This table is saved to a .csv file.
+
+5. AR detection result plots (optional):
+
+    If set `PLOT=True`, will also plot out the IVT, THR reconstruction and
+    THR anomaly distributions at each time point when any AR is detected.
+    The boundary of all detected ARs are also marked out.
+
 Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
-Update time: 2020-04-01 12:15:12.
+Update time: 2020-06-07 21:53:50.
 """
 
 from __future__ import print_function
@@ -78,11 +120,8 @@ RECORD_FILE_OUT_NAME='ar_records_%d.csv' %YEAR
 PLOT=True          # create maps of found ARs or not
 
 LAT1=0; LAT2=90      # degree, latitude domain
-# NOTE: this has to match the domain seletion in compute_thr_singlefile.py
-
 RESO=0.75             # degree, (approximate) horizontal resolution of input data.
-SHIFT_LON=80          # degree, shift left bound to longitude. Should match
-                      # that used in compute_thr_singlefile.py
+SHIFT_LON=80          # degree, shift left bound to longitude.
 
 PARAM_DICT={
     # kg/m/s, define AR candidates as regions >= than this anomalous ivt.
@@ -119,17 +158,15 @@ PARAM_DICT={
 
 
 
-
-
 #--------Import modules-------------------------
 import os
 import sys
-import cdms2 as cdms
 import numpy as np
 import matplotlib.pyplot as plt
+import cdms2 as cdms
 
-from AR_tracker.utils import funcs,plot
-from AR_tracker.AR_detector import plotAR, findARsGen
+from ipart.utils import funcs,plot
+from ipart.AR_detector import plotAR, findARsGen
 
 
 
@@ -258,9 +295,7 @@ if __name__=='__main__':
                 plt.close('all')
 
 
-    #######################################################################
-    #                          Save all records                           #
-    #######################################################################
+    #----------------Close the nc file----------------
     ncfout.close()
 
 
