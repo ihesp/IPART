@@ -1,6 +1,4 @@
-# Atmospheric River (AR) detection and tracking algorithms
-
-
+# Image-Processing based Atmospheric River Tracking (IPART) algorithms
 
 ## Dependencies
 
@@ -50,16 +48,31 @@ import cdutil
 
 If nothing prints out, the installation is successful. In case of errors, also consider their [partial installation instructions](https://github.com/CDAT/cdat/wiki/Additional-Installation-Configurations). Only the `cdms2` and `cdutil` modules are needed, the `vcs` module is not required.
 
-Lastly, get a copy of this repository, either by doing a `git clone`:
+Lastly, install ipart
 
 ```
-git clone git@github.com:ihesp/AR_tracker.git
+conda install -c guangzhi ipart
 ```
 
-or download a `zip` archive of the repository by clicking on the **Clone or download** button, then extract the contents of the `zip` file into a folder named `AR_tracker`.
 
-The package at the moment does not perform any installation, computations are done by executing the Python scripts inside the `AR_tracker` directory.
+## tests
 
+To validate installation, issue a new Python session and run
+
+```
+from ipart import AR_detector
+from ipart import AR_tracer
+from ipart import thr
+from ipart import funcs, plot
+```
+
+If nothing prints out, installation is successful.
+
+The `tests` folder also contains a number of `unittest`s, to run them:
+
+```
+python -m unittest discover -s tests
+```
 
 ## Documentation
 
@@ -81,18 +94,11 @@ Further documentation can be found at [https://ar-tracker.readthedocs.io/en/late
 
 ## Inventory
 
-* utils/func.py: general purpose functions.
-* utils/plot.py: plotting functions.
-* utils/rdp.py: Ramer-Douglas-Peucker algorithm.
-* utils/peak_prominence2d.py: Separate local peaks using peak prominence.
-* compute_thr_singlefile.py: compute THR on IVT data. Process a single file.
-* compute_thr_multifile.py: compute THR on IVT data. Process multiple files.
-* river_tracker1.py: detect ARs on individual time steps. Requires outputs from `compute_thr.py`.
-* river_tracker2.py: track individual AR records across time. Requires outputs from `river_tracker1.py`.
-* river_tracker1_funcs.py: utility functions used in `river_tracker1.py`.
-* test_data.py: utility script to check input netcdf file sanity.
 * docs: readthedocs documentation.
+* ipart: core module functions.
 * notebooks: a series of jupyter notebooks illustrating the major functionalities of the package.
+* scripts: example computation scripts. Can be used as templates to quickly develop your own working scripts.
+
 
 
 ## Contribution

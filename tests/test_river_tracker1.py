@@ -1,0 +1,131 @@
+'''Test detection in river_tracker1.
+'''
+
+
+#--------Import modules-------------------------
+from __future__ import print_function
+import os
+import numpy as np
+import unittest
+from ipart.utils import funcs
+from ipart.thr import THR
+from ipart.AR_detector import findARs, _findARs, prepareMeta
+
+
+class TestDetect(unittest.TestCase):
+    """Test input netcdf data"""
+
+
+    def setUp(self):
+        thisdir=os.path.dirname(__file__)
+        fixture_dir=os.path.join(thisdir, 'fixtures')
+        abpath_in=os.path.join(fixture_dir,'uflux_vflux_ivt_test.nc')
+
+        uflux=funcs.readVar(abpath_in, 'uflux')
+        vflux=funcs.readVar(abpath_in, 'vflux')
+        ivt=funcs.readVar(abpath_in, 'ivt')
+
+        _,ivtrec,ivtano=THR(ivt, [3,3,3], verbose=False)
+        self.ivt=ivt(squeeze=1)
+        self.ivtrec=ivtrec(squeeze=1)
+        self.ivtano=ivtano(squeeze=1)
+        self.uflux=uflux(squeeze=1)
+        self.vflux=vflux(squeeze=1)
+
+        self.latax=ivt.getLatitude()
+        self.lonax=ivt.getLongitude()
+        timeax=ivt.getTime().asComponentTime()
+        timeax=['%d-%02d-%02d %02d:00' %(timett.year,timett.month,\
+                    timett.day,timett.hour) for timett in timeax]
+        self.timeax=timeax
+
+        self.param_dict={
+            # kg/m/s, define AR candidates as regions >= than this anomalous ivt.
+            'thres_low' : 1,
+            # km^2, drop AR candidates smaller than this area.
+            'min_area': 50*1e4,
+            # km^2, drop AR candidates larger than this area.
+            'max_area': 1800*1e4,
+            # float, isoperimetric quotient. ARs larger than this (more circular in shape) is treated as relaxed.
+            'max_isoq': 0.6,
+            # float, isoperimetric quotient. ARs larger than this is discarded.
+            'max_isoq_hard': 0.7,
+            # degree, exclude systems whose centroids are lower than this latitude.
+            'min_lat': 20,
+            # degree, exclude systems whose centroids are higher than this latitude.
+            'max_lat': 80,
+            # km, ARs shorter than this length is treated as relaxed.
+            'min_length': 2000,
+            # km, ARs shorter than this length is discarded.
+            'min_length_hard': 1500,
+            # degree lat/lon, error when simplifying axis using rdp algorithm.
+            'rdp_thres': 2,
+            # grids. Remove small holes in AR contour.
+            'fill_radius': max(1,int(4*0.75/0.75)),
+            # max prominence/height ratio of a local peak. Only used when SINGLE_DOME=True
+            'single_dome': False,
+            'max_ph_ratio': 0.4,
+            # minimal proportion of flux component in a direction to total flux to
+            # allow edge building in that direction
+            'edge_eps': 0.4
+            }
+
+    def test_Metadata(self):
+
+        timeax, areamap, costhetas, sinthetas = prepareMeta(
+                self.latax, self.lonax, self.timeax,
+                self.ivt.shape[0], self.ivt.shape[1], self.ivt.shape[2])
+
+        t1=timeax[0]
+        t1_str='%04d-%02d-%02d %02d:%02d:%02d' %(t1.year, t1.month, t1.day,
+                t1.hour, t1.minute, t1.second)
+        t2=timeax[10]
+        t2_str='%04d-%02d-%02d %02d:%02d:%02d' %(t2.year, t2.month, t2.day,
+                t2.hour, t2.minute, t2.second)
+
+        self.assertEqual(t1_str, '1984-02-01 00:00:00', "Time axis wrong.")
+        self.assertEqual(t2_str, '1984-02-03 12:00:00', "Time axis wrong.")
+
+        self.assertAlmostEqual(np.min(areamap), 1267.4345, 3,
+                "Min value in areamap wrong.")
+        self.assertAlmostEqual(np.max(areamap), 6838.4643, 3,
+                "Max value in areamap wrong.")
+        self.assertAlmostEqual(np.min(costhetas), 0.17928, 3,
+                "Min value in costhetas wrong.")
+        self.assertAlmostEqual(np.max(costhetas), 0.70111, 3,
+                "Max value in costhetas wrong.")
+
+    def test_findARs(self):
+
+        # find ARs
+        time_idx, labels, angles, crossfluxes, result_df = findARs(
+                self.ivt, self.ivtrec, self.ivtano, self.uflux, self.vflux,
+                self.latax, self.lonax, self.param_dict, self.timeax)
+
+        self.assertEqual(len(result_df), 52, "Wrong number of ARs found.")
+        self.assertTrue(np.all(time_idx==np.arange(25)), msg="time_idx wrong.")
+        self.assertEqual(labels.sum(), 24086, "Labels sum doesn't match.")
+
+    def test_findARsinner(self):
+
+        idx=15
+        slabano=self.ivtano[idx](squeeze=1)
+
+        timeax, areamap, costhetas, sinthetas = prepareMeta(
+                self.latax, self.lonax, self.timeax,
+                self.ivt.shape[0], self.ivt.shape[1], self.ivt.shape[2])
+
+        # find ARs
+        mask_list,armask=_findARs(slabano, areamap, self.param_dict)
+
+        self.assertEqual(len(mask_list), 1, "Wrong number of ARs found.")
+        self.assertAlmostEqual(armask.sum(), 276, delta=30,
+                msg="AR masks not right.")
+
+if __name__=='__main__':
+
+    unittest.main()
+
+
+
+

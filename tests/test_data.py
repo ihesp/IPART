@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 import unittest
 import numpy as np
-from utils import funcs
+from ipart.utils import funcs
 
 
 class TestDataMetaData(unittest.TestCase):
@@ -65,7 +65,7 @@ class TestDataMetaData(unittest.TestCase):
 
     def test_dlon(self):
         dlon=funcs.dLongitude(self.uflux)
-        self.assertAlmostEqual(np.min(dlon), 15197.74805, 4, "dLongitude() wrong.")
+        self.assertAlmostEqual(np.min(dlon), 15197.74930, 4, "dLongitude() wrong.")
         self.assertAlmostEqual(np.max(dlon), 81999.71815, 4, "dLongitude() wrong.")
 
 
