@@ -1513,7 +1513,25 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
     New in v2.0.
     '''
 
+    def squeezeTo3D(vv):
+        if np.ndim(vv) not in [3, 4]:
+            raise Exception("Input <ivt>, <ivtrec>, <ivtano>, <qu> and <qv> should be 3D or 4D.")
+        if np.ndim(vv)==4 and vv.shape[0]!=1:
+            vv=vv(squeeze=1)
+        elif np.ndim(vv)==4 and vv.shape[0]==1:
+            vv=vv[:,0,:,:]
+        elif np.ndim(vv)==3 and vv.shape[0]==1:
+            pass
+        return vv
+
     #-----------------Get coordinate metadata-----------------
+    # squeeze to 3D
+    ivt=squeezeTo3D(ivt)
+    ivtrec=squeezeTo3D(ivtrec)
+    ivtano=squeezeTo3D(ivtano)
+    qu=squeezeTo3D(qu)
+    qv=squeezeTo3D(qv)
+
     timeax, areamap, costhetas, sinthetas = prepareMeta(lats, lons, times,
             ivt.shape[0], ivt.shape[1], ivt.shape[2], ref_time=ref_time,
             verbose=verbose)

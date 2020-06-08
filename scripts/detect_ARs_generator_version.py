@@ -218,7 +218,6 @@ if __name__=='__main__':
     timeax=ivt.getTime().asComponentTime()
     timeax=['%d-%02d-%02d %02d:00' %(timett.year,timett.month,\
                 timett.day,timett.hour) for timett in timeax]
-    timeax=None
 
     #-----------------Prepare outputs-----------------
     if not os.path.exists(OUTPUTDIR):
