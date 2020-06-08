@@ -12,14 +12,13 @@ that summarizes the shape and orientation of the AR. A solution in a planar
 graph framework is proposed here.
 
 
-A directed planar graph is build using the coordinate pairs :math:`(\lambda_k, \phi_k)` as nodes
-(see Figure :numref:`fig1` below).
-At each node, directed edges to its
-eight neighbors are created, so long as the moisture flux
-component along the direction of the edge exceeds a
-user-defined fraction (:math:`\epsilon`, see the ``PARAM_DICT`` in :ref:`detect_params`) to the total flux.
-The along-edge flux is
-defined as:
+A directed planar graph is build using the coordinate pairs
+:math:`(\lambda_k, \phi_k)` as nodes (see Figure :numref:`fig1` below).
+At each node, directed
+edges to its eight neighbors are created, so long as the moisture flux
+component along the direction of the edge exceeds a user-defined fraction
+(:math:`\epsilon`, see the ``PARAM_DICT`` in :ref:`detect_params`) to the total
+flux.  The along-edge flux is defined as:
 
 .. math::
 
@@ -51,7 +50,7 @@ graph allows the axis to capture the full extent of the AR.
     an azimuth
     angle :math:`\alpha` with the y-axis. :math:`w_{ij}` is the weight attribute
     assigned to edge :math:`e_{ij}`, and :math:`f_{ij}` is along-edge moisture
-    flux.  
+    flux.
 
 
 
@@ -134,31 +133,27 @@ Usage in Python scripts
 The following snippet shows the axis finding process:
 ::
 
-    from river_tracker1_funcs import maskToGraph, getARAxis
-
-    #----------Convert mask to directed graph----------
-    gii = maskToGraph(maskii, quslab, qvslab, costhetas, sinthetas, edge_eps)
-
-    #--------------Get AR axis from graph--------------
-    axisarrii, axismaskii = getARAxis(gii, quslab, qvslab, maskii)
+    from ipart.AR_detector import findARAxis
+    axis_list, axismask=findARAxis(quslab, qvslab, mask_list, costhetas,
+        sinthetas, param_dict)
 
 
 where:
 
-* ``maskii`` is the binary mask denoting the region of an found AR.
 * ``quslab``, ``qvslab`` are the u- and v- component of integrated vapor fluxes at a given time point.
+* ``mask_list`` is a list of binary masks denoting the region of an each found AR.
 * ``sinthetas`` and ``costhetas`` are used to compute the azimuthal angles for each grid cell.
-* ``edge_eps`` is the user defined parameter :math:`\epsilon`. This is defined in ``PARAM_DICT``, see :ref:`detect_params`.
-* ``axisarrii`` is an array for the lat/lon coordinates of the found axis.
-* ``axismaskii`` is a binary mask, with the same shape as ``maskii``, showing the found AR axis.
+* ``param_dict`` is the parameter dictionary as defined in :ref:`detect_params`.
 
-.. seealso:: :py:func:`river_tracker1_funcs.maskToGraph`, :py:func:`river_tracker1_funcs.getARAxis`.
+
+.. seealso:: :py:func:`AR_detector.findARAxis`, :py:func:`AR_detector.maskToGraph`, :py:func:`AR_detector.getARAxis`.
+
 
 Dedicated Python script
 #######################
 
 No detected Python script is offered for this process, as it is performed in the
-:py:func:`river_tracker1.findARs()` function.
+:py:func:`AR_detector.findARsGen()` function.
 
 
 
@@ -166,6 +161,6 @@ No detected Python script is offered for this process, as it is performed in the
 Notebook example
 ################
 
-An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/blob/master/notebooks/3_detect_ARs.ipynb>`_.
+An example of this process is given in this `notebook <https://github.com/ihesp/IPART/blob/master/notebooks/3_detect_ARs.ipynb>`_.
 
 

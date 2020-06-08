@@ -1,9 +1,9 @@
-.. AR tracker documentation master file, created by
+.. IPART documentation master file, created by
    sphinx-quickstart on Sun Mar 29 17:13:48 2020.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-AR tracker's documentation
+IPART's documentation
 ==========================
 
 .. contents:: Table of Contents
@@ -13,10 +13,11 @@ AR tracker's documentation
 Introduction
 ############
 
-**AR tracker** is a Python package for automated Atmospheric River (AR)
-detection, axis finding and AR tracking from gridded Integrated Vapor Transport (IVT) data, for
-instance `Reanalysis
-datasets <https://www.esrl.noaa.gov/psd/data/gridded/reanalysis/>`_.
+**IPART** (Image-Processing based Atmospheric River Tracking) is a Python
+package for automated Atmospheric River (AR) detection, axis finding and AR
+tracking from gridded Integrated Vapor Transport (IVT) data, for instance
+`Reanalysis datasets
+<https://www.esrl.noaa.gov/psd/data/gridded/reanalysis/>`_.
 
 An overview of what ARs are can be found in this review paper: `Atmospheric
 rivers: a mini-review <https://doi.org/10.3389/feart.2014.00002>`_.
@@ -42,21 +43,25 @@ Below is an example output figure:
 Installation
 ############
 
-This package at the moment does not support installation via ``pip`` or ``conda``.
-Users are advised to build a working Python virtual environment with required `Dependencies`_, and obtain
-the code of this pacakge from the `github page <https://github.com/ihesp/AR_tracker>`_. 
+The package can be installed via ``conda``.
+Users are advised to build a working Python virtual environment with the
+required `Dependencies`_, and install the package by ``conda install -c guangzhi ipart``.
+Alternatively, one can obtain the code of this pacakge from the
+`github page <https://github.com/ihesp/IPART>`_, and add the ``ipart``
+module to the ``PYTHONPATH`` environment variable.
 
 
+Detailed Installation Guide
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-Recommend building the Python environment using `Anaconda <https://www.anaconda.com/distribution/>`_.
+Recommend building the Python environment using
+`Anaconda <https://www.anaconda.com/distribution/>`_.
 
 After Anaconda installation, create a working environment:
 ::
 
     conda create -n ar python=3.7
     conda activate ar
-
 
 This creates a Python environment named "ar" with Python version 3.7.
 
@@ -66,8 +71,9 @@ Then install the above listed dependencies, e.g.
     conda install numpy
 
 
-This installs the current latest version of ``numpy``. Most likely the latest versions will work, in case of compatibility issues, consider forcing a given version of a package, e.g.
-::
+This installs the current latest version of ``numpy``. Most likely the latest
+versions will work, in case of compatibility issues, consider forcing a given
+version of a package, e.g.  ::
 
     conda install matplotlib=2.2.3
 
@@ -82,13 +88,11 @@ For installation of ``CDAT``, checkout the `installation guides <https://github.
 
 If nothing prints out, the installation is successful. In case of errors, also consider their `partial installation instructions <https://github.com/CDAT/cdat/wiki/Additional-Installation-Configurations>`_. Only the ``cdms2`` and ``cdutil`` modules are needed, the ``vcs`` module is not required.
 
-Lastly, get a copy of this repository, either by doing a ``git clone``:
+Lastly, install the ``ipart`` package
 ::
 
-    git clone git@github.com:ihesp/AR_tracker.git
+    conda install -c guangzhi ipart
 
-
-or download a ``zip`` archive of the repository by clicking on the **Clone or download** button, then extract the contents of the ``zip`` file into a folder named ``AR_tracker``.
 
 
 Dependencies
@@ -122,7 +126,7 @@ specific workflow for the automated AR detection/tracking task:
 More details regarding these steps are provided in separate pages below.
 
 Applications on example data can be found in a series of example notebooks at
-`github repository <https://github.com/ihesp/AR_tracker/blob/master/notebooks/Index.ipynb>`_.
+`github repository <https://github.com/ihesp/IPART/blob/master/notebooks/Index.ipynb>`_.
 
 
 .. toctree::
@@ -137,28 +141,24 @@ Applications on example data can be found in a series of example notebooks at
 
 
 
-Main scripts/modules
+ipart module contents
 ####################
-   
 
 .. toctree::
    :maxdepth: 1
 
-   compute_thr_singlefile.py <compute_thr_singlefile>
-   compute_thr_multifile.py <compute_thr_multifile>
-   river_tracker1.py <river_tracker1>
-   river_tracker2.py <river_tracker2>
-   river_tracker1_funcs.py <river_tracker1_funcs>
-   utils.funcs (selected parts) <funcs>
-   utils.plot (selected parts) <plot>
-
+   thr.py <thr>
+   AR_detector.py <AR_detector>
+   AR_tracer.py <AR_tracer>
+   utils.funcs.py (selected parts) <funcs>
+   utils.plot.py (selected parts) <plot>
 
 
 
 Github and Contact
 ##################
 
-The code of this package is hosted at https://github.com/ihesp/AR_tracker.
+The code of this package is hosted at https://github.com/ihesp/IPART.
 
 For any queries, please contact xugzhi1987@gmail.com.
 

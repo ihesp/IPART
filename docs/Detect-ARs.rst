@@ -10,7 +10,7 @@ Definition of AR occurrence
 
 An AR occurrence at a given time point is defined using these following rules:
 
-1. A connected region in the IVT anomaly field (:math:`I - \delta(I)`, 
+1. A connected region in the IVT anomaly field (:math:`I - \delta(I)`,
    computed in the section ":ref:`compute_thr`") where its values is greater than 0.
 2. The centroid (weighted by IVT values of the grid cells) of the region is north of :math:`20 ^{\circ} N`,
    and south of :math:`80 ^{\circ}`, i.e. we are only interested in mid-latitude systems.
@@ -73,6 +73,10 @@ Additional inputs:
             # grids. Remove small holes in AR contour.
             'fill_radius': max(1,int(4*0.75/RESO)),
 
+            # do peak partition or not, used to separate systems that are merged
+            # together with an outer contour.
+            'single_dome': False,
+
             # max prominence/height ratio of a local peak. Only used when SINGLE_DOME=True
             'max_ph_ratio': 0.4,
 
@@ -90,67 +94,30 @@ Usage in Python scripts
 The following snippet shows the detection function calls:
 ::
 
-        import MV2 as MV
-        from utils import funcs
-        from river_tracker1 import findARs
-        from river_tracker1_funcs import uvDecomp
+        from ipart.AR_detector import findARs
+        time_idx, labels, angles, crossfluxes, result_df = findARs(ivt, ivtrec,
+                    ivtano, qu, qv, latax, lonax, PARAM_DICT, times=timeax)
 
-        timeax=ivt.getTime().asComponentTime()
-        latax=qu.getLatitude()
-        lonax=qu.getLongitude()
-
-        dxs=funcs.dLongitude(qu,R=6371)
-        dys=funcs.dLatitude(qu,R=6371)
-        areamap=dxs*dys # km^2
-        costhetas=dxs/MV.sqrt(dxs**2+dys**2)
-        sinthetas=dys/MV.sqrt(dxs**2+dys**2)
-
-        #----------------Loop through time----------------
-        for ii, timett in enumerate(timeax):
-
-            timett_str='%d-%02d-%02d %02d:00' %(timett.year,timett.month,\
-                timett.day,timett.hour)
-
-            slab=ivt[ii]
-            slabano=ivtano[ii]
-            slabrec=ivtrec[ii]
-            quslab=qu[ii]
-            qvslab=qv[ii]
-
-            # decompose background-transient
-            qurec,quano,qvrec,qvano=uvDecomp(quslab,qvslab,slabrec,slabano)
-
-            # find ARs
-            mask_list,axis_list,armask,axismask=findARs(slabano,quano,qvano,
-                areamap,costhetas,sinthetas,PARAM_DICT)
-
-where
+where these input arguments are:
 
 * ``ivt`` is the IVT data, with dimensions of ``(time, level, latitude, longitude)`` or ``(time, latitude, longitude)``.
 * ``ivtrec`` is :math:`\delta(I)`, and ``ivtano`` is :math:`I-\delta(I)`, see :ref:`compute_thr` for more details.
 * ``qu``: is :math:`F_u`, and ``qv`` is :math:`F_v`.
+* ``latax``: is an 1d array storing the latitude coordinates of ``ivt`` and others.
+* ``lonax``: is an 1d array storing the longitude coordinates of ``ivt`` and others.
 * ``PARAM_DICT`` is the parameter dictionary as defined above.
+* ``timeax`` is a list of strings storing time stamps of the data in ``ivt`` and others.
 
-.. seealso:: :py:func:`river_tracker1.findARs`, :py:func:`river_tracker1_funcs.uvDecomp`, :py:func:`utils.funcs.dLatitude`, :py:func:`utils.funcs.dLongitude`
+The return values are:
 
-After this process, one can optionally call the
-``river_tracker1_funcs.getARData()`` function to obtain more AR-related
-attributes, including length, width, area, mean IVT values etc..
-::
+* ``time_idx`` is a list of indices of the time dimension when any AR is found.
+* ``labels`` is an ndarray variable saving the numerical labels of all found ARs in each time step. It has shape of ``(time, lat, lon)``.
+* ``angles`` is an ndarray variable saving the difference in the orientation of IVT vectors in all found ARs, wrt the AR axis.
+* ``crossfluxes`` is an ndarray variable saving the cross-sectional IVT flux, computed as the projection of IVT vectors onto the AR axis, using angles in angles.
+* The ``result_df`` return value is a ``pandas.DataFrame`` object saving in a table the various attributes of all detected ARs at this time point.
 
-    from river_tracker1_funcs import getARData
+.. seealso:: :py:func:`AR_detector.findARs`, :py:func:`AR_detector.findARsGen`, :py:func:`AR_detector.getARData`.
 
-    labels, angles, crossfluxes, ardf = getARData(
-        slab,quslab,qvslab,
-        slabano,quano,qvano,
-        areamap,
-        mask_list, axis_list, timett_str, PARAM_DICT, 80,
-        False, OUTPUTDIR)
-
-The ``ardf`` return value is a ``pandas.DataFrame`` object saving in a table the various
-attributes of all detected ARs at this time point.
-
-.. seealso:: :py:func:`river_tracker1_funcs.getARData`.
 
 
 .. _ar_records:
@@ -187,10 +154,16 @@ The rows of ``ardf`` are different AR records, the columns of ``ardf`` are liste
 Detecated Python script
 #######################
 
-You can use the ``river_tracker1.py`` (:py:mod:`river_tracker1`) script for AR detection process in production. Note that
-this process is essentially time-independent, i.e. the computation of one time point does not
-rely on another, therefore you can potentially parallelize this process to achieve greater
-efficiency.
+You can use the ``scripts/detect_ARs.py`` or
+``scripts/detect_ARs_generator_version.py`` script (check them out in the
+`github repo <https://github.com/ihesp/IPART>`_).
+for AR detection process in
+production.  The former does the computation and returns all outpus in one go,
+and the latter yields results at each time step separately, so the outputs can
+be saved to disk rather than accumulating in RAM.  Note that this process is
+essentially time-independent, i.e. the computation of one time point does not
+rely on another, therefore you can potentially parallelize this process to
+achieve greater efficiency.
 
 
 
@@ -201,8 +174,8 @@ The resultant detected ARs can be visualized using the following snippet:
 ::
 
     import matplotlib.pyplot as plt
-    from utils import plot
-    from river_tracker1_funcs import plotAR
+    from ipart.utils import plot
+    from ipart.AR_detector import plotAR
 
     plot_vars=[slab,slabrec,slabano]
     titles=['IVT', 'Reconstruction', 'THR']
@@ -242,7 +215,7 @@ One example output figure is shown below:
 Notebook example
 ################
 
-An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/blob/master/notebooks/3_detect_ARs.ipynb>`_.
+An example of this process is given in this `notebook <https://github.com/ihesp/IPART/blob/master/notebooks/3_detect_ARs.ipynb>`_.
 
 
 

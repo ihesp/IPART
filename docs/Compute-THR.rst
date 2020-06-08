@@ -51,8 +51,8 @@ extra-tropical storm systems, the
 "correct" THR parameter choices of :math:`t` and :math:`s` should be centered
 around the spatio-temporal scale of ARs.
 
-Let's assume the data we are working with is 6-hourly in time, and :math:`0.75 \times 0.75 ^{\circ}` in
-space.
+Let's assume the data we are working with is 6-hourly in time,
+and :math:`0.75 \times 0.75 ^{\circ}` in space.
 
 The typical synoptic time
 scale is about a week, giving :math:`t = 4 \, days` (recall that :math:`t` is only
@@ -73,15 +73,15 @@ Compute THR
 Using the above setup, the THR process is computed using following code:
 ::
 
-    from compute_thr_singlefile import filterData
+    from ipart import thr
+    ivt, ivtrec, ivtano = thr.THR(ivt_input, [16, 6, 6])
 
-    ivt, ivtrec, ivtano = filterData(ivt_input, [16, 6, 6])
+where ``ivt_input`` is the input IVT data, ``ivtrec`` is the reconstruction
+component, and ``ivtano`` is the anomalous component.
 
-where ``ivt_input`` is the input IVT data, ``ivtrec`` is the reconstruction component, and ``ivtano`` is
-the anomalous component.
+.. note:: the `thr.THR()` function accepts an optional argument `oro`, which is to provide the algorithm with some surface elevation information, with the help of which detection sensitivity of landfalling ARs can be enhanced.
 
-.. seealso:: :py:func:`compute_thr_singlefile.filterData`.
-
+.. seealso:: :py:func:`thr.THR`.
 
 Dedicated Python script
 #######################
@@ -115,7 +115,7 @@ Example output
 Notebook example
 ################
 
-An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/blob/master/notebooks/2_compute_THR.ipynb>`_.
+An example of this process is given in this `notebook <https://github.com/ihesp/IPART/blob/master/notebooks/2_compute_THR.ipynb>`_.
 
 
 

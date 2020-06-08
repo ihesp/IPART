@@ -12,17 +12,18 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../ipart'))
+sys.path.insert(0, os.path.abspath('../scripts'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'AR tracker'
+project = 'IPART'
 copyright = '2020, Guangzhi XU'
 author = 'Guangzhi XU'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = '2.0'
 
 master_doc = 'index'
 

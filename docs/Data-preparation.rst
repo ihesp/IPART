@@ -5,7 +5,7 @@ netcdf data
 ###########
 
 Source data are the u- and v- components of the vertically integrated vapor fluxes, in a rectangular
-grid. 
+grid.
 
 These are usually computed as:
 
@@ -52,21 +52,20 @@ or::
 The ``level`` dimension is optional. As data are vertical integrals, the length
 of the level dimension, if present, should be 1.
 
-The user should also make sure that the dimensions (time, latitude and longitude)
-have proper axes associated with them. This is because these temporal and geographical information
-is used in the computation.
+The user also needs to provide the time, latitude and longitude axes values.
+This is because these temporal and geographical information is used in the computation.
 
 To test the sanity of your input data, run this script against the netcdf data file:
 ::
 
-    cd /path/to/AR_tracker/folder/you/cloned
+    cd /path/to/IPART/folder/you/cloned
     python test_data.py /path/to/your/netcdf/file 'id_of_variable'
 
 For instance
 
 ::
 
-    cd ~/Downloads/AR_tracker
+    cd ~/Downloads/IPART
     python test_data.py ~/datasets/erai/uflux_file.nc 'uflux'
 
 The expected outputs would look like this:
@@ -142,6 +141,7 @@ With :math:`F_u` and :math:`F_v`, compute the IVT as
     IVT = \sqrt{F_u^2 + F_v^2}
 
 
-This is trivial to achieve, you can use the ``compute_ivt.py`` script provided in the package for this computation.
+This is trivial to achieve, you can use the ``compute_ivt.py`` script provided
+in the package for this computation.
 
 

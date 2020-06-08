@@ -19,7 +19,7 @@ association process are:
 2. the **inter-AR distance (H)** is :math:`\le 1200 \, km`.
 3. no merging or splitting is allowed, any AR at time :math:`t` can only be linked to one AR at time :math:`t+1`, similarly, any AR at time :math:`t+1` can only be linked to one AR at time :math:`t`.
 4. after all associations at any give time point have been created, any left-over AR at time :math:`t+1` forms a track on their own, and waits to be associated in the next iteration between :math:`t+1` and :math:`t+2`.
-5. any track that does not get updated during the :math:`t-(t+1)` process terminates. This assumes that no gap in the track is allowed. 
+5. any track that does not get updated during the :math:`t-(t+1)` process terminates. This assumes that no gap in the track is allowed.
 
 The remaining important question is how to define that **inter-AR distance (H)**. Here we adopt a modified **Hausdorff distance** definition:
 
@@ -43,7 +43,7 @@ closest point in **B**. And the backward Hausdorff distance is:
 
 Note that in general :math:`h_f \neq h_b`. Unlike the standard definition of
 Hausdorff distance that takes the maximum of :math:`h_f` and :math:`h_b`, we take the
-minimum of the two. 
+minimum of the two.
 
 The rationale behind this modification is that merging/splitting of ARs mostly
 happen in an end-to-end manner, during which a sudden increase/decrease in the
@@ -107,7 +107,7 @@ a few active tracks at any given time.
 Therefore the complexity does not scale with time.
 
 .. note:: One can use 3 consecutive calls of the above algorithm, with different input arguments, to achieve merging and splitting in the tracks.
- 
+
 
 
 
@@ -116,83 +116,61 @@ Therefore the complexity does not scale with time.
 Input data
 ##########
 
-This step takes as inputs the AR records detected at individual time steps as computed in :ref:`detect_ars`.
+This step takes as inputs the AR records detected at individual time steps as
+computed in :ref:`detect_ars`.
 
-
-Additional inputs:
-
-The tracker parameters, as defined in the following Python dictionary:
+The tracker parameters used:
 ::
 
-        TRACK_PARAMS={}
         # Int, hours, gap allowed to link 2 records. Should be the time resolution of
         # the data.
-        TRACK_PARAMS['time_gap_allow']=6
-
-        # int, number of anchor points along the axis
-        TRACK_PARAMS['num_anchors']=7
+        TIME_GAP_ALLOW=6
 
         # tracking scheme. 'simple': all tracks are simple paths.
         # 'full': use the network scheme, tracks are connected by their joint points.
-        TRACK_PARAMS['track_scheme']='simple'  # 'simple' | 'full'
+        TRACK_SCHEME='simple'  # 'simple' | 'full'
 
         # int, max Hausdorff distance in km to define a neighborhood relationship
-        TRACK_PARAMS['max_dist_allow']=1200  # km
+        MAX_DIST_ALLOW=1200  # km
 
         # int, min duration in hrs to keep a track.
-        TRACK_PARAMS['min_duration']=24
+        MIN_DURATION=24
 
         # int, min number of non-relaxed records in a track to keep a track.
-        TRACK_PARAMS['min_nonrelax']=1
+        MIN_NONRELAX=1
+
+        # whether to plot linkage schematic plots or not
+        SCHEMATIC=True
+
 
 
 
 Usage in Python scripts
 #######################
 
-The tracking process is handled by the :py:func:`river_tracker2.trackARs2` function:
+The tracking process is handled by the :py:func:`AR_tracer.trackARs` function:
 ::
 
-        from river_tracker2 import trackARs2
-        track_list = trackARs2(ardf, TRACK_PARAMS, isplot=True, plot_dir=plot_dir)
+        from ipart.AR_tracer import trackARs
+        from ipart.AR_tracer import readCSVRecord
 
-where ``ardf`` is a ``pandas.DataFrame`` object containing the AR records at individual time points.
-Such an object can be obtained using:
-::
+        ardf=readCSVRecord(RECORD_FILE)
+        track_list=trackARs(ardf, TIME_GAP_ALLOW, MAX_DIST_ALLOW,
+            track_scheme=TRACK_SCHEME, isplot=SCHEMATIC, plot_dir=plot_dir)
 
-        import pandas as pd
-        from river_tracker2 import convarray 
+where
 
-        convkeys=['contour_y', 'contour_x',
-                'axis_y', 'axis_x', 'axis_rdp_y', 'axis_rdp_x']
-
-        converters=dict([(keyii, convarray) for keyii in convkeys])
-
-        dtypes={'id': 'int', 'time': 'str',
-                'area': np.float64, 'length': np.float64, 'width': np.float64,
-                'iso_quotient': np.float64, 'LW_ratio': np.float64,
-                'strength': np.float64, 'strength_ano': np.float64,
-                'strength_std': np.float64,
-                'mean_angle': np.float64, 'is_relaxed': 'bool'}
-
-        ardf = pd.read_csv(RECORD_FILE, dtype=dtypes, converters=converters)
-
-where ``RECORD_FILE`` is the path to the ``csv`` file saving the individual AR records. Refer to
-`this notebook <https://github.com/ihesp/AR_tracker/blob/master/notebooks/3_detect_ARs.ipynb>`_
-for more information on the creation of this file.
-
-``track_list`` is a list of ``AR objects``, each stores a sequence of AR
-records that form a single track.  The ``data`` attribute of the ``AR object`` is a ``pandas.DataFrame``
-object, with the same columns as shown in :ref:`ar_records`.
-
+* ``RECORD_FILE`` is the path to the ``csv`` file saving the individual AR records. Refer to `this notebook <https://github.com/ihesp/IPART/blob/master/notebooks/3_detect_ARs.ipynb>`_ for more information on the creation of this file.
+* ``ardf`` is a ``pandas.DataFrame`` object containing the AR records at individual time points.
+* ``track_list`` is a list of ``AR objects``, each stores a sequence of AR records that form a single track.  The ``data`` attribute of the ``AR object`` is a ``pandas.DataFrame`` object, with the same columns as shown in :ref:`ar_records`.
 
 After this, one can optionally perform a filtering on the obtained tracks,
-using :py:func:`river_tracker2.filterTracks`,to remove, for instance, tracks
+using :py:func:`AR_tracer.filterTracks`, to remove, for instance, tracks
 that do not last for more than 24 hours:
 ::
 
-        from river_tracker2 import filterTracks
-        track_list = filterTracks(track_list, TRACK_PARAMS)
+        from ipart.AR_tracer import filterTracks
+        track_list=filterTracks(track_list, MIN_DURATION, MIN_NONRELAX)
 
 
 
@@ -202,7 +180,7 @@ Example output
 The resultant AR track can be visualized using the following snippet:
 ::
 
-        from river_tracker2 import plotAR
+        from ipart.AR_tracer import plotAR
 
         latax=np.arange(0, 90)
         lonax=np.arange(80, 440)  # degree east, shifted by 80 to ensure monotonically increasing axis
@@ -213,7 +191,7 @@ The resultant AR track can be visualized using the following snippet:
         ax=figure.add_subplot(111)
         plotAR(plot_ar,latax,lonax,True,ax=ax)
 
-.. seealso:: :py:func:`river_tracker2.plotAR`.
+.. seealso:: :py:func:`AR_tracer.plotAR`.
 
 The output figure looks like :numref:`figtrack` below.
 
@@ -231,7 +209,7 @@ The output figure looks like :numref:`figtrack` below.
 Dedicated Python script
 #######################
 
-You can use the ``river_tracker2.py`` (:py:mod:`river_tracker2`) script for AR tracking process in production.
+You can use the ``scripts/trace_ARs.py`` script for AR tracking process in production.
 
 .. note:: Unlike the AR occurrence detection process, this tracking process is time-dependent and therefore can not be paralleized. Also, if you divide the detection process into batches, e.g. one for each year, you may want to combine the output csv records into one big data file, and perform the tracking on this combined data file. This would prevent a track lasting from the end of one year into the next from being broken into 2.
 
@@ -239,6 +217,6 @@ You can use the ``river_tracker2.py`` (:py:mod:`river_tracker2`) script for AR t
 Notebook example
 ################
 
-An example of this process is given in this `notebook <https://github.com/ihesp/AR_tracker/blob/master/notebooks/4_track_ARs.ipynb>`_.
+An example of this process is given in this `notebook <https://github.com/ihesp/IPART/blob/master/notebooks/4_track_ARs.ipynb>`_.
 
 
