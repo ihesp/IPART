@@ -3,6 +3,7 @@
 # Image-Processing based Atmospheric River Tracking (IPART) algorithms
 
 from distutils.core import setup
+from setuptools import find_packages
 
 setup(name='ipart',
         version='2.0',
@@ -10,7 +11,8 @@ setup(name='ipart',
         author='Guangzhi XU',
         author_email='xugzhi1987@gmail.com',
         url='https://github.com/ihesp/IPART',
-        packages=['ipart',],
+        #packages=['ipart',],
+        packages=find_packages(include=['ipart', 'ipart.*']),
         license='GPL-3'
         )
 
