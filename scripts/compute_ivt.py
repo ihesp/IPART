@@ -2,7 +2,7 @@
 
 IVT = sqrt(uflux^2 + vflux^2), in kg/m/s.
 
-Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Author: guangzhi XU (xugzhi1987@gmail.com)
 Update time: 2020-03-28 12:09:59.
 '''
 
@@ -65,5 +65,5 @@ if __name__=='__main__':
                 fix_aspect=False)
 
     figure.show()
-        
+
 

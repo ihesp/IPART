@@ -78,7 +78,7 @@ netCDF file.
     THR anomaly distributions at each time point when any AR is detected.
     The boundary of all detected ARs are also marked out.
 
-Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Author: guangzhi XU (xugzhi1987@gmail.com)
 Update time: 2020-06-07 21:53:50.
 """
 

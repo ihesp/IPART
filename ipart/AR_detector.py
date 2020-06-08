@@ -1,6 +1,6 @@
 '''AR detection functions.
 
-Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Author: guangzhi XU (xugzhi1987@gmail.com)
 Update time: 2020-06-05 23:21:24.
 '''
 
@@ -18,9 +18,9 @@ import MV2 as MV
 from genutil import statistics as stats
 import cdutil
 
-from .utils import rdp
-from .utils import funcs
-from .utils import peak_prominence2d as pp2d
+from ipart.utils import rdp
+from ipart.utils import funcs
+from ipart.utils import peak_prominence2d as pp2d
 
 NX_VERSION=nx.__version__[0]
 
@@ -511,27 +511,6 @@ def insertCropSlab(shape, cropslab, cropidx, axislist=None):
         result.setAxisList(axislist)
 
     return result
-
-
-def getMaskEdge(mask):
-    '''Get the ordered boundary cell indices around non-zeros values in a
-    binary mask
-
-    Args:
-        mask (ndarray): 2D binary mask.
-
-    Returns:
-        edge (ndarray): Nx2 array storing (x, y) coordinate indices of the
-                        grid cells in <mask> that form the boundary of
-                        objects defined as non-zero values.
-    '''
-    edge=mask-morphology.binary_erosion(mask)
-    edge=np.where(edge>0)
-    edge=zip(edge[1],edge[0])
-    edge=np.array(edge)
-    edge=funcs.getLineFromPoints(edge)
-
-    return edge
 
 
 def partPeaks(cropmask, cropidx, orislab, max_ph_ratio):
@@ -1189,6 +1168,8 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
                      in <armask_list>.)
         axismask (ndarray): 2D binary mask showing all axes in <axes> merged
                             into one map.
+
+    New in v2.0.
     '''
 
     edge_eps=param_dict['edge_eps']
@@ -1235,6 +1216,8 @@ def prepareMeta(lats, lons, times, ntime, nlat, nlon,
             with shape (<nlat> x <nlon>).
         sinthetas (ndarray): ratios of dy/sqrt(dx^2 + dy^2) for all grid cells.
             with shape (<nlat> x <nlon>).
+
+    New in v2.0.
     '''
 
     #-------------------Check inputs-------------------
@@ -1411,7 +1394,6 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
         lons (ndarray): 1D, longitude coordinates, the length needs to be the
             same as the lon dimension of <ivt>.
         param_dict (dict): parameter dict controlling the detection process.
-
     Keyword Args:
         times (list or array): time stamps of the input data as a list of strings,
             e.g. ['2007-01-01 06:00:00', '2007-01-01 12:00', ...].
@@ -1420,7 +1402,6 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
             <ref_time> as start, with a length as the time dimension of <ivt>.
         ref_time (str): reference time point to create dummy time axis, if
             no time stamps are given in <times>.
-
     Returns:
         time_idx (list): indices of the time dimension when any AR is found.
         labels_all (TransientVariable): 3D array, with dimension
@@ -1433,10 +1414,9 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
             sectional fluxes in all ARs. In kg/m/s.
         result_df (DataFrame): AR record table. Each row is an AR, see code
             in getARData() for columns.
-
     See also:
         findARsGen(): generator version, yields results at time points
-                      separately.
+            separately.
     '''
 
     time_idx=[]
@@ -1528,10 +1508,9 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
             sectional fluxes in all ARs. In kg/m/s.
         ardf (DataFrame): AR record table. Each row is an AR, see code
             in getARData() for columns.
-
     See also:
         findARs(): collect and return all results in one go.
-
+    New in v2.0.
     '''
 
     #-----------------Get coordinate metadata-----------------

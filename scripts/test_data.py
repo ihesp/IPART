@@ -1,6 +1,6 @@
 '''Check meta data of netcdf file.
 
-Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Author: guangzhi XU (xugzhi1987@gmail.com)
 Update time: 2020-03-31 10:42:41.
 '''
 
@@ -89,8 +89,8 @@ if __name__=='__main__':
 
     finally:
         fin.close()
-    
 
 
-    
+
+
 

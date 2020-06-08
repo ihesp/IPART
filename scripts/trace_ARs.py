@@ -21,7 +21,7 @@ detect_ARs.py or detect_ARs_generator_version.py in csv format.
     the tracking procedure at consecutive time points (t=t and t=t+1).
 
 
-Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Author: guangzhi XU (xugzhi1987@gmail.com)
 Update time: 2020-06-05 23:22:25.
 '''
 

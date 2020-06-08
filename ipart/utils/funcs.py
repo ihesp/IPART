@@ -1,6 +1,6 @@
 '''Utility functions
 
-Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Author: guangzhi XU (xugzhi1987@gmail.com)
 Update time: 2020-06-05 23:23:22.
 '''
 from __future__ import print_function
@@ -15,6 +15,19 @@ class DataError(Exception):
 
 
 def get3DEllipse(t,y,x):
+    '''Get a binary 3D ellipse structuring element
+
+    Args:
+        t (int): ellipse axis length in the t (1st) dimension.
+        y (int): ellipse axis length in the y (2nd) dimension.
+        x (int): ellipse axis length in the x (3rd) dimension.
+        Note that the axis length is half the size of the ellipse
+        in that dimension.
+
+    Returns:
+        result (ndarray): 3D binary array, with 1s side the ellipse
+            defined as (T/t)^2 + (Y/y)^2 + (X/x)^2 <= 1.
+    '''
     import numpy as np
 
     at=np.arange(-t,t+1)
@@ -22,8 +35,9 @@ def get3DEllipse(t,y,x):
     ay=np.arange(-y,y+1)
     T,Y,X=np.meshgrid(at,ay,ax,indexing='ij')
     dd=(X/float(x))**2+(Y/float(y))**2+(T/float(t))**2
+    result=np.where(dd<=1,1,0)
 
-    return np.where(dd<=1,1,0)
+    return result
 
 
 def getQuantiles(slab,percents=None,verbose=False):
@@ -35,9 +49,6 @@ def getQuantiles(slab,percents=None,verbose=False):
 
     Return <quantiles>: nested list of left and right quantiles for corresponding
                        percentages.
-
-    Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
-    Update time: 2018-05-18 12:55:31.
     '''
 
     import numpy
@@ -441,7 +452,7 @@ def getSlab(var,index1=-1,index2=-2,verbose=True):
     return slab
 
 
-#-----------------Change latitude axis to south-to-north---------------------------
+#-------------Change latitude axis to south-to-north-----------------
 def increasingLatitude(slab,verbose=False):
     '''Changes a slab so that is always has latitude running from
     south to north.
@@ -538,11 +549,13 @@ def dLongitude(var,side='c',R=6371000):
 
     return delta_x
 
+
 def dLongitude2(lats, lons, side='c', R=6371000):
     '''Return a slab of longitudinal increment (meter) delta_x.
 
     Args:
-        var (TransientVariable): variable from which latitude axis is obtained;
+        lats (ndarray): 1d array, latitude coordinates in degrees.
+        lons (ndarray): 1d array, longitude coordinates in degrees.
         side (str): 'n': northern boundary of each latitudinal band;
                     's': southern boundary of each latitudinal band;
                     'c': central line of latitudinal band;
@@ -552,17 +565,13 @@ def dLongitude2(lats, lons, side='c', R=6371000):
                /_______\     's'
 
 
-        R (float): radius of Earth;
+    Keyword Args:
+        R (float): radius of Earth.
 
     Returns:
         delta_x (TransientVariable): a 2-D slab with grid information copied from <var>.
 
-    UPDATE: 2014-08-05 11:12:27:
-        In computing <delta_x>, the longitudinal increment should be taken
-        from the actual longitude axis (bounds).
-        Fortunately this is not affecting any previous computations which are all
-        globally.
-
+    New in v2.0.
     '''
 
     import numpy
@@ -601,12 +610,15 @@ def dLongitude2(lats, lons, side='c', R=6371000):
 
     return delta_x
 
+
 #----------Delta_Longitude----------------------------
 def dLatitude(var,R=6371000,verbose=True):
     '''Return a slab of latitudinal increment (meter) delta_y.
 
     Args:
         var (TransientVariable): variable from which latitude axis is abtained;
+
+    Keyword Args:
         R (float): radius of Earth;
 
     Returns:
@@ -631,16 +643,21 @@ def dLatitude(var,R=6371000,verbose=True):
     return delta_y
 
 #----------Delta_Longitude----------------------------
-def dLatitude2(lats, lons, R=6371000,verbose=True):
+def dLatitude2(lats, lons, R=6371000, verbose=True):
     '''Return a slab of latitudinal increment (meter) delta_y.
 
     Args:
-        var (TransientVariable): variable from which latitude axis is abtained;
+        lats (ndarray): 1d array, latitude coordinates in degrees.
+        lons (ndarray): 1d array, longitude coordinates in degrees.
+
+    Keyword Args:
         R (float): radius of Earth;
 
     Returns:
         delta_y (TransientVariable): a 2-D slab with grid information copied from\
             <var>.
+
+    New in v2.0.
     '''
 
     import numpy
@@ -668,71 +685,6 @@ def dLatitude2(lats, lons, R=6371000,verbose=True):
     #delta_y.setAxisList((latax,lonax))
 
     return delta_y
-
-
-#------Sort points of 2D coordinates to form a continuous line------------
-def getLineFromPoints(points,reverse=False,verbose=True):
-    '''Sort points of 2D coordinates to form a continuous line.
-
-    <points>: Nx2 nd-array, coordinates of (y,x) or (x,y).
-    <reverse>: bool, if True, reverse the line orientation.
-
-    Return <path>: Nx2 nd-array, ordered coordinates.
-
-    Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
-    Update time: 2017-11-02 15:57:02.
-    '''
-    import numpy
-
-    def computePathCost(coords,startidx=0):
-        '''Compute the cost of path starting from a given start point.
-
-        <coords>: list of (y,x) or (x,y) coordinates.
-        <startidx>: int, index from <coords> as starting point.
-
-        Return <path>: orientated coordinates based on nearest neighbors.
-               <cost>: total squared distances following points in <path>.
-        '''
-
-        def distance(P1, P2):
-            return (P1[0] - P2[0])**2 + (P1[1] - P2[1])**2
-
-        import copy
-        coord_list=copy.copy(coords)
-
-        pass_by=coord_list
-        path=[coord_list[startidx],]
-        pass_by.remove(coord_list[startidx])
-        cost=0
-
-        while len(pass_by)>0:
-
-            nearest=min(pass_by,key=lambda x: distance(path[-1],x))
-            cost+=distance(nearest,path[-1])
-            path.append(nearest)
-            pass_by.remove(nearest)
-
-        return path,cost
-
-    N=len(points)
-    coords=[(points[ii][0],points[ii][1]) for ii in range(N)]
-
-    paths=[]
-    cost=numpy.inf
-
-    #-----------Loop through starting points-----------
-    for ii in range(N):
-        pathii,costii=computePathCost(coords,ii)
-        paths.append(pathii)
-        if costii<cost:
-            cost=costii
-            path=pathii
-
-    path=numpy.array(path)
-    if reverse:
-        path=path[::-1]
-
-    return path
 
 
 #--------------------Get contour from a binary mask--------------------
@@ -934,6 +886,32 @@ def readVar(abpath_in, varid):
 
 
 def getTimeAxis(times, ntime, ref_time='days since 1900-01-01'):
+    '''Create a time axis
+
+    Args:
+        times (list or tuple or array or None): array of strings giving the
+            time stamps. It is assumed to be in chronological order.
+            If None, default to create a dummy time axis, with 6-hourly time
+            step, starting from <ref_time>, with a length of <ntime>.
+        ntime (int): length of the time axis. If <times> is not None, it is
+            checked to insure that length of <times> equals <ntime>. If <times>
+            is None, <ntime> is used to create a dummy time axis with a length
+            of <ntime>.
+
+    Keyword Args:
+        ref_time (str): reference time point. If <times> is not None, used to
+            create the numerical values of the resulant time axis with this
+            reference time. If <times> is None, used to create a dummy time
+            axis with this reference time.
+
+    Returns:
+        result (cdms.axis.TransientAxis): a cdms.axis.TransientAxis obj. If
+            <times> is not None, the axis is using the provided time stamps.
+            Otherwise, it is a dummy time axis, with 6-hourly time
+            step, starting from <ref_time>, with a length of <ntime>.
+
+    New in v2.0.
+    '''
 
     import sys
     import pandas as pd

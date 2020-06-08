@@ -1,6 +1,6 @@
 '''Perform THR computation on IVT data
 
-Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Author: guangzhi XU (xugzhi1987@gmail.com)
 Update time: 2020-06-03 09:14:14.
 '''
 
@@ -30,9 +30,13 @@ def THR(ivt, kernel, oro=None, high_terrain=600, verbose=True):
             ability of landfalling ARs. Sensitivity in landfalling ARs is
             enhanced, other areas are not affected. Needs to have compatible
             (lat, lon) shape as <ivt>.
+
+            New in v2.0.
         high_terrain (float): minimum orographic height (in m) to define as high
             terrain area, within which a separate reconstruction is performed.
             Only used if <oro> is not None.
+
+            New in v2.0.
 
     Returns:
         ivt (TransientVariable): 3D or 4D array, input <ivt>.
@@ -135,9 +139,13 @@ def rotatingTHR(filelist, varin, selector, kernel, outputdir, oro=None,
             ability of landfalling ARs. Sensitivity in landfalling ARs is
             enhanced, other areas are not affected. Needs to have compatible
             shape as <ivt>.
+
+            New in v2.0.
         high_terrain (float): minimum orographic height to define as high
             terrain area, within which a separate reconstruction is performed.
             Only used if <oro> is not None.
+
+            New in v2.0.
 
     Designed to perform temporal filtering on data that are too large to fit
     into memory, e.g. high-resolution data across multiple decades.

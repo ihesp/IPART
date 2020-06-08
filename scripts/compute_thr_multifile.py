@@ -55,7 +55,7 @@ Usage:
         python compute_thr_multifile.py
         ```
 
-Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Author: guangzhi XU (xugzhi1987@gmail.com)
 Update time: 2019-12-06 22:55:40.
 '''
 
@@ -99,8 +99,8 @@ OUTPUTDIR='/home/guangzhi/datasets/erai/ivt_thr/'
 #--------Import modules-------------------------
 import os
 from cdms2.selectors import Selector
-from AR_tracker.utils import funcs
-from AR_tracker import thr
+from ipart.utils import funcs
+from ipart import thr
 
 
 

@@ -38,7 +38,7 @@ Usage:
         python compute_thr_singlefile.py
         ```
 
-Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Author: guangzhi XU (xugzhi1987@gmail.com)
 Update time: 2020-04-01 12:14:48.
 '''
 
@@ -79,8 +79,8 @@ OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/'
 #--------Import modules-------------------------
 import os
 import cdms2 as cdms
-from AR_tracker.utils import funcs
-from AR_tracker import thr
+from ipart.utils import funcs
+from ipart import thr
 
 
 

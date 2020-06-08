@@ -1,6 +1,6 @@
 '''Plotting Functions.
 
-Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Author: guangzhi XU (xugzhi1987@gmail.com)
 Update time: 2017-10-09 14:32:05.
 '''
 

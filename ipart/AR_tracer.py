@@ -1,7 +1,7 @@
 '''Functions to compute Hausdorff distance between AR axes pairs and link
 ARs across time steps to form tracks.
 
-Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Author: guangzhi XU (xugzhi1987@gmail.com)
 Update time: 2020-06-05 22:46:19.
 '''
 
@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 import matplotlib.patches as patches
 
-from .utils import funcs, plot
+from ipart.utils import funcs, plot
 
 
 #######################################################################
@@ -422,6 +422,8 @@ def readCSVRecord(abpath_in):
 
     Returns:
         ardf (pandas.DataFrame): record saved in DataFrame.
+
+    New in v2.0.
     '''
 
     def convarray(text):

@@ -12,7 +12,7 @@ lowest contour line encircling it but containing no higher summit.
 Optionally, peaks with small prominence or area can be filtered out.
 
 
-Author: guangzhi XU (xugzhi1987@gmail.com; guangzhi.xu@outlook.com)
+Author: guangzhi XU (xugzhi1987@gmail.com)
 Update time: 2018-11-10 16:03:49.
 '''
 
