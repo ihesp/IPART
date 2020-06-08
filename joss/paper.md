@@ -1,5 +1,5 @@
 ---
-title: 'AR tracker: A Python Package for Detecting and Tracking Atmospheric Rivers Using Image-Processing'
+title: 'IPART: A Python Package for Image-Processing based Atmospheric River Tracking'
 tags:
   - Python
   - meteorology
@@ -52,41 +52,40 @@ large sizes, an algorithmic method can ensure better efficiency,
 consistency and objectivity compared with human
 identification.
 
-In many existing applications, a magnitude thresholding
-approach is used. For instance, @Ralph2004, @Neiman2008,
-@Hagos2015 and @Dettinger2011 identified ARs by first locating
-regions where the Integrated Water Vapor (IWV) is greater than $20\,
-mm$.  A $250 \, kg/m/s$ threshold on the Integrated Vapor Transport
-(IVT) was used by @Rutz2014 and @Rutz2015.
-However, an implicit assumption
-with this magnitude thresholding approach is that the atmospheric
-moisture level stays unchanged throughout the analysis period.  Such
-an assumption may not be fully justifiable under a warming climate as
-the atmospheric moisture level is expected to increase.
+In many existing applications, a magnitude thresholding approach is used. For
+instance, @Ralph2004, @Neiman2008, @Hagos2015 and @Dettinger2011 identified ARs
+by first locating regions where the Integrated Water Vapor (IWV) is greater
+than $20\, mm$.  A $250 \, kg/m/s$ threshold on the Integrated Vapor Transport
+(IVT) was used by @Rutz2014 and @Rutz2015.  However, an implicit assumption
+with this magnitude thresholding approach is that the atmospheric moisture
+level stays unchanged throughout the analysis period.  Such an assumption may
+not be fully justifiable under a warming climate as the atmospheric moisture
+level is expected to increase.
 
-In this package we propose a suite of new detection/tracking algorithms
-to help solve the above difficulties.
-Through a
-systematic analysis using 7 years of Reanalysis data [@Dee2011], we
-have found that the proposed detection algorithm has reduced sensitivity to
-parameters and data resolution.  Long-lived ARs spanning multiple
-days, having cross-continent or cross-basin tracks can be more reliably
-traced through their tropical/sub-tropical origins to high-latitude
-landfalls.
+In this package we propose a suite of new detection/tracking algorithms to help
+solve the above difficulties.  Through a systematic analysis using 7 years of
+Reanalysis data [@Dee2011], we have found that the proposed detection algorithm
+has reduced sensitivity to parameters and data resolution.  Long-lived ARs
+spanning multiple days, having cross-continent or cross-basin tracks can be
+more reliably traced through their tropical/sub-tropical origins to
+high-latitude landfalls. As the research on ARs matures, new AR
+detection/tracking methods are been developed, and the inter-comparisons of
+various AR detection/tracking are carried out by, for instance, the Atmospheric
+River Tracking Method Intercomparison Project (ARTMIP) [@Rutz2019b,
+Shields2018].
 
-The *AR_tracker* package includes a collection of Python functions/classes
-designed for an analysis workflow covering the detection of ARs,
-the simplification of the AR's geographical location,
-to the subsequent tracking through time.
-The algorithms are implemented using the Python
-programming language as a wrapper to some well-established numeric packages
-including *numpy* ,*scikit-image* and *networkx* etc..
-The input and output data use the NetCDF format, an industry standard in
-the geoscience field. Optional graphical outputs can also be saved,
-making it suitable for production usage and educational purposes as well.
-A series of [Jupyter notebooks](https://github.com/ihesp/AR_tracker/tree/master/notebooks)
-are also included to help guide the users through the entire workflow and quickly
-build their own production scripts.
+The *IPART* package includes a collection of Python functions/classes designed
+for an analysis workflow covering the detection of ARs, the simplification of
+the AR's geographical location, to the subsequent tracking through time.  The
+algorithms are implemented using the Python programming language as a wrapper
+to some well-established numeric packages including *numpy* ,*scikit-image* and
+*networkx* etc..  The input and output data use the NetCDF format, an industry
+standard in the geoscience field. Optional graphical outputs can also be saved,
+making it suitable for production usage and educational purposes as well.  A
+series of [Jupyter notebooks](https://github.com/ihesp/IPART/tree/master/notebooks) are also
+included to help guide the users through the entire workflow, and some example
+scripts are provided as templates to help the user quickly build their own
+production scripts.
 
 
 # Example use case
