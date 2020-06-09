@@ -71,8 +71,7 @@ more reliably traced through their tropical/sub-tropical origins to
 high-latitude landfalls. As the research on ARs matures, new AR
 detection/tracking methods are been developed, and the inter-comparisons of
 various AR detection/tracking are carried out by, for instance, the Atmospheric
-River Tracking Method Intercomparison Project (ARTMIP) [@Rutz2019b,
-Shields2018].
+River Tracking Method Intercomparison Project (ARTMIP) [@Rutz2019b;@Shields2018].
 
 The *IPART* package includes a collection of Python functions/classes designed
 for an analysis workflow covering the detection of ARs, the simplification of
