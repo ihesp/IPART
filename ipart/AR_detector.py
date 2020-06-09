@@ -22,7 +22,7 @@ from ipart.utils import rdp
 from ipart.utils import funcs
 from ipart.utils import peak_prominence2d as pp2d
 
-NX_VERSION=nx.__version__[0]
+NETWORKX_VERSION=nx.__version__[0]
 
 
 
@@ -344,7 +344,7 @@ def getARAxis(g, quslab, qvslab, mask):
         '''Sum edge distances along a path'''
         s=0
         for ii in range(len(path)-1):
-            if NX_VERSION=='2':
+            if NETWORKX_VERSION=='2':
                 sii=g[path[ii]][path[ii+1]][attr]
             else:
                 sii=g.edge[path[ii]][path[ii+1]][attr]

@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 IPART's documentation
-==========================
+=====================
 
 .. contents:: Table of Contents
   :local:
@@ -142,7 +142,7 @@ Applications on example data can be found in a series of example notebooks at
 
 
 ipart module contents
-####################
+#####################
 
 .. toctree::
    :maxdepth: 1
