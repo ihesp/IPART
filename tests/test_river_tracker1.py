@@ -72,7 +72,7 @@ class TestDetect(unittest.TestCase):
 
     def test_Metadata(self):
 
-        timeax, areamap, costhetas, sinthetas = prepareMeta(
+        timeax, areamap, costhetas, sinthetas, lats, lons = prepareMeta(
                 self.latax, self.lonax, self.timeax,
                 self.ivt.shape[0], self.ivt.shape[1], self.ivt.shape[2])
 
@@ -111,7 +111,7 @@ class TestDetect(unittest.TestCase):
         idx=15
         slabano=self.ivtano[idx](squeeze=1)
 
-        timeax, areamap, costhetas, sinthetas = prepareMeta(
+        timeax, areamap, costhetas, sinthetas, lats, lons = prepareMeta(
                 self.latax, self.lonax, self.timeax,
                 self.ivt.shape[0], self.ivt.shape[1], self.ivt.shape[2])
 

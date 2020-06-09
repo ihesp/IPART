@@ -48,7 +48,7 @@ import cdutil
 
 If nothing prints out, the installation is successful. In case of errors, also consider their [partial installation instructions](https://github.com/CDAT/cdat/wiki/Additional-Installation-Configurations). Only the `cdms2` and `cdutil` modules are needed, the `vcs` module is not required.
 
-Lastly, install ipart
+Lastly, install `ipart`:
 
 ```
 conda install -c guangzhi ipart
@@ -60,10 +60,7 @@ conda install -c guangzhi ipart
 To validate installation, issue a new Python session and run
 
 ```
-from ipart import AR_detector
-from ipart import AR_tracer
-from ipart import thr
-from ipart import funcs, plot
+import ipart
 ```
 
 If nothing prints out, installation is successful.
@@ -76,7 +73,7 @@ python -m unittest discover -s tests
 
 ## Documentation
 
-Further documentation can be found at [https://ar-tracker.readthedocs.io/en/latest/](https://ar-tracker.readthedocs.io/en/latest/).
+Further documentation can be found at [https://ipart.readthedocs.io/en/latest/](https://ipart.readthedocs.io/en/latest/).
 
 
 ## Example use case
