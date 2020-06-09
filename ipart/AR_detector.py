@@ -1232,6 +1232,11 @@ def prepareMeta(lats, lons, times, ntime, nlat, nlon,
     if len(lons) != nlon:
         raise Exception("Length of <lons> doesn't equal <nlon>.")
 
+    #------Make sure lats and lons are increasing------
+    # NOTE: important to make sure lat is increasing
+    lats=np.sort(lats)
+    lons=np.sort(lons)
+
     #------------------Get time axis------------------
     timeax=funcs.getTimeAxis(times, ntime, ref_time).asComponentTime()
 
@@ -1245,7 +1250,7 @@ def prepareMeta(lats, lons, times, ntime, nlat, nlon,
     if verbose:
         print('\n# <prepareMeta>: Metadata created.')
 
-    return timeax, areamap, costhetas, sinthetas
+    return timeax, areamap, costhetas, sinthetas, lats, lons
 
 
 def _findARs(anoslab, areas, param_dict):
@@ -1522,6 +1527,8 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
             vv=vv[:,0,:,:]
         elif np.ndim(vv)==3 and vv.shape[0]==1:
             pass
+        # NOTE: important to make sure lat is increasing
+        vv=funcs.increasingLatitude(vv)
         return vv
 
     #-----------------Get coordinate metadata-----------------
@@ -1532,9 +1539,9 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
     qu=squeezeTo3D(qu)
     qv=squeezeTo3D(qv)
 
-    timeax, areamap, costhetas, sinthetas = prepareMeta(lats, lons, times,
-            ivt.shape[0], ivt.shape[1], ivt.shape[2], ref_time=ref_time,
-            verbose=verbose)
+    timeax, areamap, costhetas, sinthetas, lats, lons = prepareMeta(
+            lats, lons, times, ivt.shape[0], ivt.shape[1], ivt.shape[2],
+            ref_time=ref_time, verbose=verbose)
     yield # this bare yield prepares the generator by advancing it to the 1st yield
 
     #######################################################################
