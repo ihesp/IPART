@@ -98,7 +98,7 @@ pathlib2=2.3.5=py27_0
 pcre=8.43=he6710b0_0
 pexpect=4.7.0=py27_0
 pickleshare=0.7.5=py27_0
-pillow=6.2.1=py27h34e0f95_0
+pillow>=6.2.2
 pip=19.3.1=py27_0
 proj4=5.2.0=he6710b0_1
 prometheus_client=0.7.1=py_0
