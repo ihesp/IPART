@@ -1236,6 +1236,7 @@ def prepareMeta(lats, lons, times, ntime, nlat, nlon,
     # NOTE: important to make sure lat is increasing
     lats=np.sort(lats)
     lons=np.sort(lons)
+    reso=np.mean([np.diff(lats).mean(), np.diff(lons).mean()])
 
     #------------------Get time axis------------------
     timeax=funcs.getTimeAxis(times, ntime, ref_time).asComponentTime()
@@ -1250,7 +1251,7 @@ def prepareMeta(lats, lons, times, ntime, nlat, nlon,
     if verbose:
         print('\n# <prepareMeta>: Metadata created.')
 
-    return timeax, areamap, costhetas, sinthetas, lats, lons
+    return timeax, areamap, costhetas, sinthetas, lats, lons, reso
 
 
 def _findARs(anoslab, areas, param_dict):
@@ -1378,9 +1379,15 @@ def _findARs(anoslab, areas, param_dict):
     return masks, armask
 
 
-def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
+def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         times=None, ref_time='days since 1900-01-01',
+        thres_low= 1, min_area= 50*1e4, max_area= 1800*1e4, max_isoq= 0.6,
+        max_isoq_hard= 0.7, min_lat= 20, max_lat= 80, min_length= 2000,
+        min_length_hard= 1500, rdp_thres= 2, fill_radius= None,
+        single_dome= False, max_ph_ratio= 0.6, edge_eps= 0.4,
         verbose=True):
+
+
     '''Find ARs from THR results, get all results in one go.
 
     Args:
@@ -1407,6 +1414,37 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
             <ref_time> as start, with a length as the time dimension of <ivt>.
         ref_time (str): reference time point to create dummy time axis, if
             no time stamps are given in <times>.
+        thres_low (float): kg/m/s, define AR candidates as regions
+            >= than this anomalous ivt.
+        min_area (float): km^2, drop AR candidates smaller than this area.
+        max_area (float): km^2, drop AR candidates larger than this area.
+        max_isoq (float): isoperimetric quotient. ARs larger than this
+            (more circular in shape) is treated as relaxed.
+        max_isoq_hard (float): isoperimetric quotient. ARs larger than this
+            is discarded.
+        min_lat (float): degree, exclude systems whose centroids are lower
+            than this latitude.
+        max_lat (float): degree, exclude systems whose centroids are higher
+            than this latitude.
+        min_length (float): km, ARs shorter than this length is treated as
+            relaxed.
+        min_length_hard (float): km, ARs shorter than this length is discarded.
+        rdp_thres (float): degree lat/lon, error when simplifying axis using
+            rdp algorithm.
+        fill_radius (int or None): number of grids as radius to fill small
+            holes in AR contour. If None, computed as
+
+                max(1,int(4*0.75/RESO))
+
+            where RESO is the approximate resolution in degrees of lat/lon,
+            estimated from <lat>, <lon>.
+        single_dome (bool): do peak partition or not, used to separate
+            systems that are merged together with an outer contour.
+        max_ph_ratio (float): max prominence/height ratio of a local peak.
+            Only used when single_dome=True
+        edge_eps (float): minimal proportion of flux component in a direction
+            to total flux to allow edge building in that direction.
+
     Returns:
         time_idx (list): indices of the time dimension when any AR is found.
         labels_all (TransientVariable): 3D array, with dimension
@@ -1431,7 +1469,14 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
     crossfluxes_all=[]
 
     finder_gen = findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
-            param_dict, times=times, ref_time=ref_time, verbose=verbose)
+            times=times, ref_time=ref_time, thres_low=thres_low,
+        min_area=min_area, max_area=max_area, max_isoq=max_isoq,
+        max_isoq_hard=max_isoq_hard, min_lat=min_lat, max_lat=max_lat,
+        min_length=min_length, min_length_hard=min_length_hard,
+        rdp_thres=rdp_thres, fill_radius=fill_radius,
+        single_dome=single_dome, max_ph_ratio=max_ph_ratio,
+        edge_eps=edge_eps,
+        verbose=verbose)
     next(finder_gen)  # prime the generator to prepare metadata
 
     for (tidx, timett, label, angle, cross, ardf) in finder_gen:
@@ -1469,8 +1514,12 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
     return time_idx, labels_all, angles_all, crossfluxes_all, result_df
 
 
-def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
+def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         times=None, ref_time='days since 1900-01-01',
+        thres_low= 1, min_area= 50*1e4, max_area= 1800*1e4, max_isoq= 0.6,
+        max_isoq_hard= 0.7, min_lat= 20, max_lat= 80, min_length= 2000,
+        min_length_hard= 1500, rdp_thres= 2, fill_radius= None,
+        single_dome= False, max_ph_ratio= 0.6, edge_eps= 0.4,
         verbose=True):
     '''Find ARs from THR results, generator version
 
@@ -1499,6 +1548,36 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
             <ref_time> as start, with a length as the time dimension of <ivt>.
         ref_time (str): reference time point to create dummy time axis, if
             no time stamps are given in <times>.
+        thres_low (float): kg/m/s, define AR candidates as regions
+            >= than this anomalous ivt.
+        min_area (float): km^2, drop AR candidates smaller than this area.
+        max_area (float): km^2, drop AR candidates larger than this area.
+        max_isoq (float): isoperimetric quotient. ARs larger than this
+            (more circular in shape) is treated as relaxed.
+        max_isoq_hard (float): isoperimetric quotient. ARs larger than this
+            is discarded.
+        min_lat (float): degree, exclude systems whose centroids are lower
+            than this latitude.
+        max_lat (float): degree, exclude systems whose centroids are higher
+            than this latitude.
+        min_length (float): km, ARs shorter than this length is treated as
+            relaxed.
+        min_length_hard (float): km, ARs shorter than this length is discarded.
+        rdp_thres (float): degree lat/lon, error when simplifying axis using
+            rdp algorithm.
+        fill_radius (int or None): number of grids as radius to fill small
+            holes in AR contour. If None, computed as
+
+                max(1,int(4*0.75/RESO))
+
+            where RESO is the approximate resolution in degrees of lat/lon,
+            estimated from <lat>, <lon>.
+        single_dome (bool): do peak partition or not, used to separate
+            systems that are merged together with an outer contour.
+        max_ph_ratio (float): max prominence/height ratio of a local peak.
+            Only used when single_dome=True
+        edge_eps (float): minimal proportion of flux component in a direction
+            to total flux to allow edge building in that direction.
 
     Returns:
         ii (int): index of the time dimension when any AR is found.
@@ -1539,9 +1618,29 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons, param_dict,
     qu=squeezeTo3D(qu)
     qv=squeezeTo3D(qv)
 
-    timeax, areamap, costhetas, sinthetas, lats, lons = prepareMeta(
+    timeax, areamap, costhetas, sinthetas, lats, lons, reso = prepareMeta(
             lats, lons, times, ivt.shape[0], ivt.shape[1], ivt.shape[2],
             ref_time=ref_time, verbose=verbose)
+    if fill_radius is None:
+        fill_radius=max(1,int(4*0.75/reso))
+
+    param_dict={
+        'thres_low' : thres_low,
+        'min_area': min_area,
+        'max_area': max_area,
+        'max_isoq': max_isoq,
+        'max_isoq_hard': max_isoq_hard,
+        'min_lat': min_lat,
+        'max_lat': max_lat,
+        'min_length': min_length,
+        'min_length_hard': min_length_hard,
+        'rdp_thres': rdp_thres,
+        'fill_radius': fill_radius,
+        'single_dome': single_dome,
+        'max_ph_ratio': max_ph_ratio,
+        'edge_eps': edge_eps
+        }
+
     yield # this bare yield prepares the generator by advancing it to the 1st yield
 
     #######################################################################

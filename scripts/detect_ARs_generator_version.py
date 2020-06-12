@@ -120,7 +120,6 @@ RECORD_FILE_OUT_NAME='ar_records_%d.csv' %YEAR
 PLOT=True          # create maps of found ARs or not
 
 LAT1=0; LAT2=90      # degree, latitude domain
-RESO=0.75             # degree, (approximate) horizontal resolution of input data.
 SHIFT_LON=80          # degree, shift left bound to longitude.
 
 PARAM_DICT={
@@ -145,7 +144,7 @@ PARAM_DICT={
     # degree lat/lon, error when simplifying axis using rdp algorithm.
     'rdp_thres': 2,
     # grids. Remove small holes in AR contour.
-    'fill_radius': max(1,int(4*0.75/RESO)),
+    'fill_radius': None,
     # do peak partition or not, used to separate systems that are merged
     # together with an outer contour.
     'single_dome': False,
@@ -248,7 +247,7 @@ if __name__=='__main__':
         #                     Start processing                      #
         #############################################################
         finder_gen = findARsGen(ivt, ivtrec, ivtano, qu, qv, latax, lonax,
-                PARAM_DICT, times=timeax)
+               times=timeax, **PARAM_DICT)
         next(finder_gen)  # prime the generator to prepare metadata
 
         for (tidx, timett, label, angle, cross, result_df) in finder_gen:
