@@ -71,7 +71,7 @@ Additional inputs:
             'rdp_thres': 2,
 
             # grids. Remove small holes in AR contour.
-            'fill_radius': max(1,int(4*0.75/RESO)),
+            'fill_radius': None,
 
             # do peak partition or not, used to separate systems that are merged
             # together with an outer contour.
@@ -96,7 +96,7 @@ The following snippet shows the detection function calls:
 
         from ipart.AR_detector import findARs
         time_idx, labels, angles, crossfluxes, result_df = findARs(ivt, ivtrec,
-                    ivtano, qu, qv, latax, lonax, PARAM_DICT, times=timeax)
+                    ivtano, qu, qv, latax, lonax, times=timeax **PARAM_DICT)
 
 where these input arguments are:
 
