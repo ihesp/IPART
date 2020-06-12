@@ -222,7 +222,6 @@ if __name__=='__main__':
     #######################################################################
     #                           Detect ARs                                #
     #######################################################################
-    __import__('pdb').set_trace()
     time_idx, labels, angles, crossfluxes, result_df = findARs(ivt, ivtrec,
             ivtano, qu, qv, latax, lonax, times=timeax, **PARAM_DICT)
 
