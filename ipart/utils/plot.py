@@ -1619,9 +1619,11 @@ class Plot2Basemap(Plot2D):
 
         #------------------Set grid lines------------------
         if self.latlongrid is False or self.clean:
-            linewidth=0
+            #linewidth=0
+            zorder=-2
         else:
-            linewidth=0.5
+            #linewidth=0.5
+            zorder=None
 
         #-----------------Draw axes/lables/ticks-----------------
         self.ax.set_yticks(lat_labels)
@@ -1629,9 +1631,13 @@ class Plot2Basemap(Plot2D):
         self.ax.tick_params(axis='both',which='major',labelsize=self.font_size)
         self.ax.xaxis.set_ticklabels([])
         self.ax.yaxis.set_ticklabels([])
-        self.bmap.drawparallels(lat_labels,labels=parallels,linewidth=linewidth,\
+        self.bmap.drawparallels(lat_labels,labels=parallels,
+                zorder=zorder,
+                #linewidth=linewidth,\
                 labelstyle='+/-',fontsize=self.font_size)
-        labels=self.bmap.drawmeridians(lon_labels,labels=meridians,linewidth=linewidth,\
+        labels=self.bmap.drawmeridians(lon_labels,labels=meridians,
+                zorder=zorder,
+                #linewidth=linewidth,\
                 labelstyle='+/-',fontsize=self.font_size)
 
         #--------------Fix label offset issue--------------
