@@ -1216,6 +1216,8 @@ def prepareMeta(lats, lons, times, ntime, nlat, nlon,
             with shape (<nlat> x <nlon>).
         sinthetas (ndarray): ratios of dy/sqrt(dx^2 + dy^2) for all grid cells.
             with shape (<nlat> x <nlon>).
+        reso (float): (approximate) horizontal resolution in degrees of lat/lon
+            estimate from <lats> and <lons>.
 
     New in v2.0.
     '''
