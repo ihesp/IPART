@@ -43,27 +43,54 @@ Below is an example output figure:
 Installation
 ############
 
-The package can be installed via ``conda``.
-Users are advised to build a working Python virtual environment with the
-required `Dependencies`_, and install the package by ``conda install -c guangzhi ipart``.
-Alternatively, one can obtain the code of this pacakge from the
-`github page <https://github.com/ihesp/IPART>`_, and add the ``ipart``
-module to the ``PYTHONPATH`` environment variable.
+
+Create a conda env using the environment file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Users are advised to
+obtain the code of this pacakge from the
+`github page <https://github.com/ihesp/IPART>`_, and create a new
+conda environment using the environment files provided:
+::
+
+    git clone https://github.com/ihesp/IPART
+    cd IPART
+    conda env create -f environment_py2.yml
+
+This creates a new environment named ``ipartpy2``. Activate the environment using:
+::
+
+    conda activate ipartpy2
 
 
-Detailed Installation Guide
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+After that, you can check the list of packages installed by:
+::
 
-Recommend building the Python environment using
+    conda list
+
+Similarly for Python 3.7, use:
+::
+
+    conda env create -f environment_py3.yml
+
+
+Manual Installation Guide
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Alternatively, one can install ``ipart`` in an existing conda environment
+(note that the ``ipart`` package itself does not specificy the dependencies),
+or build the environment up from scratch, as instructed below.
+
+First build the Python environment using
 `Anaconda <https://www.anaconda.com/distribution/>`_.
 
 After Anaconda installation, create a working environment:
 ::
 
-    conda create -n ar python=3.7
-    conda activate ar
+    conda create -n ipartpy3 python=3.7
+    conda activate ipartpy3
 
-This creates a Python environment named "ar" with Python version 3.7.
+This creates a Python environment named "ipartpy3" with Python version 3.7.
 
 Then install the above listed dependencies, e.g.
 ::
