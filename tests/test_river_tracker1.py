@@ -72,7 +72,7 @@ class TestDetect(unittest.TestCase):
 
     def test_Metadata(self):
 
-        timeax, areamap, costhetas, sinthetas, lats, lons = prepareMeta(
+        timeax, areamap, costhetas, sinthetas, lats, lons, reso = prepareMeta(
                 self.latax, self.lonax, self.timeax,
                 self.ivt.shape[0], self.ivt.shape[1], self.ivt.shape[2])
 
@@ -100,7 +100,7 @@ class TestDetect(unittest.TestCase):
         # find ARs
         time_idx, labels, angles, crossfluxes, result_df = findARs(
                 self.ivt, self.ivtrec, self.ivtano, self.uflux, self.vflux,
-                self.latax, self.lonax, self.param_dict, self.timeax)
+                self.latax, self.lonax, self.timeax, **self.param_dict)
 
         self.assertEqual(len(result_df), 52, "Wrong number of ARs found.")
         self.assertTrue(np.all(time_idx==np.arange(25)), msg="time_idx wrong.")
@@ -111,7 +111,7 @@ class TestDetect(unittest.TestCase):
         idx=15
         slabano=self.ivtano[idx](squeeze=1)
 
-        timeax, areamap, costhetas, sinthetas, lats, lons = prepareMeta(
+        timeax, areamap, costhetas, sinthetas, lats, lons, reso = prepareMeta(
                 self.latax, self.lonax, self.timeax,
                 self.ivt.shape[0], self.ivt.shape[1], self.ivt.shape[2])
 

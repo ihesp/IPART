@@ -65,8 +65,8 @@ class TestDataMetaData(unittest.TestCase):
 
     def test_dlon(self):
         dlon=funcs.dLongitude(self.uflux)
-        self.assertAlmostEqual(np.min(dlon), 15197.74930, 4, "dLongitude() wrong.")
-        self.assertAlmostEqual(np.max(dlon), 81999.71815, 4, "dLongitude() wrong.")
+        self.assertAlmostEqual(np.min(dlon), 15197.74930, 2, "dLongitude() wrong.")
+        self.assertAlmostEqual(np.max(dlon), 81999.71815, 2, "dLongitude() wrong.")
 
 
 if __name__=='__main__':
