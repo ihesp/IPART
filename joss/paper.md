@@ -72,12 +72,17 @@ high-latitude landfalls. As the research on ARs matures, new AR
 detection/tracking methods are been developed, and the inter-comparisons of
 various AR detection/tracking are carried out by, for instance, the Atmospheric
 River Tracking Method Intercomparison Project (ARTMIP) [@Rutz2019b;@Shields2018].
-We have performed some systematic comparisons with two magnitude thresholding based AR detection methods included in ARTMIP, and the proposed method displays
-better correspondence between North Hemisphere AR tracks and
-storm tracks, better identification of the strong mid-latitude
-AR-related moisture transports, and longer AR track durations. The detailed
-analysis has been accepted by the journal of Atmosphere and is now in
-production.
+Using the terminology of ARTMIP [@Shields2018], the proposed method is a
+"tracking" (Lagrangian approach) type, with length and shape geometrical
+requirements. It imposes no threshold on IVT/IWV, but instead imposes absolute
+thresholds on the spatio-temporal scale of AR-like systems. The detected ARs
+can be optionally time-stitched to identify coherent AR objects.  We have
+performed some systematic comparisons with two magnitude thresholding based AR
+detection methods included in ARTMIP, and the proposed method displays better
+correspondence between North Hemisphere AR tracks and storm tracks, better
+identification of the strong mid-latitude AR-related moisture transports, and
+longer AR track durations. The detailed analysis has been accepted by the
+journal of Atmosphere and is now in production.
 
 The *IPART* package includes a collection of Python functions/classes designed
 for an analysis workflow covering the detection of ARs, the simplification of
