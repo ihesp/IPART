@@ -74,6 +74,8 @@ Similarly for Python 3.7, use:
     conda env create -f environment_py3.yml
 
 
+
+
 Manual Installation Guide
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -120,6 +122,30 @@ Lastly, install the ``ipart`` package
 
     conda install -c guangzhi ipart
 
+
+Install from conda (experimental)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For py2:
+::
+
+    conda create -n ipartpy2 python=2.7 -c guangzhi -c conda-forge ipart
+
+For py3 (good luck with ``cdms2`` and ``cdutil``):
+::
+
+    conda create -n ipartpy3 python=3.7 -c guangzhi -c conda-forge ipart
+
+Then activate the environment:
+::
+
+    conda activate ipartpy2
+
+or
+
+::
+
+    conda activate ipartpy3
 
 
 Dependencies

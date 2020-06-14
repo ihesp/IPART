@@ -91,6 +91,33 @@ Lastly, install `ipart`:
 conda install -c guangzhi ipart
 ```
 
+### Option 3, install from conda (experimental)
+
+For py2:
+
+```
+conda create -n ipartpy2 python=2.7 -c guangzhi -c conda-forge ipart
+```
+
+For py3 (good luck with `cdms2` and `cdutil`):
+
+```
+conda create -n ipartpy3 python=3.7 -c guangzhi -c conda-forge ipart
+```
+
+Then activate the environment:
+
+```
+conda activate ipartpy2
+```
+
+or
+
+```
+conda activate ipartpy3
+```
+
+
 
 ## tests
 
