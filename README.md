@@ -18,7 +18,7 @@ TODO: MAKE STATEMENT ABOUT WHAT PLATFORMS ARE SUPPORTED (WINDOWS, MAC, LINUX)
 
 Recommend building the Python environment using [Anaconda](https://www.anaconda.com/distribution/).
 
-### Option 1, create conda env using environment file
+### Create conda env using environment file
 
 After Anaconda installation, git clone this repository:
 
@@ -51,72 +51,14 @@ Similarly for Python 3.7, use
 conda env create -f environment_py3.yml
 ```
 
-
-### Option 2, manually install all packages
-
-After Anaconda installation, create a working environment:
-
+Finally install IPART using either:
 ```
-conda create -n ipartpy3 python=3.7
-conda activate ipartpy3
+python setup.py develop
 ```
-
-This creates a Python environment named "ipartpy3" with Python version 3.7.
-
-Then install the above listed dependencies, e.g.
-
-```
-conda install numpy
-```
-
-This installs the current latest version of `numpy`. Most likely the latest versions will work, in case of compatibility issues, consider forcing a given version of a package, e.g.
-
-```
-conda install matplotlib=2.2.3
-```
-
-For installation of `CDAT`, checkout the [installation guides](https://github.com/CDAT/cdat/wiki/Install). This is likely the most difficult package to install, and consider leaving it to the end. To verify the CDAT installation, in a python session:
-
-```
-import cdms2
-import MV2
-import cdutil
-```
-
-If nothing prints out, the installation is successful. In case of errors, also consider their [partial installation instructions](https://github.com/CDAT/cdat/wiki/Additional-Installation-Configurations). Only the `cdms2` and `cdutil` modules are needed, the `vcs` module is not required.
-
-Lastly, install `ipart`:
-
-```
-conda install -c guangzhi ipart
-```
-
-### Option 3, install from conda (experimental)
-
-For py2:
-
-```
-conda create -n ipartpy2 python=2.7 -c guangzhi -c conda-forge ipart
-```
-
-For py3 (good luck with `cdms2` and `cdutil`):
-
-```
-conda create -n ipartpy3 python=3.7 -c guangzhi -c conda-forge ipart
-```
-
-Then activate the environment:
-
-```
-conda activate ipartpy2
-```
-
 or
-
 ```
-conda activate ipartpy3
+pip install -e .
 ```
-
 
 
 ## tests
@@ -166,6 +108,3 @@ Further documentation can be found at [https://ipart.readthedocs.io/en/latest/](
 
 If you encounter problems or would like to help improve the code, please don't
 hesitate to fire up an issue or pull request.
-
-
-
