@@ -26,18 +26,17 @@ After Anaconda installation, git clone this repository:
 git clone https://github.com/ihesp/IPART
 ```
 
-Then build a new conda environment using the environment file provided. For
-Python 2.7:
+Then build a new conda environment using the environment file provided. For example:
 
 ```
 cd IPART
-conda env create -f environment_py2.yml
+conda env create -f environment_py3.yml
 ```
 
-This creates a new environment named `ipartpy2`. Activate the environment using
+This creates a new environment named `ipartpy3`. Activate the environment using
 
 ```
-conda activate ipartpy2
+conda activate ipartpy3
 ```
 
 After that, you can check the list of packages installed by
