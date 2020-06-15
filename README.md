@@ -12,6 +12,7 @@
 * networkx (developed in 1.11 and 2.2 in py2, tested 2.4 in py3)
 * scikit-image (developed in 0.14.2 in py2, tested 0.16.2 in py3)
 
+TODO: MAKE STATEMENT ABOUT WHAT PLATFORMS ARE SUPPORTED (WINDOWS, MAC, LINUX)
 
 ## Installation
 
