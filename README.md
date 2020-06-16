@@ -11,8 +11,7 @@
 * pandas (developed in 0.23.4 in py2, tested 1.0.3 in py3)
 * networkx (developed in 1.11 and 2.2 in py2, tested 2.4 in py3)
 * scikit-image (developed in 0.14.2 in py2, tested 0.16.2 in py3)
-
-TODO: MAKE STATEMENT ABOUT WHAT PLATFORMS ARE SUPPORTED (WINDOWS, MAC, LINUX)
+* OS: Linux or Mac.
 
 ## Installation
 
@@ -45,10 +44,10 @@ After that, you can check the list of packages installed by
 conda list
 ```
 
-Similarly for Python 3.7, use
+Similarly for Python 2.7, use
 
 ```
-conda env create -f environment_py3.yml
+conda env create -f environment_py2.yml
 ```
 
 Finally install IPART using either:
