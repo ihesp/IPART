@@ -11,10 +11,16 @@ setup(name='ipart',
         author='Guangzhi XU',
         author_email='xugzhi1987@gmail.com',
         url='https://github.com/ihesp/IPART',
-        #packages=['ipart',],
+        install_requires=[
+            "cdms2",
+            "matplotlib",
+            "scipy",
+            "scikit-image",
+            "pandas",
+            "cdutil",
+            "basemap",
+            "networkx",
+        ],
         packages=find_packages(include=['ipart', 'ipart.*']),
         license='GPL-3'
         )
-
-
-
