@@ -11,6 +11,7 @@ import cdms2 as cdms
 import MV2 as MV
 from skimage import morphology
 from ipart.utils import funcs
+import recon
 
 
 def THR(ivt, kernel, oro=None, high_terrain=600, verbose=True):
@@ -54,8 +55,8 @@ def THR(ivt, kernel, oro=None, high_terrain=600, verbose=True):
 
     #################### use a cube to speed up ##############
     # empirical
-    #if kernel[0]>=16 or kernel[1]>=6:
-        #ele=np.ones(ele.shape)
+    if kernel[0]>=16 or kernel[1]>=6:
+        ele=np.ones(ele.shape)
     ##########################################################
 
     # reconstruction element: a 6-connectivity element
@@ -82,6 +83,111 @@ def THR(ivt, kernel, oro=None, high_terrain=600, verbose=True):
         oro_rs=np.repeat(oro_rs, len(ivt), axis=0)
 
         ivtrec_oro=morphology.reconstruction(lm*oro_rs, ivt, method='dilation',
+                selem=rec_ele)
+        ivtano=MV.maximum(ivt-ivtrec, (ivt-ivtrec_oro)*oro_rs)
+    else:
+        ivtano=ivt-ivtrec
+
+    ivtrec=ivt-ivtano
+
+    if ndim==4:
+        levax=cdms.createAxis([0,])
+        levax.designateLevel()
+        levax.id='z'
+        levax.name='level'
+        levax.units=''
+
+        ivt=funcs.addExtraAxis(ivt,levax,1)
+        ivtrec=funcs.addExtraAxis(ivtrec,levax,1)
+        ivtano=funcs.addExtraAxis(ivtano,levax,1)
+
+    axislist=ivt.getAxisList()
+    ivtrec.setAxisList(axislist)
+    ivtano.setAxisList(axislist)
+
+    ivtrec.id='ivt_rec'
+    ivtrec.long_name='%s, THR reconstruction' %(getattr(ivt, 'long_name', ''))
+    ivtrec.standard_name=ivtrec.long_name
+    ivtrec.title=ivtrec.long_name
+    ivtrec.units=ivt.units
+
+    ivtano.id='ivt_ano'
+    ivtano.long_name='%s, THR anomaly' %(getattr(ivt, 'long_name', ''))
+    ivtano.standard_name=ivtano.long_name
+    ivtano.title=ivtano.long_name
+    ivtano.units=ivt.units
+
+    return ivt, ivtrec, ivtano
+
+def THRCyclicLongitude(ivt, kernel, oro=None, high_terrain=600, verbose=True):
+    """Perform THR filtering process on 3d data
+
+    Args:
+        ivt (TransientVariable): 3D or 4D input IVT data, with dimensions
+            (time, lat, lon) or (time, level, lat, lon).
+        kernel (list or tuple): list/tuple of integers specifying the shape of
+            the kernel/structuring element used in the gray erosion process.
+
+    Keyword Args:
+        oro (TransientVariable): 2D array, surface orographic data in meters.
+            This optional surface height info is used to perform a separate
+            reconstruction computation for areas with high elevations, and
+            the results can be used to enhance the continent-penetration
+            ability of landfalling ARs. Sensitivity in landfalling ARs is
+            enhanced, other areas are not affected. Needs to have compatible
+            (lat, lon) shape as <ivt>.
+
+            New in v2.0.
+        high_terrain (float): minimum orographic height (in m) to define as high
+            terrain area, within which a separate reconstruction is performed.
+            Only used if <oro> is not None.
+
+            New in v2.0.
+
+    Returns:
+        ivt (TransientVariable): 3D or 4D array, input <ivt>.
+        ivtrec (TransientVariable): 3D or 4D array, the reconstruction
+            component from the THR process.
+        ivtano (TransientVariable): 3D or 4D array, the difference between
+            input <ivt> and <ivtrec>.
+    """
+
+    ndim=np.ndim(ivt)
+    ivt=ivt(squeeze=1)
+
+    #-------------------3d ellipsoid-------------------
+    ele=funcs.get3DEllipse(*kernel)
+
+    #################### use a cube to speed up ##############
+    # empirical
+    if kernel[0]>=16 or kernel[1]>=6:
+        ele=np.ones(ele.shape)
+    ##########################################################
+
+    # reconstruction element: a 6-connectivity element
+    rec_ele=np.zeros([3,3,3])
+    rec_ele[0,1,1]=1
+    rec_ele[1,:,1]=1
+    rec_ele[1,1,:]=1
+    rec_ele[2,1,1]=1
+
+    if verbose:
+        print('\n# <THR>: Computing erosion ...')
+
+    lm=morphology.erosion(ivt.data, selem=ele)
+
+    if verbose:
+        print('\n# <THR>: Computing reconstruction ...')
+
+    ivtrec=recon.reconstruction(lm, ivt, method='dilation', selem=rec_ele)
+
+    # perform an extra reconstruction over land
+    if oro is not None:
+        oro_rs=MV.where(oro>=high_terrain, 1, 0)
+        oro_rs=funcs.addExtraAxis(oro_rs,axis=0)
+        oro_rs=np.repeat(oro_rs, len(ivt), axis=0)
+
+        ivtrec_oro=recon.reconstruction(lm*oro_rs, ivt, method='dilation',
                 selem=rec_ele)
         ivtano=MV.maximum(ivt-ivtrec, (ivt-ivtrec_oro)*oro_rs)
     else:

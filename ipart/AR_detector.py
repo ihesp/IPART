@@ -42,7 +42,7 @@ def plotGraph(graph, ax=None, show=True):
     return
 
 
-def areaFilt(mask, area, min_area=None, max_area=None):
+def areaFilt(mask, area, min_area=None, max_area=None, zonal_cyclic=False):
     '''Filter AR binary masks by region areas
 
     Args:
@@ -53,6 +53,7 @@ def areaFilt(mask, area, min_area=None, max_area=None):
                                   in <mask>.
         max_area (float or None): if not None, maximum area to filter objects
                                   in <mask>.
+        zonal_cyclic (bool): if True, treat zonal boundary as cyclic.
 
     Returns:
         result (ndarray): 2D binary mask with objects area-filtered.
@@ -61,7 +62,8 @@ def areaFilt(mask, area, min_area=None, max_area=None):
     if min_area is None and max_area is None:
         return mask
 
-    labels=measure.label(mask,connectivity=1)
+    #labels=measure.label(mask,connectivity=1)
+    labels=cyclicLabel(mask,connectivity=1, iszonalcyclic=zonal_cyclic)
     n=labels.max()+1
     areas=ndimage.sum(area,labels,np.arange(n))
     sel=np.ones(n,bool)
@@ -146,6 +148,14 @@ def cart2Wind(vs, lats, lons):
 
     return u,v
 
+def checkCyclic(mask):
+
+    left=mask[:,0]
+    right=mask[:,-1]
+    if np.sum(left)>0 and np.sum(right)>0 and np.sum(left*right)>0:
+        return True
+    else:
+        return False
 
 def maskToGraph(mask, quslab, qvslab, costhetas, sinthetas, edge_eps,
         connectivity=2):
@@ -733,7 +743,17 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
         widthii=areaii/lenii # km
 
         # mask contour
-        contii=funcs.getBinContour(maskii,lonax,latax)
+        if checkCyclic(maskii):
+            maskii_roll=np.roll(maskii, maskii.shape[1]//2, axis=1)
+            lonax_roll=np.roll(lonax[:], len(lonax)//2)
+            # NOTE: holes exist in contours across zonal edges
+            contii=funcs.getBinContour(maskii_roll,lonax_roll,latax)
+            contii=contii.vertices
+            #newx=(contii[:,0] - maskii.shape[1]//2)%maskii.shape[1]
+            #contii[:,0]=newx
+        else:
+            contii=funcs.getBinContour(maskii,lonax,latax)
+            contii=contii.vertices
 
         # isoperimetric quotient
         isoquoii=4*np.pi*rpii.area/rpii.perimeter**2
@@ -795,7 +815,7 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
             is_relaxedii=True
         if lenii<min_length:
             is_relaxedii=True
-        if qvmeanii<=0:
+        if np.sign(centroidy)*qvmeanii<=0:
             is_relaxedii=True
 
         labels=labels+maskii*(ii+1)
@@ -805,8 +825,8 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
         results[ii+1]={
                 'id': ii+1,
                 'time':timestr,
-                'contour_y': contii.vertices[:,1],
-                'contour_x': contii.vertices[:,0],
+                'contour_y': contii[:,1],
+                'contour_x': contii[:,0],
                 'centroid_y': centroidy,
                 'centroid_x': centroidx,
                 'axis_y':axisii[:,0],
@@ -922,6 +942,37 @@ def save2DF(result_dict):
 
     return result_df
 
+def breakCurveAtEdge(xs, ys, left_bound, right_bound):
+
+    idx=[]
+    new_xs=[]
+    new_ys=[]
+    for ii, xii in enumerate(xs[:-1]):
+        xii2=xs[ii+1]
+        #if (xii-left_bound)*(xii2-left_bound)<=0 or\
+                #(xii-right_bound)*(xii2-right_bound)<=0:
+        dx=abs(xii2-xii)
+        dx2=min(abs(xii-left_bound) + abs(right_bound-xii2),
+                abs(xii-right_bound) + abs(xii2-left_bound))
+        if dx>dx2:
+            idx.append(ii+1)
+
+    print('\n# <AR_detector>: idx=',idx)
+
+    if len(idx)==0:
+        new_xs.append(xs)
+        new_ys.append(ys)
+    else:
+        idx.insert(0,0)
+        idx.append(len(xs))
+
+        for i1, i2 in zip(idx[:-1], idx[1:]):
+            new_xs.append(xs[i1:i2])
+            new_ys.append(ys[i1:i2])
+
+    return new_xs, new_ys
+
+
 
 def plotAR(ardf, ax, bmap):
     '''Helper function to plot the regions and axes of ARs
@@ -941,17 +992,24 @@ def plotAR(ardf, ax, bmap):
         px=vv['contour_x']
         py=vv['contour_y']
 
-        px,py=bmap(px,py)
-        linewidth=1.5 if isrelaxkk else 1.5
-        linestyle=':' if isrelaxkk else '-'
-        ax.plot(px,py,color='k',linestyle=linestyle,linewidth=linewidth)
+        px_segs, py_segs=breakCurveAtEdge(px, py, bmap.llcrnrx, bmap.urcrnrx)
+
+        for xjj, yjj in zip(px_segs, py_segs):
+
+            xjj,yjj=bmap(xjj,yjj)
+            linewidth=1.5 if isrelaxkk else 1.5
+            linestyle=':' if isrelaxkk else '-'
+            ax.plot(xjj,yjj,color='k',linestyle=linestyle,linewidth=linewidth)
 
         # plot axis
         px=vv['axis_x']
         py=vv['axis_y']
 
-        px,py=bmap(px,py)
-        ax.plot(px,py,'g:',linewidth=2.0)
+        px_segs, py_segs=breakCurveAtEdge(px, py, bmap.llcrnrx, bmap.urcrnrx)
+        for xjj, yjj in zip(px_segs, py_segs):
+
+            xjj,yjj=bmap(xjj,yjj)
+            ax.plot(xjj,yjj,'g:',linewidth=2.0)
 
         # plot cross flux text
         '''
@@ -1173,19 +1231,49 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
     '''
 
     edge_eps=param_dict['edge_eps']
+    zonal_cyclic=param_dict['zonal_cyclic']
 
     #-----------------Prepare outputs-----------------
     axismask=np.zeros(quslab.shape)
     axes=[]
 
     #--------------------Find axes--------------------
+    if zonal_cyclic:
+        quslab_roll=np.roll(quslab, quslab.shape[1]//2, axis=1)
+        qvslab_roll=np.roll(qvslab, qvslab.shape[1]//2, axis=1)
+        sinthetas_roll=np.roll(sinthetas, sinthetas.shape[1]//2, axis=1)
+        costhetas_roll=np.roll(costhetas, costhetas.shape[1]//2, axis=1)
+
     for maskii in armask_list:
 
+        #------------Check mask if zonal cyclic------------
+        if zonal_cyclic and checkCyclic(maskii):
+            maskii=np.roll(maskii, maskii.shape[1]//2, axis=1)
+            if checkCyclic(maskii):
+                raise Exception("WTF")
+            rollii=True
+            quii=quslab_roll
+            qvii=qvslab_roll
+            sinii=sinthetas_roll
+            cosii=costhetas_roll
+        else:
+            rollii=False
+            quii=quslab
+            qvii=qvslab
+            sinii=sinthetas
+            cosii=costhetas
+
         #----------Convert mask to directed graph----------
-        gii=maskToGraph(maskii,quslab,qvslab,costhetas,sinthetas,edge_eps)
+        gii=maskToGraph(maskii,quii,qvii,cosii,sinii,edge_eps)
 
         #--------------Get AR axis from graph--------------
-        axisarrii,axismaskii=getARAxis(gii,quslab,qvslab,maskii)
+        axisarrii,axismaskii=getARAxis(gii,quii,qvii,maskii)
+
+        if rollii:
+            axismaskii=np.roll(axismaskii, -axismaskii.shape[1]//2, axis=1)
+            newx=(axisarrii[:,1] - axismaskii.shape[1]//2)%axismaskii.shape[1]
+            axisarrii[:,1]=newx
+
         axes.append(axisarrii)
         axismask=axismask+axismaskii
 
@@ -1256,6 +1344,43 @@ def prepareMeta(lats, lons, times, ntime, nlat, nlon,
     return timeax, areamap, costhetas, sinthetas, lats, lons, reso
 
 
+def cyclicLabel(mask, connectivity=1, iszonalcyclic=False):
+
+    if not iszonalcyclic:
+        result=measure.label(mask, connectivity=connectivity)
+    else:
+        label1=measure.label(mask, connectivity=connectivity)
+        mask2=np.roll(mask, mask.shape[1]//2, axis=1)
+        label2=measure.label(mask2, connectivity=connectivity)
+        label2=np.roll(label2, -mask.shape[1]//2, axis=1)
+
+        left=label1[:, 0]
+        right=label1[:, -1]
+        left2=label2[:, 0]
+        right2=label2[:, -1]
+
+        idx=np.where((left2+right2>0) & (left2==right2))[0]
+        result=label1
+        for ii in idx:
+            result=np.where(result==left[ii], right[ii], result)
+            left=result[:, 0]
+            right=result[:, -1]
+
+        # re-assign labels so that there is not gap
+        uni=list(np.unique(result))
+        uni.remove(0)
+        result2=np.zeros(result.shape)
+
+        for ii, lii in enumerate(uni):
+            result2+=np.where(result==lii, ii+1, 0)
+
+        result=np.array(result2, dtype='int')
+
+    return result
+
+
+
+
 def _findARs(anoslab, areas, param_dict):
     '''Find ARs from THR results at a time snap
 
@@ -1284,6 +1409,7 @@ def _findARs(anoslab, areas, param_dict):
     max_ph_ratio=param_dict['max_ph_ratio']
     max_isoq_hard=param_dict['max_isoq_hard']
     fill_radius=param_dict['fill_radius']
+    zonal_cyclic=param_dict['zonal_cyclic']
     latax=anoslab.getLatitude()
 
     def paddedClosing(mask, ele, pad):
@@ -1298,9 +1424,9 @@ def _findARs(anoslab, areas, param_dict):
     mask0=np.where(anoslab>thres_low,1,0)
     if single_dome:
         # NOTE: if using single_dome, should not filter max_area here.
-        mask0=areaFilt(mask0,areas,min_area,np.inf)
+        mask0=areaFilt(mask0,areas,min_area,np.inf, zonal_cyclic)
     else:
-        mask0=areaFilt(mask0,areas,min_area,max_area)
+        mask0=areaFilt(mask0,areas,min_area,max_area, zonal_cyclic)
 
     # prepare outputs
     masks=[]
@@ -1311,7 +1437,8 @@ def _findARs(anoslab, areas, param_dict):
 
     #---------------Separate grouped peaks---------------
     if single_dome:
-        labels=measure.label(mask0,connectivity=2)
+        #labels=measure.label(mask0,connectivity=2)
+        labels=cyclicLabel(mask0,connectivity=2,iszonalcyclic=zonal_cyclic)
         mask1=np.zeros(mask0.shape)
 
         for ii in range(labels.max()):
@@ -1334,13 +1461,14 @@ def _findARs(anoslab, areas, param_dict):
     else:
         mask1=mask0
 
-    mask1=areaFilt(mask1,areas,min_area,max_area)
+    mask1=areaFilt(mask1,areas,min_area,max_area,zonal_cyclic)
 
     if mask1.max()==0:
         return masks, armask
 
     #-------Latitude and iso_quotient filtering-------
-    labels=measure.label(mask1,connectivity=2)
+    #labels=measure.label(mask1,connectivity=2)
+    labels=cyclicLabel(mask1, connectivity=2, iszonalcyclic=zonal_cyclic)
     mask1=np.zeros(mask0.shape)
 
     for ii in range(labels.max()):
@@ -1369,7 +1497,8 @@ def _findARs(anoslab, areas, param_dict):
         return masks, armask
 
     #--------Fill some small holes and make the contour smoother--------
-    labels=measure.label(mask1,connectivity=2)
+    #labels=measure.label(mask1,connectivity=2)
+    labels=cyclicLabel(mask1, connectivity=2, iszonalcyclic=zonal_cyclic)
     filldisk=morphology.disk(fill_radius)
 
     for ii in range(labels.max()):
@@ -1386,7 +1515,8 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         thres_low= 1, min_area= 50*1e4, max_area= 1800*1e4, max_isoq= 0.6,
         max_isoq_hard= 0.7, min_lat= 20, max_lat= 80, min_length= 2000,
         min_length_hard= 1500, rdp_thres= 2, fill_radius= None,
-        single_dome= False, max_ph_ratio= 0.6, edge_eps= 0.4,
+        single_dome=False, max_ph_ratio= 0.6, edge_eps= 0.4,
+        zonal_cyclic=False,
         verbose=True):
 
 
@@ -1477,7 +1607,7 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         min_length=min_length, min_length_hard=min_length_hard,
         rdp_thres=rdp_thres, fill_radius=fill_radius,
         single_dome=single_dome, max_ph_ratio=max_ph_ratio,
-        edge_eps=edge_eps,
+        edge_eps=edge_eps, zonal_cyclic=zonal_cyclic,
         verbose=verbose)
     next(finder_gen)  # prime the generator to prepare metadata
 
@@ -1521,7 +1651,8 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         thres_low= 1, min_area= 50*1e4, max_area= 1800*1e4, max_isoq= 0.6,
         max_isoq_hard= 0.7, min_lat= 20, max_lat= 80, min_length= 2000,
         min_length_hard= 1500, rdp_thres= 2, fill_radius= None,
-        single_dome= False, max_ph_ratio= 0.6, edge_eps= 0.4,
+        single_dome=False, max_ph_ratio= 0.6, edge_eps= 0.4,
+        zonal_cyclic=False,
         verbose=True):
     '''Find ARs from THR results, generator version
 
@@ -1640,7 +1771,8 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         'fill_radius': fill_radius,
         'single_dome': single_dome,
         'max_ph_ratio': max_ph_ratio,
-        'edge_eps': edge_eps
+        'edge_eps': edge_eps,
+        'zonal_cyclic': zonal_cyclic,
         }
 
     yield # this bare yield prepares the generator by advancing it to the 1st yield

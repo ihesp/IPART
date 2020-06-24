@@ -48,15 +48,15 @@ from __future__ import print_function
 #--------------Globals------------------------------------------
 
 #-----------IVT data----------------------
-IVT_FILE='/home/guangzhi/datasets/erai_qflux/ivt_m1-60_6_2007_cln-cea-proj.nc'
+IVT_FILE='/home/guangzhi/datasets/artmip_merra_added_time/ivt_s_3_1980_merra2-NH.xml'
 VARIN='ivt'          # data id in nc file
 
-LAT1=0; LAT2=90      # degree, latitude domain
+LAT1=-90; LAT2=0      # degree, latitude domain
 
 #-------Structuring element for erosion (E)-------
-KERNEL=[16,6,6]   # half length of time (time steps), and half length of spatial (number of grids)
+KERNEL=[32,9,9]   # half length of time (time steps), and half length of spatial (number of grids)
 
-SHIFT_LON=80  # shift longitudinally to center Pacific and Altantic
+SHIFT_LON=0  # shift longitudinally to center Pacific and Altantic
 
 # Orographic file, providing surface terrain elevation info.
 # This is optional, can be used to enhance the continent-penetration
@@ -68,7 +68,7 @@ HIGH_TERRAIN=600 # surface height (in m) above which land surface is defined
                  # landfalling ARs.
 
 #------------------Output folder------------------
-OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/'
+OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_added_time/THR'
 
 
 
@@ -92,20 +92,29 @@ if __name__=='__main__':
         os.makedirs(OUTPUTDIR)
 
     #-----------Read in data----------------------
-    var=funcs.readVar(IVT_FILE, 'ivt')
+    #var=funcs.readVar(IVT_FILE, 'ivt')
+    print('\n### <compute_thr_singlefile>: Read in file:\n',IVT_FILE)
+    fin=cdms.open(IVT_FILE,'r')
+    var=fin('IVT', time=slice(0,480))
+    fin.close()
 
     #--------------------Read in orographic data--------------------
-    oro=funcs.readVar(ORO_FILE, 'oro')
+    #oro=funcs.readVar(ORO_FILE, 'oro')
+    oro=None
 
     #-----------------Shift longitude-----------------
     var=var(latitude=(LAT1, LAT2))
-    var=var(longitude=(SHIFT_LON,SHIFT_LON+360))
-    oro=oro(latitude=(LAT1, LAT2))
-    oro=oro(longitude=(SHIFT_LON,SHIFT_LON+360))(squeeze=1)
+    #var=var(longitude=(SHIFT_LON,SHIFT_LON+360))
+    #oro=oro(latitude=(LAT1, LAT2))
+    #oro=oro(longitude=(SHIFT_LON,SHIFT_LON+360))(squeeze=1)
 
     #----------------------Do THR----------------------
-    ivt, ivtrec, ivtano=thr.THR(var, KERNEL, oro=oro,
+    #ivt, ivtrec, ivtano=thr.THR(var, KERNEL, oro=oro,
+    ivt, ivtrec, ivtano=thr.THRCyclicLongitude(var, KERNEL, oro=oro,
             high_terrain=HIGH_TERRAIN)
+    #ivt2, ivtrec2, ivtano2=thr.THR(var, KERNEL, oro=oro,
+            #high_terrain=HIGH_TERRAIN)
+    #__import__('pdb').set_trace()
 
     #--------Save------------------------------------
     fname=os.path.split(IVT_FILE)[1]

@@ -91,27 +91,29 @@ from __future__ import print_function
 #######################################################################
 
 #--------------------Time range--------------------
-YEAR=2007
-TIME_START='%d-01-01 00:00:00' %YEAR
-TIME_END='%d-01-05 18:00:00' %YEAR
+YEAR=1980
+TIME_START='%d-01-05 00:00:00' %YEAR
+TIME_END='%d-01-20 18:00:00' %YEAR
 
 #-----------u-qflux----------------------
-SOURCEDIR1='/home/guangzhi/datasets/erai_qflux/'
-UQ_FILE_NAME='uflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
-UQ_VAR='uflux'
+#SOURCEDIR1='/home/guangzhi/datasets/erai_qflux/'
+UQ_FILE_NAME='/home/guangzhi/datasets/artmip_merra_added_time/ivt_s_3_1980_merra2-NH.xml'
+#UQ_FILE_NAME='uflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
+UQ_VAR='uIVT'
 
 #-----------v-qflux----------------------
-SOURCEDIR2='/home/guangzhi/datasets/erai_qflux'
-VQ_FILE_NAME='vflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
-VQ_VAR='vflux'
+#SOURCEDIR2='/home/guangzhi/datasets/erai_qflux'
+#VQ_FILE_NAME='vflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
+VQ_FILE_NAME=UQ_FILE_NAME
+VQ_VAR='vIVT'
 
 #-----------------ivt reconstruction and anomalies-----------------
-SOURCEDIR3='/home/guangzhi/datasets/erai/ERAI_AR_THR/'
-IVT_FILE_NAME='ivt_m1-60_6_%d_cln-cea-proj-THR-kernel-t16-s6.nc' %YEAR
+SOURCEDIR3='/home/guangzhi/datasets/artmip_merra_added_time/'
+IVT_FILE_NAME='ivt_s_3_%d_merra2-NH-THR-kernel-t32-s9.nc' %YEAR
 
 
 #------------------Output folder------------------
-OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/%d/' %YEAR
+OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_added_time'
 LABEL_FILE_OUT_NAME='ar_s_6_%d_label-angle-flux.nc' %YEAR
 RECORD_FILE_OUT_NAME='ar_records_%d.csv' %YEAR
 
@@ -119,8 +121,8 @@ RECORD_FILE_OUT_NAME='ar_records_%d.csv' %YEAR
 
 PLOT=True          # create maps of found ARs or not
 
-LAT1=0; LAT2=90      # degree, latitude domain
-SHIFT_LON=80          # degree, shift left bound to longitude.
+LAT1=-90; LAT2=0      # degree, latitude domain
+SHIFT_LON=0          # degree, shift left bound to longitude.
 
 PARAM_DICT={
     # kg/m/s, define AR candidates as regions >= than this anomalous ivt.
@@ -134,9 +136,9 @@ PARAM_DICT={
     # float, isoperimetric quotient. ARs larger than this is discarded.
     'max_isoq_hard': 0.7,
     # degree, exclude systems whose centroids are lower than this latitude.
-    'min_lat': 20,
+    'min_lat': -80,
     # degree, exclude systems whose centroids are higher than this latitude.
-    'max_lat': 80,
+    'max_lat': -20,
     # km, ARs shorter than this length is treated as relaxed.
     'min_length': 2000,
     # km, ARs shorter than this length is discarded.
@@ -152,7 +154,8 @@ PARAM_DICT={
     'max_ph_ratio': 0.6,
     # minimal proportion of flux component in a direction to total flux to
     # allow edge building in that direction
-    'edge_eps': 0.4
+    'edge_eps': 0.4,
+    'zonal_cyclic': True,
     }
 
 
@@ -176,24 +179,24 @@ from ipart.AR_detector import plotAR, findARs
 if __name__=='__main__':
 
     #-----------Read in flux data----------------------
-    file_in_name=UQ_FILE_NAME
-    abpath_in=os.path.join(SOURCEDIR1,file_in_name)
-    qu=funcs.readVar(abpath_in, UQ_VAR)
+    #file_in_name=UQ_FILE_NAME
+    #abpath_in=os.path.join(SOURCEDIR1,file_in_name)
+    qu=funcs.readVar(UQ_FILE_NAME, UQ_VAR)
 
-    file_in_name=VQ_FILE_NAME
-    abpath_in=os.path.join(SOURCEDIR2,file_in_name)
-    qv=funcs.readVar(abpath_in, VQ_VAR)
+    #file_in_name=VQ_FILE_NAME
+    #abpath_in=os.path.join(SOURCEDIR2,file_in_name)
+    qv=funcs.readVar(VQ_FILE_NAME, VQ_VAR)
 
     #-----------------Shift longitude-----------------
-    qu=qu(longitude=(SHIFT_LON,SHIFT_LON+360))
-    qv=qv(longitude=(SHIFT_LON,SHIFT_LON+360))
+    #qu=qu(longitude=(SHIFT_LON,SHIFT_LON+360))
+    #qv=qv(longitude=(SHIFT_LON,SHIFT_LON+360))
 
     #-------------------Read in ivt and THR results-------------------
     file_in_name=IVT_FILE_NAME
     abpath_in=os.path.join(SOURCEDIR3,file_in_name)
     print('\n### <detect_ARs>: Read in file:\n',abpath_in)
     fin=cdms.open(abpath_in,'r')
-    ivt=fin('ivt')
+    ivt=fin('IVT')
     ivtrec=fin('ivt_rec')
     ivtano=fin('ivt_ano')
     fin.close()
