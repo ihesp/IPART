@@ -98,7 +98,7 @@ TIME_END='%d-01-20 18:00:00' %YEAR
 #-----------u-qflux----------------------
 #SOURCEDIR1='/home/guangzhi/datasets/erai_qflux/'
 #UQ_FILE_NAME='uflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
-UQ_FILE_NAME='/home/guangzhi/datasets/artmip_merra_added_time/ivt_s_3_1980_merra2-NH.xml'
+UQ_FILE_NAME='/home/guangzhi/datasets/artmip_merra_added_time/ivt_s_3_1980_merra2-SH.xml'
 #UQ_VAR='uflux'
 UQ_VAR='uIVT'
 
@@ -131,6 +131,8 @@ SHIFT_LON=0          # degree, shift left bound to longitude.
 
 PARAM_DICT={
     # kg/m/s, define AR candidates as regions >= than this anomalous ivt.
+    # If None is given, compute a threshold based on anomalous ivt data. See
+    # the docstring of ipart.AR_detector.determineThresLow() for details.
     'thres_low' : 1,
     # km^2, drop AR candidates smaller than this area.
     'min_area': 50*1e4,
@@ -141,9 +143,13 @@ PARAM_DICT={
     # float, isoperimetric quotient. ARs larger than this is discarded.
     'max_isoq_hard': 0.7,
     # degree, exclude systems whose centroids are lower than this latitude.
-    'min_lat': -80,
+    # NOTE this is the absolute latitude for both NH and SH. For SH, systems
+    # with centroid latitude north of -20 will be excluded.
+    'min_lat': 20,
     # degree, exclude systems whose centroids are higher than this latitude.
-    'max_lat': -20,
+    # NOTE this is the absolute latitude for both NH and SH. For SH, systems
+    # with centroid latitude south of -80 will be excluded.
+    'max_lat': 80,
     # km, ARs shorter than this length is treated as relaxed.
     'min_length': 2000,
     # km, ARs shorter than this length is discarded.
@@ -154,12 +160,17 @@ PARAM_DICT={
     'fill_radius': None,
     # do peak partition or not, used to separate systems that are merged
     # together with an outer contour.
-    'single_dome': False,
+    'single_dome': True,
     # max prominence/height ratio of a local peak. Only used when single_dome=True
     'max_ph_ratio': 0.6,
     # minimal proportion of flux component in a direction to total flux to
     # allow edge building in that direction
     'edge_eps': 0.4,
+    # bool, if True, treat the data as zonally cyclic (e.g. entire hemisphere
+    # or global). ARs covering regions across the longitude bounds will be
+    # correctly treated as one. If your data is not zonally cyclic, or a zonal
+    # shift of the data can put the domain of interest to the center, consider
+    # doing the shift and setting this to False, as it will save computations.
     'zonal_cyclic': True,
     }
 

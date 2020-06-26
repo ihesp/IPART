@@ -148,7 +148,17 @@ def cart2Wind(vs, lats, lons):
 
     return u,v
 
+
 def checkCyclic(mask):
+    '''Check binary mask is zonally cyclic or not
+
+    Args:
+        mask (ndarray): 2d binary array, with 1s denoting existance of
+            a feature.
+    Returns:
+        result (bool): True if feature in <mask> is zonally cyclic, False
+            otherwise.
+    '''
 
     left=mask[:,0]
     right=mask[:,-1]
@@ -156,6 +166,7 @@ def checkCyclic(mask):
         return True
     else:
         return False
+
 
 def maskToGraph(mask, quslab, qvslab, costhetas, sinthetas, edge_eps,
         connectivity=2):
@@ -744,13 +755,17 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
 
         # mask contour
         if checkCyclic(maskii):
+            # if mask is zonally cyclic, shift to center
             maskii_roll=np.roll(maskii, maskii.shape[1]//2, axis=1)
-            lonax_roll=np.roll(lonax[:], len(lonax)//2)
-            # NOTE: holes exist in contours across zonal edges
-            contii=funcs.getBinContour(maskii_roll,lonax_roll,latax)
+            contii=funcs.getBinContour(maskii_roll,lonax,latax)
+            # have to shift the longitude coordinates again
             contii=contii.vertices
-            #newx=(contii[:,0] - maskii.shape[1]//2)%maskii.shape[1]
-            #contii[:,0]=newx
+            xx=contii[:,0]
+            xx2=np.zeros(xx.shape)
+            mid_lon=lonax[len(lonax)//2]
+            xx2=np.where(xx<=mid_lon, xx+180, xx2)
+            xx2=np.where(xx>mid_lon, xx-180, xx2)
+            contii[:,0]=xx2
         else:
             contii=funcs.getBinContour(maskii,lonax,latax)
             contii=contii.vertices
@@ -815,6 +830,7 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
             is_relaxedii=True
         if lenii<min_length:
             is_relaxedii=True
+        # NOTE that in SH, qvmean<0 is poleward
         if np.sign(centroidy)*qvmeanii<=0:
             is_relaxedii=True
 
@@ -942,22 +958,39 @@ def save2DF(result_dict):
 
     return result_df
 
-def breakCurveAtEdge(xs, ys, left_bound, right_bound):
 
-    idx=[]
-    new_xs=[]
+def breakCurveAtEdge(xs, ys, left_bound, right_bound):
+    '''Segment curve coordinates at the left, right edges
+
+    Args:
+        xs (ndarray): 1d array of x- coordinates.
+        ys (ndarray): 1d array of y- coordinates.
+        left_bound (float): left most bound of the map domain.
+        right_bound (float): right most bound of the map domain.
+    Returns:
+        new_xs (list): list of 1d arrays, each being a segment of the
+            original input <xs>.
+        new_ys (list): list of 1d arrays, each being a segment of the
+            original input <ys>.
+
+    This function segment a curve's coordinates into a number of segments
+    so that when plotted in a basemap plot, a zonally cyclic curve won't
+    be plotted as jumping straight lines linking the left and right bounds.
+    '''
+
+    idx=[]  # break point indices
+    new_xs=[] # result list for x coordinates segments
     new_ys=[]
     for ii, xii in enumerate(xs[:-1]):
         xii2=xs[ii+1]
-        #if (xii-left_bound)*(xii2-left_bound)<=0 or\
-                #(xii-right_bound)*(xii2-right_bound)<=0:
-        dx=abs(xii2-xii)
+        dx=abs(xii2-xii)  # direct x-length from p_i to p_i+1
         dx2=min(abs(xii-left_bound) + abs(right_bound-xii2),
                 abs(xii-right_bound) + abs(xii2-left_bound))
+        # dx2 is the x-length if going from p_i to an edge then to p_i+1
+        # if dx > dx2, going through the map edge is shorter, then need to
+        # break at here
         if dx>dx2:
             idx.append(ii+1)
-
-    print('\n# <AR_detector>: idx=',idx)
 
     if len(idx)==0:
         new_xs.append(xs)
@@ -971,7 +1004,6 @@ def breakCurveAtEdge(xs, ys, left_bound, right_bound):
             new_ys.append(ys[i1:i2])
 
     return new_xs, new_ys
-
 
 
 def plotAR(ardf, ax, bmap):
@@ -1217,7 +1249,7 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
                                           cos=dx/sqrt(dx^2+dy^2).
         sinthetas (cdms.TransientVariable): (n * m) 2D slab of grid cell shape:
                                           sin=dy/sqrt(dx^2+dy^2).
-        param_dict (dict): parameter dict defined in Global preamble.
+        param_dict (dict): parameter dict. See findARs() for details.
 
     Returns:
         axes (list): list of AR axis coordinates. Each coordinate is defined
@@ -1239,6 +1271,7 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
 
     #--------------------Find axes--------------------
     if zonal_cyclic:
+        # prepare zonally shifted copies for later use
         quslab_roll=np.roll(quslab, quslab.shape[1]//2, axis=1)
         qvslab_roll=np.roll(qvslab, qvslab.shape[1]//2, axis=1)
         sinthetas_roll=np.roll(sinthetas, sinthetas.shape[1]//2, axis=1)
@@ -1250,6 +1283,7 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
         if zonal_cyclic and checkCyclic(maskii):
             maskii=np.roll(maskii, maskii.shape[1]//2, axis=1)
             if checkCyclic(maskii):
+                __import__('pdb').set_trace()
                 raise Exception("WTF")
             rollii=True
             quii=quslab_roll
@@ -1270,6 +1304,7 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
         axisarrii,axismaskii=getARAxis(gii,quii,qvii,maskii)
 
         if rollii:
+            # shift back
             axismaskii=np.roll(axismaskii, -axismaskii.shape[1]//2, axis=1)
             newx=(axisarrii[:,1] - axismaskii.shape[1]//2)%axismaskii.shape[1]
             axisarrii[:,1]=newx
@@ -1345,13 +1380,29 @@ def prepareMeta(lats, lons, times, ntime, nlat, nlon,
 
 
 def cyclicLabel(mask, connectivity=1, iszonalcyclic=False):
+    '''Label connected region, zonally cyclic version
+
+    Args:
+        mask (ndarray): 2d binary mask with 1s denoting feature regions.
+    Keyword Args:
+        connectivity (int): 1 or 2 connectivity. 2 probaby won't work
+            for zonally cyclic labelling.
+        iszonalcyclic (bool): doing zonally cyclic labelling or not.
+            If False, call skimage.measure.label().
+            If True, call skimage.measure.label() for initial labelling, then
+            shift the map zonally by half the zonal length, do another
+            measure.label() to find zonally linked regions. Then use this
+            to update the original labels.
+    '''
 
     if not iszonalcyclic:
         result=measure.label(mask, connectivity=connectivity)
     else:
         label1=measure.label(mask, connectivity=connectivity)
+        # do another labelling with rolled mask
         mask2=np.roll(mask, mask.shape[1]//2, axis=1)
         label2=measure.label(mask2, connectivity=connectivity)
+        # roll back
         label2=np.roll(label2, -mask.shape[1]//2, axis=1)
 
         left=label1[:, 0]
@@ -1359,6 +1410,7 @@ def cyclicLabel(mask, connectivity=1, iszonalcyclic=False):
         left2=label2[:, 0]
         right2=label2[:, -1]
 
+        # find connected edges, and give them the same label
         idx=np.where((left2+right2>0) & (left2==right2))[0]
         result=label1
         for ii in idx:
@@ -1366,7 +1418,7 @@ def cyclicLabel(mask, connectivity=1, iszonalcyclic=False):
             left=result[:, 0]
             right=result[:, -1]
 
-        # re-assign labels so that there is not gap
+        # re-assign labels so that there is not gap in label numbers
         uni=list(np.unique(result))
         uni.remove(0)
         result2=np.zeros(result.shape)
@@ -1379,6 +1431,44 @@ def cyclicLabel(mask, connectivity=1, iszonalcyclic=False):
     return result
 
 
+def determineThresLow(anoslab):
+    '''Determine the threshold for anomalous IVT field, experimental
+
+    Args:
+        anoslab (cdms.TransientVariable): (n * m) 2D anomalous IVT slab, in kg/m/s.
+    Returns:
+        result (float): determined lower threshold.
+
+    Method of determining the threshold:
+        1. make a loop through an array of thresholds from 1 to the 99th
+           percentile
+        2. at each level, record the number of pixels > threshold
+        3. after looping, pixel number counts will have a curve with a
+           lower-left elbow. Compute the product of number counts and
+           thresholds P. P will have a peak value around the elbow.
+        4. choose the 1st time P reaches the 90% of max(P), and pick
+           the corresponding threshold as result.
+
+    Largely empirical, but seems to work good on MERRA2 IVT results.
+    '''
+
+    maxthres=np.percentile(anoslab, 99)
+    thres=np.arange(1, maxthres, 3)
+    areas=[]
+    aa=[]
+    for tii in thres:
+        maskii=np.where(anoslab>tii,1,0)
+        areas.append(maskii.sum())
+
+    areas=np.array(areas)
+    aa=np.array(aa)
+    score=thres*areas
+    max_score=np.max(score)
+    idx=np.where(score>=max_score*0.8)[0]
+    idx=np.min(idx)
+    result=thres[idx]
+
+    return result
 
 
 def _findARs(anoslab, areas, param_dict):
@@ -1403,8 +1493,8 @@ def _findARs(anoslab, areas, param_dict):
     thres_low=param_dict['thres_low']
     min_area=param_dict['min_area']
     max_area=param_dict['max_area']
-    min_lat=param_dict['min_lat']
-    max_lat=param_dict['max_lat']
+    min_lat=abs(param_dict['min_lat'])
+    max_lat=abs(param_dict['max_lat'])
     single_dome=param_dict['single_dome']
     max_ph_ratio=param_dict['max_ph_ratio']
     max_isoq_hard=param_dict['max_isoq_hard']
@@ -1420,6 +1510,9 @@ def _findARs(anoslab, areas, param_dict):
         # trim
         padmask=padmask[slice(pad,-pad), slice(pad,-pad)]
         return padmask
+
+    if thres_low is None:
+        thres_low=determineThresLow(anoslab)
 
     mask0=np.where(anoslab>thres_low,1,0)
     if single_dome:
@@ -1446,15 +1539,37 @@ def _findARs(anoslab, areas, param_dict):
 
             #-------------Skip if latitude too low or too high---------
             latsii=np.where(maskii==1)[0]
-            latmaxii=latax[np.max(latsii)]
-            if latmaxii<min_lat:
-                continue
-            latminii=latax[np.min(latsii)]
-            if latminii>max_lat:
-                continue
+            latsii=np.take(latax, latsii)
+            if np.mean(latsii)>0:
+                # NH
+                if np.max(latsii)<min_lat:
+                    continue
+                if np.min(latsii)>max_lat:
+                    continue
+            else:
+                # SH
+                if -np.min(latsii)<min_lat:
+                    continue
+                if -np.max(latsii)>max_lat:
+                    continue
+
+            if zonal_cyclic and checkCyclic(maskii):
+                maskii=np.roll(maskii, maskii.shape[1]//2, axis=1)
+                if checkCyclic(maskii):
+                    #raise Exception("WTF")
+                    pass
+                rollii=True
+                anoslab_roll=np.roll(anoslab, maskii.shape[1]//2, axis=1)
+                anoslabii=anoslab_roll
+            else:
+                rollii=False
+                anoslabii=anoslab
 
             cropmask,cropidx=cropMask(maskii)
-            maskii2=partPeaks(cropmask,cropidx,anoslab,max_ph_ratio)
+            maskii2=partPeaks(cropmask,cropidx,anoslabii,max_ph_ratio)
+            if rollii:
+                maskii2=np.roll(maskii2, -maskii.shape[1]//2, axis=1)
+
             # should I revert to maskii if the peak separation results in
             # a large area loss?
             mask1=mask1+maskii2
@@ -1478,6 +1593,7 @@ def _findARs(anoslab, areas, param_dict):
         rpii=measure.regionprops(maskii, intensity_image=np.array(anoslab))[0]
         centroidy,centroidx=rpii.weighted_centroid
         centroidy=latax[int(centroidy)]
+        centroidy=np.sign(centroidy)*centroidy
         min_lat_idx=np.argmin(np.abs(latax[:]-min_lat))
 
         if (centroidy<=min_lat and\
@@ -1503,7 +1619,19 @@ def _findARs(anoslab, areas, param_dict):
 
     for ii in range(labels.max()):
         maskii=np.where(labels==ii+1,1,0)
+        if zonal_cyclic and checkCyclic(maskii):
+            maskii=np.roll(maskii, maskii.shape[1]//2, axis=1)
+            if checkCyclic(maskii):
+                #raise Exception("WTF")
+                pass
+            rollii=True
+        else:
+            rollii=False
+
         maskii=paddedClosing(maskii, filldisk, fill_radius)
+        if rollii:
+            maskii=np.roll(maskii, -maskii.shape[1]//2, axis=1)
+
         masks.append(maskii)
         armask=armask+maskii
 
