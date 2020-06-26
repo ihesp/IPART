@@ -67,7 +67,8 @@ class TestDetect(unittest.TestCase):
             'max_ph_ratio': 0.4,
             # minimal proportion of flux component in a direction to total flux to
             # allow edge building in that direction
-            'edge_eps': 0.4
+            'edge_eps': 0.4,
+            'zonal_cyclic': False,
             }
 
     def test_Metadata(self):

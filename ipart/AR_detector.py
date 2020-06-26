@@ -959,52 +959,6 @@ def save2DF(result_dict):
     return result_df
 
 
-def breakCurveAtEdge(xs, ys, left_bound, right_bound):
-    '''Segment curve coordinates at the left, right edges
-
-    Args:
-        xs (ndarray): 1d array of x- coordinates.
-        ys (ndarray): 1d array of y- coordinates.
-        left_bound (float): left most bound of the map domain.
-        right_bound (float): right most bound of the map domain.
-    Returns:
-        new_xs (list): list of 1d arrays, each being a segment of the
-            original input <xs>.
-        new_ys (list): list of 1d arrays, each being a segment of the
-            original input <ys>.
-
-    This function segment a curve's coordinates into a number of segments
-    so that when plotted in a basemap plot, a zonally cyclic curve won't
-    be plotted as jumping straight lines linking the left and right bounds.
-    '''
-
-    idx=[]  # break point indices
-    new_xs=[] # result list for x coordinates segments
-    new_ys=[]
-    for ii, xii in enumerate(xs[:-1]):
-        xii2=xs[ii+1]
-        dx=abs(xii2-xii)  # direct x-length from p_i to p_i+1
-        dx2=min(abs(xii-left_bound) + abs(right_bound-xii2),
-                abs(xii-right_bound) + abs(xii2-left_bound))
-        # dx2 is the x-length if going from p_i to an edge then to p_i+1
-        # if dx > dx2, going through the map edge is shorter, then need to
-        # break at here
-        if dx>dx2:
-            idx.append(ii+1)
-
-    if len(idx)==0:
-        new_xs.append(xs)
-        new_ys.append(ys)
-    else:
-        idx.insert(0,0)
-        idx.append(len(xs))
-
-        for i1, i2 in zip(idx[:-1], idx[1:]):
-            new_xs.append(xs[i1:i2])
-            new_ys.append(ys[i1:i2])
-
-    return new_xs, new_ys
-
 
 def plotAR(ardf, ax, bmap):
     '''Helper function to plot the regions and axes of ARs
@@ -1024,7 +978,8 @@ def plotAR(ardf, ax, bmap):
         px=vv['contour_x']
         py=vv['contour_y']
 
-        px_segs, py_segs=breakCurveAtEdge(px, py, bmap.llcrnrx, bmap.urcrnrx)
+        px_segs, py_segs=funcs.breakCurveAtEdge(px, py, bmap.llcrnrx,
+                bmap.urcrnrx)
 
         for xjj, yjj in zip(px_segs, py_segs):
 
@@ -1037,7 +992,8 @@ def plotAR(ardf, ax, bmap):
         px=vv['axis_x']
         py=vv['axis_y']
 
-        px_segs, py_segs=breakCurveAtEdge(px, py, bmap.llcrnrx, bmap.urcrnrx)
+        px_segs, py_segs=funcs.breakCurveAtEdge(px, py, bmap.llcrnrx,
+                bmap.urcrnrx)
         for xjj, yjj in zip(px_segs, py_segs):
 
             xjj,yjj=bmap(xjj,yjj)
@@ -1440,13 +1396,13 @@ def determineThresLow(anoslab):
         result (float): determined lower threshold.
 
     Method of determining the threshold:
-        1. make a loop through an array of thresholds from 1 to the 99th
-           percentile
-        2. at each level, record the number of pixels > threshold
+        1. make a loop through an array of thresholds from 1 to the
+        99th percentile of <ivtano>.
+        2. at each level, record the number of pixels > threshold.
         3. after looping, pixel number counts will have a curve with a
            lower-left elbow. Compute the product of number counts and
            thresholds P. P will have a peak value around the elbow.
-        4. choose the 1st time P reaches the 90% of max(P), and pick
+        4. choose the 1st time P reaches the 80% of max(P), and pick
            the corresponding threshold as result.
 
     Largely empirical, but seems to work good on MERRA2 IVT results.
@@ -1646,8 +1602,6 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         single_dome=False, max_ph_ratio= 0.6, edge_eps= 0.4,
         zonal_cyclic=False,
         verbose=True):
-
-
     '''Find ARs from THR results, get all results in one go.
 
     Args:
@@ -1674,8 +1628,18 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
             <ref_time> as start, with a length as the time dimension of <ivt>.
         ref_time (str): reference time point to create dummy time axis, if
             no time stamps are given in <times>.
-        thres_low (float): kg/m/s, define AR candidates as regions
-            >= than this anomalous ivt.
+        thres_low (float or None): kg/m/s, define AR candidates as regions
+            >= this anomalous ivt level. If None is given, compute a
+            threshold based on anomalous ivt data in <ivtano> using an
+            empirical method:
+                1. make a loop through an array of thresholds from 1 to the
+                99th percentile of <ivtano>.
+                2. at each level, record the number of pixels > threshold.
+                3. after looping, pixel number counts will have a curve with a
+                   lower-left elbow. Compute the product of number counts and
+                   thresholds P. P will have a peak value around the elbow.
+                4. choose the 1st time P reaches the 80% of max(P), and pick
+                   the corresponding threshold as result.
         min_area (float): km^2, drop AR candidates smaller than this area.
         max_area (float): km^2, drop AR candidates larger than this area.
         max_isoq (float): isoperimetric quotient. ARs larger than this
@@ -1683,9 +1647,13 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         max_isoq_hard (float): isoperimetric quotient. ARs larger than this
             is discarded.
         min_lat (float): degree, exclude systems whose centroids are lower
-            than this latitude.
+            than this latitude. NOTE this is the absolute latitude for both
+            NH and SH. For SH, systems with centroid latitude north of
+            - min_lat will be excluded.
         max_lat (float): degree, exclude systems whose centroids are higher
-            than this latitude.
+            than this latitude. NOTE this is the absolute latitude for both
+            NH and SH. For SH, systems with centroid latitude south of
+            - max_lat will be excluded.
         min_length (float): km, ARs shorter than this length is treated as
             relaxed.
         min_length_hard (float): km, ARs shorter than this length is discarded.
@@ -1704,6 +1672,12 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
             Only used when single_dome=True
         edge_eps (float): minimal proportion of flux component in a direction
             to total flux to allow edge building in that direction.
+        zonal_cyclic (bool): if True, treat the data as zonally cyclic (e.g.
+            entire hemisphere or global). ARs covering regions across the
+            longitude bounds will be correctly treated as one. If your data
+            is not zonally cyclic, or a zonal shift of the data can put the
+            domain of interest to the center, consider doing the shift and
+            setting this to False, as it will save computations.
 
     Returns:
         time_idx (list): indices of the time dimension when any AR is found.
@@ -1809,8 +1783,18 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
             <ref_time> as start, with a length as the time dimension of <ivt>.
         ref_time (str): reference time point to create dummy time axis, if
             no time stamps are given in <times>.
-        thres_low (float): kg/m/s, define AR candidates as regions
-            >= than this anomalous ivt.
+        thres_low (float or None): kg/m/s, define AR candidates as regions
+            >= this anomalous ivt level. If None is given, compute a
+            threshold based on anomalous ivt data in <ivtano> using an
+            empirical method:
+                1. make a loop through an array of thresholds from 1 to the
+                99th percentile of <ivtano>.
+                2. at each level, record the number of pixels > threshold.
+                3. after looping, pixel number counts will have a curve with a
+                   lower-left elbow. Compute the product of number counts and
+                   thresholds P. P will have a peak value around the elbow.
+                4. choose the 1st time P reaches the 80% of max(P), and pick
+                   the corresponding threshold as result.
         min_area (float): km^2, drop AR candidates smaller than this area.
         max_area (float): km^2, drop AR candidates larger than this area.
         max_isoq (float): isoperimetric quotient. ARs larger than this
@@ -1818,9 +1802,13 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         max_isoq_hard (float): isoperimetric quotient. ARs larger than this
             is discarded.
         min_lat (float): degree, exclude systems whose centroids are lower
-            than this latitude.
+            than this latitude. NOTE this is the absolute latitude for both
+            NH and SH. For SH, systems with centroid latitude north of
+            - min_lat will be excluded.
         max_lat (float): degree, exclude systems whose centroids are higher
-            than this latitude.
+            than this latitude. NOTE this is the absolute latitude for both
+            NH and SH. For SH, systems with centroid latitude south of
+            - max_lat will be excluded.
         min_length (float): km, ARs shorter than this length is treated as
             relaxed.
         min_length_hard (float): km, ARs shorter than this length is discarded.
@@ -1839,6 +1827,12 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
             Only used when single_dome=True
         edge_eps (float): minimal proportion of flux component in a direction
             to total flux to allow edge building in that direction.
+        zonal_cyclic (bool): if True, treat the data as zonally cyclic (e.g.
+            entire hemisphere or global). ARs covering regions across the
+            longitude bounds will be correctly treated as one. If your data
+            is not zonally cyclic, or a zonal shift of the data can put the
+            domain of interest to the center, consider doing the shift and
+            setting this to False, as it will save computations.
 
     Returns:
         ii (int): index of the time dimension when any AR is found.

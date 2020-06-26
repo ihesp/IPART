@@ -102,6 +102,22 @@ Further documentation can be found at [https://ipart.readthedocs.io/en/latest/](
 * scripts: example computation scripts. Can be used as templates to quickly develop your own working scripts.
 
 
+## Changelog
+
+### v3.0
+
+Make algorithms zonally cyclic.
+
+### v2.0
+
+* restructure into a module `ipart`, separate module from scripts.
+* add a `findARsGen()` generator function to yield results at each time point separately.
+
+### v1.0
+
+* initial upload. Can perform AR detection and tracing through time.
+
+
 
 ## Contribution
 

@@ -959,3 +959,51 @@ def getTimeAxis(times, ntime, ref_time='days since 1900-01-01'):
             raise Exception("Failed to convert times to time axis. Pls check your <times> input.")
 
     return result
+
+
+def breakCurveAtEdge(xs, ys, left_bound, right_bound):
+    '''Segment curve coordinates at the left, right edges
+
+    Args:
+        xs (ndarray): 1d array of x- coordinates.
+        ys (ndarray): 1d array of y- coordinates.
+        left_bound (float): left most bound of the map domain.
+        right_bound (float): right most bound of the map domain.
+    Returns:
+        new_xs (list): list of 1d arrays, each being a segment of the
+            original input <xs>.
+        new_ys (list): list of 1d arrays, each being a segment of the
+            original input <ys>.
+
+    This function segment a curve's coordinates into a number of segments
+    so that when plotted in a basemap plot, a zonally cyclic curve won't
+    be plotted as jumping straight lines linking the left and right bounds.
+    '''
+
+    idx=[]  # break point indices
+    new_xs=[] # result list for x coordinates segments
+    new_ys=[]
+    for ii, xii in enumerate(xs[:-1]):
+        xii2=xs[ii+1]
+        dx=abs(xii2-xii)  # direct x-length from p_i to p_i+1
+        dx2=min(abs(xii-left_bound) + abs(right_bound-xii2),
+                abs(xii-right_bound) + abs(xii2-left_bound))
+        # dx2 is the x-length if going from p_i to an edge then to p_i+1
+        # if dx > dx2, going through the map edge is shorter, then need to
+        # break at here
+        if dx>dx2:
+            idx.append(ii+1)
+
+    if len(idx)==0:
+        new_xs.append(xs)
+        new_ys.append(ys)
+    else:
+        idx.insert(0,0)
+        idx.append(len(xs))
+
+        for i1, i2 in zip(idx[:-1], idx[1:]):
+            new_xs.append(xs[i1:i2])
+            new_ys.append(ys[i1:i2])
+
+    return new_xs, new_ys
+

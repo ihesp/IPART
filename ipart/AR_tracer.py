@@ -316,7 +316,7 @@ def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',
         arlist=[arlist,]
 
     bmap=Basemap(projection='cyl',
-            llcrnrlat=10,llcrnrlon=90,
+            llcrnrlat=latax[0],llcrnrlon=lonax[0],
             urcrnrlat=latax[-1],urcrnrlon=lonax[-1],
             ax=ax,fix_aspect=False)
 
@@ -345,27 +345,39 @@ def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',
         if not full:
             axis_y=arii.anchor_lats
             axis_x=arii.anchor_lons
+            #xx,yy=bmap(axis_x,axis_y)
 
-            xx,yy=bmap(axis_x,axis_y)
-            ax.plot(xx,yy,'bo-')
-            x0=xx[0]
-            y0=yy[0]
+            px_segs, py_segs=funcs.breakCurveAtEdge(axis_x, axis_y,
+                    bmap.llcrnrx, bmap.urcrnrx)
+
+            for xjj, yjj in zip(px_segs, py_segs):
+                xjj,yjj=bmap(xjj,yjj)
+                ax.plot(xjj,yjj,'bo-')
+
+            x0,y0=bmap(axis_x[0], axis_y[0])
         else:
             #cmap=plt.cm.RdBu_r
             cmap=plt.cm.gnuplot
             for jj in range(len(arii.data)):
                 axis_yjj=getAnchors(arii.data['axis_y'].iloc[jj])
                 axis_xjj=getAnchors(arii.data['axis_x'].iloc[jj])
-                xx,yy=bmap(axis_xjj,axis_yjj)
+                px_segs, py_segs=funcs.breakCurveAtEdge(axis_xjj, axis_yjj,
+                        bmap.llcrnrx, bmap.urcrnrx)
                 if jj!=len(arii.data)-1:
                     alpha=0.7
                 else:
                     alpha=1
-                    x0=xx[0]
-                    y0=yy[0]
+                    #x0=xx[0]
+                    #y0=yy[0]
+                    x0,y0=bmap(axis_xjj[0], axis_yjj[0])
+                #xx,yy=bmap(axis_xjj,axis_yjj)
                 frac=float(jj)/max(1,(len(arii.data)-1))
-                ax.plot(xx,yy,alpha=alpha,color=cmap(frac),linestyle=linestyle,
-                        marker=marker,markersize=2)
+                for xkk, ykk in zip(px_segs, py_segs):
+                    xkk,ykk=bmap(xkk,ykk)
+                    #ax.plot(xxkk,yykk,'bo-')
+                    ax.plot(xkk,ykk,alpha=alpha,color=cmap(frac),
+                            linestyle=linestyle,
+                            marker=marker,markersize=2)
 
 
         if label is not None:
