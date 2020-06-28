@@ -29,13 +29,13 @@ from __future__ import print_function
 
 #--------------Globals------------------------------------------
 RECORD_FILE_IN_NAME='/home/guangzhi/datasets/erai/ERAI_AR_THR/2007/ar_records_2007.csv'
-RECORD_FILE_IN_NAME='/home/guangzhi/datasets/artmip_merra_added_time/ar_records_1980.csv'
-OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_added_time/'
+RECORD_FILE_IN_NAME='/home/guangzhi/datasets/artmip_merra_global/ar_records_1980.csv'
+OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_global/'
 RECORD_FILE_OUT_NAME='ar_tracks_1980.csv'
 
 PLOT=True         # plot track movements or not
 SCHEMATIC=False   # plot schematic or not
-LAT1=-90; LAT2=0; LON1=-180; LON2=180         # domain to plot
+LAT1=-90; LAT2=90; LON1=-180; LON2=180         # domain to plot
 
 # Int, hours, gap allowed to link 2 records. Should be the time resolution of
 # the data.

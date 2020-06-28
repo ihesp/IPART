@@ -49,7 +49,8 @@ from __future__ import print_function
 
 #-----------IVT data----------------------
 IVT_FILE='/home/guangzhi/datasets/artmip_merra_added_time/ivt_s_3_1980_merra2-NH.xml'
-VARIN='ivt'          # data id in nc file
+IVT_FILE='/home/guangzhi/datasets/artmip_merra_global/ivt_s_3_1980_merra2-global.xml'
+VARIN='IVT'          # data id in nc file
 
 LAT1=-90; LAT2=0      # degree, latitude domain
 
@@ -68,7 +69,7 @@ HIGH_TERRAIN=600 # surface height (in m) above which land surface is defined
                  # landfalling ARs.
 
 #------------------Output folder------------------
-OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_added_time/THR'
+OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_global/THR'
 
 
 
@@ -95,7 +96,7 @@ if __name__=='__main__':
     #var=funcs.readVar(IVT_FILE, 'ivt')
     print('\n### <compute_thr_singlefile>: Read in file:\n',IVT_FILE)
     fin=cdms.open(IVT_FILE,'r')
-    var=fin('IVT', time=slice(0,480))
+    var=fin(VARIN, time=slice(0,480))
     fin.close()
 
     #--------------------Read in orographic data--------------------
@@ -103,7 +104,7 @@ if __name__=='__main__':
     oro=None
 
     #-----------------Shift longitude-----------------
-    var=var(latitude=(LAT1, LAT2))
+    #var=var(latitude=(LAT1, LAT2))
     #var=var(longitude=(SHIFT_LON,SHIFT_LON+360))
     #oro=oro(latitude=(LAT1, LAT2))
     #oro=oro(longitude=(SHIFT_LON,SHIFT_LON+360))(squeeze=1)

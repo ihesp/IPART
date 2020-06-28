@@ -534,7 +534,7 @@ def insertCropSlab(shape, cropslab, cropidx, axislist=None):
     return result
 
 
-def partPeaks(cropmask, cropidx, orislab, max_ph_ratio):
+def partPeaksOld(cropmask, cropidx, orislab, max_ph_ratio):
     '''Separate local maxima by topographical prominence
 
     Args:
@@ -657,6 +657,85 @@ def partPeaks(cropmask, cropidx, orislab, max_ph_ratio):
 
     return result
 
+def partPeaks(cropmask, cropidx, orislab, area, min_area, max_ph_ratio,
+        fill_radius):
+    '''Separate local maxima by topographical prominence
+
+    Args:
+        cropmask (ndarray): 2D binary array, defines regions of local maxima.
+        cropidx (tuple): (y, x) coordinate indices, output from cropMask().
+        orislab (ndarray): 2D array, giving magnitude/height/intensity values
+                           defining the topography.
+        max_ph_ratio (float): maximum peak/height ratio. Local peaks with
+                              a peak/height ratio larger than this value is
+                              treated as an independent peak.
+
+    Returns:
+        result (ndarray): 2D binary array, similar as the input <cropmask>
+                          but with connected peaks (if any) separated so that
+                          each connected region (with 1s) denotes an
+                          independent local maximum.
+    '''
+
+    cropslab=applyCropIdx(orislab,cropidx)
+    areaslab=applyCropIdx(area,cropidx)
+    if 0 in cropidx[0] or 0 in cropidx[1] or orislab.shape[0]-1 in\
+            cropidx[0] or orislab.shape[1]-1 in cropidx[1]:
+        include_edge=True
+    else:
+        include_edge=False
+
+    # compute prominences
+    peaks,peakid,peakpro,peakparents=pp2d.getProminence(cropslab*cropmask,
+            10.,
+            include_edge=include_edge,centroid_num_to_center=1,
+            verbose=False)
+
+    #peakheights=(peakpro>0)*cropslab*cropmask
+    #ratios=cropmask*peakpro/peakheights
+
+    # filter local peaks
+    localpeaks=[]
+    xx=np.arange(cropmask.shape[1])
+    yy=np.arange(cropmask.shape[0])
+    for kk,vv in peaks.items():
+        rkk=vv['prominence']/vv['height']
+        if rkk<=max_ph_ratio:
+            continue
+        contkk=vv['contour']
+        maskkk=funcs.getGridsInContour(contkk, xx, yy)
+        areakk=(maskkk*areaslab).sum()
+        if areakk<min_area:
+            continue
+        ykk,xkk=np.where(peakid==vv['id'])
+        ykk=int(ykk)
+        xkk=int(xkk)
+        localpeaks.append((ykk,xkk))
+
+    # take maxima whose prominence/height ratio> max_ph_ratio
+    #localpeaks=np.where(ratios>max_ph_ratio)
+    #localpeaks=zip(localpeaks[0],localpeaks[1])
+
+    if len(localpeaks)==1:
+        mask1=cropmask
+    else:
+        seed=np.zeros(cropmask.shape)
+        for ii, (yii,xii) in enumerate(localpeaks):
+            seed[yii,xii]=ii+1
+
+        mask1=morphology.watershed(-np.array(cropslab), seed,
+                connectivity=2, mask=np.array(cropmask),
+                watershed_line=True)
+        mask1=np.where(mask1>0,1,0)
+        ele=morphology.disk(fill_radius)
+        gap=cropmask-mask1
+        gap2=morphology.dilation(gap, selem=ele)
+        mask1=np.where(mask1-gap2<=0, 0, mask1)
+
+    result=insertCropSlab(orislab.shape,mask1,cropidx)
+
+    return result
+
 
 def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
         mask_list, axis_list, timestr, param_dict):
@@ -702,6 +781,7 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
     '''
 
     max_isoq=param_dict['max_isoq']
+    max_isoq_hard=param_dict['max_isoq_hard']
     min_length=param_dict['min_length']
     min_length_hard=param_dict['min_length_hard']
     rdp_thres=param_dict['rdp_thres']
@@ -750,8 +830,20 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
         if areaii<min_area or lenii<min_length_hard:
             continue
 
+        # skip if end points too close
+        enddist=funcs.greatCircle(latsii[0], lonsii[0], latsii[-1],
+                lonsii[-1])/1e3
+        if enddist/lenii<=0.3:
+            continue
+
         # mean width
         widthii=areaii/lenii # km
+
+        # length/width ratio
+        ratioii=lenii/widthii
+        min_LW=2.
+        if ratioii<min_LW:
+            continue
 
         # mask contour
         if checkCyclic(maskii):
@@ -772,9 +864,8 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
 
         # isoperimetric quotient
         isoquoii=4*np.pi*rpii.area/rpii.perimeter**2
-
-        # length/width ratio
-        ratioii=lenii/widthii
+        #if isoquoii>=max_isoq_hard:
+            #continue
 
         # mean strength
         slabii=MV.masked_where(maskii==0,slab)
@@ -1387,11 +1478,15 @@ def cyclicLabel(mask, connectivity=1, iszonalcyclic=False):
     return result
 
 
-def determineThresLow(anoslab):
+def determineThresLow(anoslab, sill=0.8):
     '''Determine the threshold for anomalous IVT field, experimental
 
     Args:
         anoslab (cdms.TransientVariable): (n * m) 2D anomalous IVT slab, in kg/m/s.
+
+    Keyword Args:
+        sill (float): float in (0, 1). Fraction of max score to define as the
+            1st time the score is regarded as reaching stable level.
     Returns:
         result (float): determined lower threshold.
 
@@ -1420,7 +1515,7 @@ def determineThresLow(anoslab):
     aa=np.array(aa)
     score=thres*areas
     max_score=np.max(score)
-    idx=np.where(score>=max_score*0.8)[0]
+    idx=np.where(score>=max_score*sill)[0]
     idx=np.min(idx)
     result=thres[idx]
 
@@ -1522,7 +1617,8 @@ def _findARs(anoslab, areas, param_dict):
                 anoslabii=anoslab
 
             cropmask,cropidx=cropMask(maskii)
-            maskii2=partPeaks(cropmask,cropidx,anoslabii,max_ph_ratio)
+            maskii2=partPeaks(cropmask,cropidx,anoslabii,areas,min_area,
+                    max_ph_ratio, fill_radius)
             if rollii:
                 maskii2=np.roll(maskii2, -maskii.shape[1]//2, axis=1)
 
@@ -1558,10 +1654,10 @@ def _findARs(anoslab, areas, param_dict):
             continue
 
         # filter by isoperimetric quotient
-        isoquoii=4*np.pi*rpii.area/rpii.perimeter**2
+        #isoquoii=4*np.pi*rpii.area/rpii.perimeter**2
 
-        if isoquoii>=max_isoq_hard:
-            continue
+        #if isoquoii>=max_isoq_hard:
+            #continue
 
         mask1=mask1+maskii
 
@@ -1572,6 +1668,7 @@ def _findARs(anoslab, areas, param_dict):
     #labels=measure.label(mask1,connectivity=2)
     labels=cyclicLabel(mask1, connectivity=2, iszonalcyclic=zonal_cyclic)
     filldisk=morphology.disk(fill_radius)
+    __import__('pdb').set_trace()
 
     for ii in range(labels.max()):
         maskii=np.where(labels==ii+1,1,0)
@@ -1585,6 +1682,12 @@ def _findARs(anoslab, areas, param_dict):
             rollii=False
 
         maskii=paddedClosing(maskii, filldisk, fill_radius)
+
+        rpii=measure.regionprops(maskii)[0]
+        #isoquoii=4*np.pi*rpii.area/rpii.perimeter**2
+        #if isoquoii>=max_isoq_hard:
+            #continue
+
         if rollii:
             maskii=np.roll(maskii, -maskii.shape[1]//2, axis=1)
 
@@ -1597,7 +1700,7 @@ def _findARs(anoslab, areas, param_dict):
 def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         times=None, ref_time='days since 1900-01-01',
         thres_low= 1, min_area= 50*1e4, max_area= 1800*1e4, max_isoq= 0.6,
-        max_isoq_hard= 0.7, min_lat= 20, max_lat= 80, min_length= 2000,
+        max_isoq_hard= 0.75, min_lat= 20, max_lat= 80, min_length= 2000,
         min_length_hard= 1500, rdp_thres= 2, fill_radius= None,
         single_dome=False, max_ph_ratio= 0.6, edge_eps= 0.4,
         zonal_cyclic=False,
@@ -1751,7 +1854,7 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
 def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         times=None, ref_time='days since 1900-01-01',
         thres_low= 1, min_area= 50*1e4, max_area= 1800*1e4, max_isoq= 0.6,
-        max_isoq_hard= 0.7, min_lat= 20, max_lat= 80, min_length= 2000,
+        max_isoq_hard= 0.75, min_lat= 20, max_lat= 80, min_length= 2000,
         min_length_hard= 1500, rdp_thres= 2, fill_radius= None,
         single_dome=False, max_ph_ratio= 0.6, edge_eps= 0.4,
         zonal_cyclic=False,

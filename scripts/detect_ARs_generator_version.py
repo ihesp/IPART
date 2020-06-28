@@ -92,13 +92,13 @@ from __future__ import print_function
 
 #--------------------Time range--------------------
 YEAR=1980
-TIME_START='%d-01-01 00:00:00' %YEAR
+TIME_START='%d-01-05 15:00:00' %YEAR
 TIME_END='%d-01-20 18:00:00' %YEAR
 
 #-----------u-qflux----------------------
 #SOURCEDIR1='/home/guangzhi/datasets/erai_qflux/'
 #UQ_FILE_NAME='uflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
-UQ_FILE_NAME='/home/guangzhi/datasets/artmip_merra_added_time/ivt_s_3_1980_merra2-SH.xml'
+UQ_FILE_NAME='/home/guangzhi/datasets/artmip_merra_global/ivt_s_3_1980_merra2-global.xml'
 #UQ_VAR='uflux'
 UQ_VAR='uIVT'
 
@@ -112,13 +112,13 @@ VQ_VAR='vIVT'
 #-----------------ivt reconstruction and anomalies-----------------
 #SOURCEDIR3='/home/guangzhi/datasets/erai/ERAI_AR_THR/'
 #IVT_FILE_NAME='ivt_m1-60_6_%d_cln-cea-proj-THR-kernel-t16-s6.nc' %YEAR
-SOURCEDIR3='/home/guangzhi/datasets/artmip_merra_added_time/THR'
-IVT_FILE_NAME='ivt_s_3_%d_merra2-NH-THR-kernel-t32-s9.nc' %YEAR
+SOURCEDIR3='/home/guangzhi/datasets/artmip_merra_global/THR'
+IVT_FILE_NAME='ivt_s_3_%d_merra2-global-THR-kernel-t32-s9.nc' %YEAR
 
 
 #------------------Output folder------------------
 #OUTPUTDIR='/home/guangzhi/datasets/erai/ERAI_AR_THR/%d/' %YEAR
-OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_added_time/'
+OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_global_new/'
 LABEL_FILE_OUT_NAME='ar_s_6_%d_label-angle-flux.nc' %YEAR
 RECORD_FILE_OUT_NAME='ar_records_%d.csv' %YEAR
 
@@ -126,7 +126,7 @@ RECORD_FILE_OUT_NAME='ar_records_%d.csv' %YEAR
 
 PLOT=True          # create maps of found ARs or not
 
-LAT1=-90; LAT2=0      # degree, latitude domain
+LAT1=-90; LAT2=90      # degree, latitude domain
 SHIFT_LON=0          # degree, shift left bound to longitude.
 
 PARAM_DICT={
@@ -162,7 +162,7 @@ PARAM_DICT={
     # together with an outer contour.
     'single_dome': True,
     # max prominence/height ratio of a local peak. Only used when single_dome=True
-    'max_ph_ratio': 0.6,
+    'max_ph_ratio': 0.65,
     # minimal proportion of flux component in a direction to total flux to
     # allow edge building in that direction
     'edge_eps': 0.4,
@@ -290,14 +290,16 @@ if __name__=='__main__':
                 slabrec=ivtrec[tidx]
                 slabano=ivtano[tidx]
 
-                plot_vars=[slab,slabrec,slabano]
-                titles=['IVT', 'Reconstruction', 'THR']
+                #plot_vars=[slab,slabrec,slabano]
+                #titles=['IVT', 'Reconstruction', 'THR']
+                plot_vars=[slab,slabano]
+                titles=['IVT', 'THR']
                 iso=plot.Isofill(plot_vars,12,1,1,min_level=0,max_level=800)
 
                 figure=plt.figure(figsize=(12,10),dpi=100)
 
                 for jj in range(len(plot_vars)):
-                    ax=figure.add_subplot(3,1,jj+1)
+                    ax=figure.add_subplot(len(plot_vars),1,jj+1)
                     pobj=plot.plot2(plot_vars[jj],iso,ax,projection='cyl',
                             title='%s %s' %(timett_str, titles[jj]),
                             fix_aspect=False)

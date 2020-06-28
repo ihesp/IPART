@@ -1007,3 +1007,122 @@ def breakCurveAtEdge(xs, ys, left_bound, right_bound):
 
     return new_xs, new_ys
 
+
+#------ Get binary grids inside a contour ------------
+def getGridsInContour(contour,x,y):
+    '''Get binary grids inside a contour
+    <contour>: Nx2 ndarray, (x,y) coordinates of a contour.
+               Or a matplotlib Path obj. If the latter, function can
+               remove holes if exists in the contour.
+    <x>,<y>: 1d array, x and y coordinates of the grid.
+
+    Return <validcoords>: 2d array of shape (len(y), len(x)), binary slab
+                          with 1s inside of <contour> and 0s elsewhere.
+    '''
+    import numpy
+    from matplotlib.path import Path
+
+    #---------------Create a dummy path---------------
+    dummy=Path([[0,0],[1,1]])
+
+    #-----------Check type of input contour-----------
+    if type(contour)==type(dummy):
+        ispath=True
+    else:
+        ispath=False
+        assert numpy.ndim(contour)==2, "<contour> needs to be 2D."
+        assert contour.shape[1]==2, "<contour> needs to be Nx2."
+
+    assert numpy.ndim(x)==1, "<x> needs to be 1D."
+    assert numpy.ndim(y)==1, "<y> needs to be 1D."
+
+    if ispath:
+        cxy=contour.vertices
+    else:
+        cxy=contour
+
+    #--------Get a bounding box around contour--------
+    xmin,ymin=numpy.min(cxy,axis=0)
+    xmax,ymax=numpy.max(cxy,axis=0)
+
+    xmin_idx=findIndex(xmin,x) or 0
+    ymin_idx=findIndex(ymin,y) or 0
+    xmax_idx=findIndex(xmax,x) or len(x)-1
+    ymax_idx=findIndex(ymax,y) or len(y)-1
+
+    xmin_idx=max(0,xmin_idx-3) # enlarge a bit
+    ymin_idx=max(0,ymin_idx-3) # enlarge a bit
+    xmax_idx=min(len(x)-1,xmax_idx+3) # enlarge a bit
+    ymax_idx=min(len(y)-1,ymax_idx+3) # enlarge a bit
+
+    X2,Y2=numpy.meshgrid(x[xmin_idx:xmax_idx],y[ymin_idx:ymax_idx])
+    coords=numpy.array(zip(X2.flat, Y2.flat))
+
+    #------Create a path from vertices------
+    if ispath:
+        path=contour
+    else:
+        path=Path(contour)
+    validcoords=path.contains_points(coords)
+    validcoords=numpy.reshape(validcoords,X2.shape).astype('int')
+
+    #-------------------Subtract holes-------------------
+    if ispath:
+        segs=contour.to_polygons()
+        if len(segs)>1:
+            areas=[polygonArea(sii[:,0],sii[:,1]) for sii in segs]
+            winner_id=numpy.argmax(areas)
+
+            for ii in range(len(segs)):
+                if ii!=winner_id:
+                    contii=Path(segs[ii])
+                    holeii=contii.contains_points(coords)
+                    holeii=numpy.reshape(holeii,X2.shape).astype('int')
+                    validcoords=validcoords-holeii
+
+    #------------------Paste box back------------------
+    mask=numpy.zeros([len(y),len(x)])
+    mask[ymin_idx:ymax_idx,xmin_idx:xmax_idx]=validcoords
+
+    return mask
+
+def polygonArea(x,y):
+    import numpy as np
+
+    '''
+    def isClosed(xs,ys):
+        if np.alltrue([np.allclose(xs[0],xs[-1]),\
+            np.allclose(ys[0],ys[-1]),xs.ptp(),ys.ptp()]):
+            return True
+        else:
+            return False
+
+    if not isClosed(x,y):
+        # here is a minor issue: isclosed() on lat/lon can be closed,
+        # but after projection, unclosed. Happens to spurious small
+        # contours usually a triangle. just return 0.
+        return 0
+    area=np.sum(y[:-1]*np.diff(x)-x[:-1]*np.diff(y))
+    return np.abs(0.5*area)
+    '''
+    return np.abs(signedArea(x, y))
+
+def signedArea(x, y):
+    import numpy as np
+
+    x=np.asarray(x)
+    y=np.asarray(y)
+    def isClosed(xs,ys):
+        if np.alltrue([np.allclose(xs[0],xs[-1]),\
+            np.allclose(ys[0],ys[-1]),xs.ptp(),ys.ptp()]):
+            return True
+        else:
+            return False
+
+    if not isClosed(x, y):
+        x=np.r_[x, x[0]]
+        y=np.r_[y, y[0]]
+
+    area = np.sum(-y[:-1] * np.diff(x) + x[:-1] * np.diff(y)) * 0.5
+
+    return area

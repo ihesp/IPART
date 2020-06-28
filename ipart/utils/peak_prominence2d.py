@@ -393,8 +393,8 @@ def getProminence(var,step,lats=None,lons=None,min_depth=None,
                         for mm in match_list:
                             areamm=peaks[mm][-1].area
                             if areamm<min_area:
-                                print(match_list)
-                                print('del by area',mm)
+                                #print(match_list)
+                                #print('del by area',mm)
                                 del peaks[mm]
                                 del prominence[mm]
                                 if mm in parents:
