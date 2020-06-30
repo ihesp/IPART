@@ -15,7 +15,8 @@ An AR occurrence at a given time point is defined using these following rules:
 2. The centroid (weighted by IVT values of the grid cells) of the region is north of :math:`20 ^{\circ} N`,
    and south of :math:`80 ^{\circ}`, i.e. we are only interested in mid-latitude systems.
 3. The region's area has to be within :math:`50 - 1800 \times 10^4 km^2`.
-4. After the computation of this AR candidates axis (see :ref:`compute_axis`) and the effective width (defined as area/length ratio), the length has to be :math:`\ge\, 1500 km`, and length/width ratio has to be :math:`\ge \,2`.
+4. The region's `isoperimeteric quotient <https://en.wikipedia.org/wiki/Isoperimetric_inequality>`_ :math:`q = \frac{4 \pi A}{L^2} \ge 0.6`. This is to filter out circular features like tropical cyclones.
+5. After the computation of this AR candidates axis (see :ref:`compute_axis`) and the effective width (defined as area/length ratio), the length has to be :math:`\ge\, 1500 km`, and length/width ratio has to be :math:`\ge \,2`.
 
 
 .. _detect_params:
@@ -48,8 +49,11 @@ Additional inputs:
             # km^2, drop AR candidates larger than this area.
             'max_area': 1800*1e4,
 
-            # float, min length/width ratio.
-            'min_LW': 2,
+            # float, isoperimetric quotient. ARs larger than this (more circular in shape) is treated as relaxed.
+            'max_isoq': 0.6,
+
+            # float, isoperimetric quotient. ARs larger than this is discarded.
+            'max_isoq_hard': 0.7,
 
             # degree, exclude systems whose centroids are lower than this latitude.
             'min_lat': 20,
@@ -136,6 +140,7 @@ The rows of ``ardf`` are different AR records, the columns of ``ardf`` are liste
 * ``area``         : float, area of the AR in :math:`km^2`.
 * ``length``       : float, length of the AR in :math:`km`.
 * ``width``        : float, effective width in :math:`km`, as area/length.
+* ``iso_quotient`` : float, isoperimeteric quotient.
 * ``LW_ratio``     : float, length/width ratio.
 * ``strength``     : float, spatially averaged IVT value within the AR region, in :math:`kg/m/s`.
 * ``strength_ano`` : float, spatially averaged anomalous IVT value within the AR region, in :math:`kg/m/s`.
