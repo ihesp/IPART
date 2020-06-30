@@ -49,7 +49,8 @@ class TestDetect(unittest.TestCase):
             # float, isoperimetric quotient. ARs larger than this (more circular in shape) is treated as relaxed.
             'max_isoq': 0.6,
             # float, isoperimetric quotient. ARs larger than this is discarded.
-            'max_isoq_hard': 0.7,
+            #'max_isoq_hard': 0.7,
+            'min_LW': 2,
             # degree, exclude systems whose centroids are lower than this latitude.
             'min_lat': 20,
             # degree, exclude systems whose centroids are higher than this latitude.
@@ -103,9 +104,9 @@ class TestDetect(unittest.TestCase):
                 self.ivt, self.ivtrec, self.ivtano, self.uflux, self.vflux,
                 self.latax, self.lonax, self.timeax, **self.param_dict)
 
-        self.assertEqual(len(result_df), 52, "Wrong number of ARs found.")
+        self.assertEqual(len(result_df), 51, "Wrong number of ARs found.")
         self.assertTrue(np.all(time_idx==np.arange(25)), msg="time_idx wrong.")
-        self.assertEqual(labels.sum(), 24086, "Labels sum doesn't match.")
+        self.assertEqual(labels.sum(), 24870, "Labels sum doesn't match.")
 
     def test_findARsinner(self):
 

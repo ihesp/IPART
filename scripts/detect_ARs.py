@@ -133,10 +133,8 @@ PARAM_DICT={
     'min_area': 50*1e4,
     # km^2, drop AR candidates larger than this area.
     'max_area': 1800*1e4,
-    # float, isoperimetric quotient. ARs larger than this (more circular in shape) is treated as relaxed.
-    'max_isoq': 0.6,
-    # float, isoperimetric quotient. ARs larger than this is discarded.
-    'max_isoq_hard': 0.7,
+    # float, min length/width ratio.
+    'min_LW': 2,
     # degree, exclude systems whose centroids are lower than this latitude.
     # NOTE this is the absolute latitude for both NH and SH. For SH, systems
     # with centroid latitude north of -20 will be excluded.
@@ -157,7 +155,7 @@ PARAM_DICT={
     # together with an outer contour.
     'single_dome': True,
     # max prominence/height ratio of a local peak. Only used when single_dome=True
-    'max_ph_ratio': 0.6,
+    'max_ph_ratio': 0.7,
     # minimal proportion of flux component in a direction to total flux to
     # allow edge building in that direction
     'edge_eps': 0.4,

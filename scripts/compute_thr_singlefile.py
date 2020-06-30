@@ -48,14 +48,14 @@ from __future__ import print_function
 #--------------Globals------------------------------------------
 
 #-----------IVT data----------------------
-IVT_FILE='/home/guangzhi/datasets/artmip_merra_added_time/ivt_s_3_1980_merra2-NH.xml'
 IVT_FILE='/home/guangzhi/datasets/artmip_merra_global/ivt_s_3_1980_merra2-global.xml'
+IVT_FILE='/home/guangzhi/datasets/artmip_merra_added_time/ivt_s_3_1980_merra2-SH.xml'
 VARIN='IVT'          # data id in nc file
 
 LAT1=-90; LAT2=0      # degree, latitude domain
 
 #-------Structuring element for erosion (E)-------
-KERNEL=[32,9,9]   # half length of time (time steps), and half length of spatial (number of grids)
+KERNEL=[16,9,9]   # half length of time (time steps), and half length of spatial (number of grids)
 
 SHIFT_LON=0  # shift longitudinally to center Pacific and Altantic
 
@@ -69,7 +69,7 @@ HIGH_TERRAIN=600 # surface height (in m) above which land surface is defined
                  # landfalling ARs.
 
 #------------------Output folder------------------
-OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_global/THR'
+OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_added_time/THR'
 
 
 
@@ -104,7 +104,7 @@ if __name__=='__main__':
     oro=None
 
     #-----------------Shift longitude-----------------
-    #var=var(latitude=(LAT1, LAT2))
+    var=var(latitude=(LAT1, LAT2))
     #var=var(longitude=(SHIFT_LON,SHIFT_LON+360))
     #oro=oro(latitude=(LAT1, LAT2))
     #oro=oro(longitude=(SHIFT_LON,SHIFT_LON+360))(squeeze=1)
