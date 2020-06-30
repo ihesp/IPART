@@ -451,7 +451,8 @@ def readCSVRecord(abpath_in):
 
     dtypes={'id': 'int', 'time': 'str',
             'area': np.float64, 'length': np.float64, 'width': np.float64,
-            'iso_quotient': np.float64, 'LW_ratio': np.float64,
+            #'iso_quotient': np.float64,
+            'LW_ratio': np.float64,
             'strength': np.float64, 'strength_ano': np.float64,
             'strength_std': np.float64,
             'mean_angle': np.float64, 'is_relaxed': 'bool'}

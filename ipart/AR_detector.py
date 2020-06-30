@@ -788,7 +788,7 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
                                below for columns.
     '''
 
-    max_isoq=param_dict['max_isoq']
+    #max_isoq=param_dict['max_isoq']
     #max_isoq_hard=param_dict['max_isoq_hard']
     min_length=param_dict['min_length']
     min_length_hard=param_dict['min_length_hard']
@@ -871,7 +871,7 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
             contii=contii.vertices
 
         # isoperimetric quotient
-        isoquoii=4*np.pi*rpii.area/rpii.perimeter**2
+        #isoquoii=4*np.pi*rpii.area/rpii.perimeter**2
         #if isoquoii>=max_isoq_hard:
             #continue
 
@@ -924,8 +924,8 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
 
         # is candidate a strict AR
         is_relaxedii=False
-        if isoquoii>max_isoq:
-            is_relaxedii=True
+        #if isoquoii>max_isoq:
+            #is_relaxedii=True
         if lenii<min_length:
             is_relaxedii=True
         # NOTE that in SH, qvmean<0 is poleward
@@ -950,7 +950,7 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
                 'area': areaii,
                 'length': lenii,
                 'width': widthii,
-                'iso_quotient':isoquoii,
+                #'iso_quotient':isoquoii,
                 'LW_ratio':ratioii,
                 'strength':strengthii,
                 'strength_ano':anostrengthii,
@@ -985,7 +985,9 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
 
     keys=['id', 'time', 'contour_y', 'contour_x', 'centroid_y', 'centroid_x',
             'axis_y', 'axis_x', 'axis_rdp_y', 'axis_rdp_x',
-            'area', 'length', 'width', 'iso_quotient', 'LW_ratio',
+            'area', 'length', 'width',
+            #'iso_quotient',
+            'LW_ratio',
             'strength', 'strength_ano', 'strength_std', 'max_strength',
             'mean_angle', 'is_relaxed', 'qv_mean']
 
@@ -1699,7 +1701,7 @@ def _findARs(anoslab, areas, param_dict):
 
 def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         times=None, ref_time='days since 1900-01-01',
-        thres_low= 1, min_area= 50*1e4, max_area= 1800*1e4, max_isoq= 0.6,
+        thres_low= 1, min_area= 50*1e4, max_area= 1800*1e4,
         min_LW= 2, min_lat= 20, max_lat= 80, min_length= 2000,
         min_length_hard= 1500, rdp_thres= 2, fill_radius= None,
         single_dome=False, max_ph_ratio= 0.6, edge_eps= 0.4,
@@ -1745,8 +1747,6 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
                    the corresponding threshold as result.
         min_area (float): km^2, drop AR candidates smaller than this area.
         max_area (float): km^2, drop AR candidates larger than this area.
-        max_isoq (float): isoperimetric quotient. ARs larger than this
-            (more circular in shape) is treated as relaxed.
         min_LW (float): minimum length/width ratio.
         min_lat (float): degree, exclude systems whose centroids are lower
             than this latitude. NOTE this is the absolute latitude for both
@@ -1806,7 +1806,7 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
 
     finder_gen = findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
             times=times, ref_time=ref_time, thres_low=thres_low,
-        min_area=min_area, max_area=max_area, max_isoq=max_isoq,
+        min_area=min_area, max_area=max_area,
         min_LW=min_LW, min_lat=min_lat, max_lat=max_lat,
         min_length=min_length, min_length_hard=min_length_hard,
         rdp_thres=rdp_thres, fill_radius=fill_radius,
@@ -1852,7 +1852,7 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
 
 def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         times=None, ref_time='days since 1900-01-01',
-        thres_low= 1, min_area= 50*1e4, max_area= 1800*1e4, max_isoq= 0.6,
+        thres_low= 1, min_area= 50*1e4, max_area= 1800*1e4,
         min_LW= 2, min_lat= 20, max_lat= 80, min_length= 2000,
         min_length_hard= 1500, rdp_thres= 2, fill_radius= None,
         single_dome=False, max_ph_ratio= 0.6, edge_eps= 0.4,
@@ -1899,8 +1899,6 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
                    the corresponding threshold as result.
         min_area (float): km^2, drop AR candidates smaller than this area.
         max_area (float): km^2, drop AR candidates larger than this area.
-        max_isoq (float): isoperimetric quotient. ARs larger than this
-            (more circular in shape) is treated as relaxed.
         min_LW (float): minimum length/width ratio.
         min_lat (float): degree, exclude systems whose centroids are lower
             than this latitude. NOTE this is the absolute latitude for both
@@ -1984,7 +1982,7 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         'thres_low' : thres_low,
         'min_area': min_area,
         'max_area': max_area,
-        'max_isoq': max_isoq,
+        #'max_isoq': max_isoq,
         #'max_isoq_hard': max_isoq_hard,
         'min_LW': min_LW,
         'min_lat': min_lat,

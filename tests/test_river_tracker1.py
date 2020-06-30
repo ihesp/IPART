@@ -47,7 +47,7 @@ class TestDetect(unittest.TestCase):
             # km^2, drop AR candidates larger than this area.
             'max_area': 1800*1e4,
             # float, isoperimetric quotient. ARs larger than this (more circular in shape) is treated as relaxed.
-            'max_isoq': 0.6,
+            #'max_isoq': 0.6,
             # float, isoperimetric quotient. ARs larger than this is discarded.
             #'max_isoq_hard': 0.7,
             'min_LW': 2,
