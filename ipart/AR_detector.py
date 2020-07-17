@@ -730,7 +730,7 @@ def partPeaks(cropmask, cropidx, orislab, area, min_area, max_ph_ratio,
                 connectivity=2, mask=np.array(cropmask),
                 watershed_line=True)
         mask1=np.where(mask1>0,1,0)
-        ele=morphology.diamond(fill_radius)
+        ele=morphology.diamond(fill_radius//2)
 
         gap=cropmask-mask1
         op=morphology.opening(mask1, selem=ele)
@@ -1587,6 +1587,7 @@ def _findARs(anoslab, areas, param_dict):
         return masks, armask
 
     #---------------Separate grouped peaks---------------
+    __import__('pdb').set_trace()
     if single_dome:
         #labels=measure.label(mask0,connectivity=2)
         labels=cyclicLabel(mask0,connectivity=2,iszonalcyclic=zonal_cyclic)
