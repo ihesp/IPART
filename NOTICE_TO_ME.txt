@@ -1,0 +1,45 @@
+The netcdf branch is created from dev branch, not from master.
+This is to transit from CDAT to netcdf4.
+When done, merge back to dev.
+
+Functions need change:
+
+* AR_detector.maskToGraph(): doc string.
+* [y?]AR_detector.applyCropIdx()
+* [y?]AR_detector.insertCropSlab()
+* [y?]AR_detector.partPeaks()
+* [y?]AR_detector.getARData()
+* [y?]AR_detector.crossSectionFlux()
+* [y?]AR_detector.prepareMeta()
+* [y?]AR_detector.findARs()
+* [y?]AR_detector.findARsGen()
+
+* [y]thr.THR()
+* [y]thr.THRCyclicLongitude()
+* thr.rotatingTHR()
+
+* [y]utils.funcs.attribute_obj2dict()
+* [y]utils.funcs.attribute_dict2obj()
+* [y]utils.funcs.addExtraAxis()
+* [y]utils.funcs.cat()
+* [y]utils.funcs.interpretAxis()
+* [y]utils.funcs.getMissingMask() ?
+* [d]utils.funcs.getAxis()
+* [y]utils.funcs.increasingLatitude()
+* [y]utils.funcs.dLatitude2()
+* [y]utils.funcs.dLongitude2()
+* utils.funcs.readVar() -> replace with readNC()
+* [y]utils.funcs.getTimeAxis()
+
+* [y]utils.plot.get1stTime()
+* [y?]utils.plot.Plot2D
+* [y?]utils.plot.Plot2Basemap
+
+* [y]scripts/compute_ivt.py
+* [y]scripts/compute_thr_singlefile.py
+* scripts/compute_thr_multifile.py
+* [y]scripts/detect_ARs.py
+* [y[scripts/detect_ARs_generator_version.py
+* scripts/test_data.py
+
+* tests/*

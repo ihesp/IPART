@@ -10,11 +10,11 @@ import numpy as np
 import cdms2 as cdms
 import MV2 as MV
 from skimage import morphology
-from ipart.utils import funcs
+from ipart.utils import funcs2 as funcs
 import recon
 
 
-def THR(ivt, kernel, oro=None, high_terrain=600, verbose=True):
+def THR(ivtvar, kernel, oro=None, high_terrain=600, verbose=True):
     """Perform THR filtering process on 3d data
 
     Args:
@@ -47,8 +47,9 @@ def THR(ivt, kernel, oro=None, high_terrain=600, verbose=True):
             input <ivt> and <ivtrec>.
     """
 
+    ivt=ivtvar.data
     ndim=np.ndim(ivt)
-    ivt=ivt(squeeze=1)
+    ivt=np.squeeze(ivt)
 
     #-------------------3d ellipsoid-------------------
     ele=funcs.get3DEllipse(*kernel)
@@ -78,46 +79,43 @@ def THR(ivt, kernel, oro=None, high_terrain=600, verbose=True):
 
     # perform an extra reconstruction over land
     if oro is not None:
-        oro_rs=MV.where(oro>=high_terrain, 1, 0)
-        oro_rs=funcs.addExtraAxis(oro_rs,axis=0)
+        oro_rs=np.where(oro.data>=high_terrain, 1, 0)
+        #oro_rs=funcs.addExtraAxis(oro_rs,axis=0)
+        oro_rs=oro_rs[None,...]
         oro_rs=np.repeat(oro_rs, len(ivt), axis=0)
 
         ivtrec_oro=morphology.reconstruction(lm*oro_rs, ivt, method='dilation',
                 selem=rec_ele)
-        ivtano=MV.maximum(ivt-ivtrec, (ivt-ivtrec_oro)*oro_rs)
+        ivtano=np.ma.maximum(ivt-ivtrec, (ivt-ivtrec_oro)*oro_rs)
     else:
         ivtano=ivt-ivtrec
 
     ivtrec=ivt-ivtano
 
+    axislist=ivtvar.axislist
+
     if ndim==4:
-        levax=cdms.createAxis([0,])
-        levax.designateLevel()
-        levax.id='z'
-        levax.name='level'
-        levax.units=''
+        #levax=funcs.createAxis('z', np.array([0,]), {'name': 'level',
+            #'long_name': 'level', 'standard_name': 'level',
+            #'units': ''})
+        #levax=ivtvar.axislist[1]
+        #axislist.insert(1, levax)
 
-        ivt=funcs.addExtraAxis(ivt,levax,1)
-        ivtrec=funcs.addExtraAxis(ivtrec,levax,1)
-        ivtano=funcs.addExtraAxis(ivtano,levax,1)
+        ivt=ivt[:,None,...]
+        ivtrec=ivtrec[:,None,...]
+        ivtano=ivtano[:,None,...]
 
-    axislist=ivt.getAxisList()
-    ivtrec.setAxisList(axislist)
-    ivtano.setAxisList(axislist)
+    ivtrec=funcs.NCVAR(ivtrec, 'ivt_rec', axislist, {'name': 'ivt_rec',
+        'long_name': '%s, THR reconstruction' %(getattr(ivt, 'long_name', '')),
+        'standard_name': '%s, THR reconstruction' %(getattr(ivt, 'long_name', '')),
+        'units': getattr(ivt, 'units', '')})
 
-    ivtrec.id='ivt_rec'
-    ivtrec.long_name='%s, THR reconstruction' %(getattr(ivt, 'long_name', ''))
-    ivtrec.standard_name=ivtrec.long_name
-    ivtrec.title=ivtrec.long_name
-    ivtrec.units=ivt.units
+    ivtano=funcs.NCVAR(ivtano, 'ivt_ano', axislist, {'name': 'ivt_ano',
+        'long_name': '%s, THR anomaly' %(getattr(ivt, 'long_name', '')),
+        'standard_name': '%s, THR anomaly' %(getattr(ivt, 'long_name', '')),
+        'units': getattr(ivt, 'units', '')})
 
-    ivtano.id='ivt_ano'
-    ivtano.long_name='%s, THR anomaly' %(getattr(ivt, 'long_name', ''))
-    ivtano.standard_name=ivtano.long_name
-    ivtano.title=ivtano.long_name
-    ivtano.units=ivt.units
-
-    return ivt, ivtrec, ivtano
+    return ivtvar, ivtrec, ivtano
 
 def THRCyclicLongitude(ivt, kernel, oro=None, high_terrain=600, verbose=True):
     """Perform THR filtering process on 3d data
@@ -150,6 +148,8 @@ def THRCyclicLongitude(ivt, kernel, oro=None, high_terrain=600, verbose=True):
             component from the THR process.
         ivtano (TransientVariable): 3D or 4D array, the difference between
             input <ivt> and <ivtrec>.
+
+    NOTE: only minor difference from non-zonally cyclic version. Not worth it.
     """
 
     ndim=np.ndim(ivt)
@@ -225,8 +225,8 @@ def THRCyclicLongitude(ivt, kernel, oro=None, high_terrain=600, verbose=True):
     return ivt, ivtrec, ivtano
 
 
-def rotatingTHR(filelist, varin, selector, kernel, outputdir, oro=None,
-        high_terrain=600, verbose=True):
+def rotatingTHR(filelist, varin, kernel, outputdir, oro=None,
+        selector=None, high_terrain=600, verbose=True):
     '''Compute time filtering on data in different files.
 
     Args:
@@ -273,17 +273,15 @@ def rotatingTHR(filelist, varin, selector, kernel, outputdir, oro=None,
     for ii, fii in enumerate(filelist[:-1]):
 
         if ii==0:
-            var1=funcs.readVar(fii, varin)
+            var1=funcs.readNC(fii, varin)
             var1=var1(selector)
-            #var1=var1(longitude=(SHIFT_LON,SHIFT_LON+360))
         else:
             var1=var2
             del var2
 
         fii2=filelist[ii+1]
-        var2=funcs.readVar(fii2, varin)
+        var2=funcs.readNC(fii2, varin)
         var2=var2(selector)
-        #var2=var2(longitude=(SHIFT_LON,SHIFT_LON+360))
 
         timeidx=funcs.interpretAxis('time',var1)
         if timeidx!=0:
@@ -300,8 +298,10 @@ def rotatingTHR(filelist, varin, selector, kernel, outputdir, oro=None,
 
         # crop end points
         dt=kernel[0]
-        vartmp_rec=vartmp_rec[dt:-dt]
-        vartmp_ano=vartmp_ano[dt:-dt]
+        #vartmp_rec=vartmp_rec[dt:-dt]
+        #vartmp_ano=vartmp_ano[dt:-dt]
+        vartmp_rec=vartmp_rec.sliceIndex(dt, -dt)
+        vartmp_ano=vartmp_ano.sliceIndex(dt, -dt)
 
         if dt<=0:
             raise Exception("dt<=0 not supported yet")
@@ -313,42 +313,57 @@ def rotatingTHR(filelist, varin, selector, kernel, outputdir, oro=None,
 
         if ii==0:
             #----------------------Pad 0s----------------------
-            left_rec=MV.zeros((dt,)+var1.shape[1:])
-            left_rec.mask=True
-            left_ano=MV.zeros((dt,)+var1.shape[1:])
-            left_ano.mask=True
+            #left_rec=np.ma.zeros((dt,)+var1.shape[1:])
+            #left_rec.mask=True
+            left_rec=var1.sliceIndex(0, dt)
+            left_rec.data=left_rec.data*0
+            left_rec.data.mask=True
+            #left_ano=np.ma.zeros((dt,)+var1.shape[1:])
+            #left_ano.mask=True
+            left_ano=var1.sliceIndex(0, dt)
+            left_ano.data=left_ano.data*0
+            left_ano.data.mask=True
         else:
             left_rec=mid_left_rec
             left_ano=mid_left_ano
 
         rec_pad=funcs.cat(left_rec,vartmp_rec,axis=0)
-        rec1=rec_pad[:n1]
+        #rec1=rec_pad[:n1]
+        rec1=rec_pad.sliceIndex(0, n1)
 
         ano_pad=funcs.cat(left_ano,vartmp_ano,axis=0)
-        ano1=ano_pad[:n1]
+        #ano1=ano_pad[:n1]
+        ano1=ano_pad.sliceIndex(0, n1)
 
-        var1=vartmp[:n1]
+        #var1=vartmp[:n1]
+        var1=vartmp.sliceIndex(0, n1)
 
         if verbose:
             print('\n# <rotatingTHR>: Shape of left section after padding:', rec1.shape)
 
-        rec1.setAxisList(var1.getAxisList())
+        #rec1.setAxisList(var1.getAxisList())
         rec1.id=vartmp_rec.id
-        rec1.long_name='%s, THR reconstruction' %(getattr(var1, 'long_name', ''))
-        rec1.standard_name=rec1.long_name
-        rec1.title=rec1.long_name
-        rec1.units=var1.units
+        attdict={'long_name':'%s, THR reconstruction'\
+                %(getattr(var1, 'long_name', ''))}
+        attdict['standard_name']=attdict['long_name']
+        attdict['title']=attdict['long_name']
+        attdict['units']=var1.units
+        rec1.attributes=attdict
 
-        ano1.setAxisList(var1.getAxisList())
+        #ano1.setAxisList(var1.getAxisList())
         ano1.id=vartmp_ano.id
-        ano1.long_name='%s, THR anomaly' %(getattr(var1, 'long_name', ''))
-        ano1.standard_name=ano1.long_name
-        ano1.title=ano1.long_name
-        ano1.units=var1.units
+        attdict={'long_name':'%s, THR anomaly'\
+                %(getattr(var1, 'long_name', ''))}
+        attdict['standard_name']=attdict['long_name']
+        attdict['title']=attdict['long_name']
+        attdict['units']=var1.units
+        ano1.attributes=attdict
 
         # left to pad in next iteration
-        mid_left_rec=vartmp_rec[n1-dt:n1]
-        mid_left_ano=vartmp_ano[n1-dt:n1]
+        #mid_left_rec=vartmp_rec[n1-dt:n1]
+        #mid_left_ano=vartmp_ano[n1-dt:n1]
+        mid_left_rec=vartmp_rec.sliceIndex(n1-dt, n1)
+        mid_left_ano=vartmp_ano.sliceIndex(n1-dt, n1)
 
         #-----------------------Save-----------------------
         fname=os.path.split(fii)[1]
@@ -357,40 +372,63 @@ def rotatingTHR(filelist, varin, selector, kernel, outputdir, oro=None,
 
         abpath_out=os.path.join(outputdir,file_out_name)
         print('\n### <testrotatingfilter>: Saving output to:\n',abpath_out)
+        '''
         fout=cdms.open(abpath_out,'w')
         fout.write(var1,typecode='f')
         fout.write(rec1,typecode='f')
         fout.write(ano1,typecode='f')
         fout.close()
+        '''
+        funcs.saveNC(abpath_out, var1, 'w')
+        funcs.saveNC(abpath_out, rec1, 'a')
+        funcs.saveNC(abpath_out, ano1, 'a')
 
         # save the right section for the last file
         if ii==len(filelist)-2:
-            right=MV.zeros((dt,)+var2.shape[1:])
-            right.mask=True
-            rec2=rec_pad[n1:]
+            #right=MV.zeros((dt,)+var2.shape[1:])
+            #right.mask=True
+            #rec2=rec_pad[n1:]
+            right=var2.sliceIndex(-dt, None)
+            right.data=right.data*0
+            right.data.mask=True
+            rec2=rec_pad.sliceIndex(n1, None)
             rec2=funcs.cat(rec2,right,axis=0)
 
-            ano2=ano_pad[n1:]
+            #ano2=ano_pad[n1:]
+            ano2=ano_pad.sliceIndex(n1, None)
             ano2=funcs.cat(ano2,right,axis=0)
 
-            var2=vartmp[n1:]
+            #var2=vartmp[n1:]
+            var2=vartmp.sliceIndex(n1, None)
 
             if verbose:
                 print('\n# <rotatingTHR>: Shape of last section after padding:', ano2.shape)
 
-            rec2.setAxisList(var2.getAxisList())
+            #rec2.setAxisList(var2.getAxisList())
             rec2.id=vartmp_rec.id
-            rec2.long_name='%s, THR reconstruction' %(getattr(var1, 'long_name', ''))
-            rec2.standard_name=rec2.long_name
-            rec2.title=rec2.long_name
-            rec2.units=var2.units
+            #rec2.long_name='%s, THR reconstruction' %(getattr(var1, 'long_name', ''))
+            #rec2.standard_name=rec2.long_name
+            #rec2.title=rec2.long_name
+            #rec2.units=var2.units
+            attdict={'long_name':'%s, THR reconstruction'\
+                    %(getattr(var1, 'long_name', ''))}
+            attdict['standard_name']=attdict['long_name']
+            attdict['title']=attdict['long_name']
+            attdict['units']=var2.units
+            rec2.attributes=attdict
 
-            ano2.setAxisList(var2.getAxisList())
+            #ano2.setAxisList(var2.getAxisList())
             ano2.id=vartmp_ano.id
-            ano2.long_name='%s, THR anomaly' %(getattr(var2, 'long_name', ''))
-            ano2.standard_name=ano2.long_name
-            ano2.title=ano2.long_name
-            ano2.units=var2.units
+            #ano2.long_name='%s, THR anomaly' %(getattr(var2, 'long_name', ''))
+            #ano2.standard_name=ano2.long_name
+            #ano2.title=ano2.long_name
+            #ano2.units=var2.units
+            attdict={'long_name':'%s, THR anomaly'\
+                    %(getattr(var1, 'long_name', ''))}
+            attdict['standard_name']=attdict['long_name']
+            attdict['title']=attdict['long_name']
+            attdict['units']=var2.units
+            ano2.attributes=attdict
 
             #-----------------------Save-----------------------
             fname=os.path.split(fii2)[1]
@@ -398,11 +436,16 @@ def rotatingTHR(filelist, varin, selector, kernel, outputdir, oro=None,
                     %(os.path.splitext(fname)[0], kernel[0], kernel[1])
             abpath_out=os.path.join(outputdir,file_out_name)
             print('\n### <testrotatingfilter>: Saving output to:\n',abpath_out)
+            '''
             fout=cdms.open(abpath_out,'w')
             fout.write(var2,typecode='f')
             fout.write(rec2,typecode='f')
             fout.write(ano2,typecode='f')
             fout.close()
+            '''
+            funcs.saveNC(abpath_out, var2, 'w')
+            funcs.saveNC(abpath_out, rec2, 'a')
+            funcs.saveNC(abpath_out, ano2, 'a')
 
 
     return
