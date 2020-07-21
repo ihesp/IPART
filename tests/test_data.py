@@ -6,8 +6,9 @@
 from __future__ import print_function
 import os
 import unittest
+from datetime import datetime
 import numpy as np
-from ipart.utils import funcs
+from ipart.utils import funcs2 as funcs
 
 
 class TestDataMetaData(unittest.TestCase):
@@ -19,9 +20,9 @@ class TestDataMetaData(unittest.TestCase):
         fixture_dir=os.path.join(thisdir, 'fixtures')
         abpath_in=os.path.join(fixture_dir,'uflux_vflux_ivt_test.nc')
 
-        uflux=funcs.readVar(abpath_in, 'uflux')
-        vflux=funcs.readVar(abpath_in, 'vflux')
-        ivt=funcs.readVar(abpath_in, 'ivt')
+        uflux=funcs.readNC(abpath_in, 'uflux')
+        vflux=funcs.readNC(abpath_in, 'vflux')
+        ivt=funcs.readNC(abpath_in, 'ivt')
 
         self.uflux=uflux
         self.vflux=vflux
@@ -34,16 +35,18 @@ class TestDataMetaData(unittest.TestCase):
 
     def test_timeAxis(self):
         timeax=self.uflux.getTime()
-        timeax_cp=timeax.asComponentTime()
+        #timeax_cp=timeax.asComponentTime()
         t1=timeax[0]
         t2=timeax[-1]
-        tc1=timeax_cp[0]
-        tc2=timeax_cp[-1]
+        #tc1=timeax_cp[0]
+        #tc2=timeax_cp[-1]
         self.assertEqual(len(timeax), 25, "Lenght of time axis wrong.")
-        self.assertEqual(t1, 30711.0, "Start time point not correct.")
-        self.assertEqual(t2, 30717.0, "End time point not right.")
-        self.assertEqual(str(tc1), '1984-2-1 0:0:0.0', "Start time point not correct.")
-        self.assertEqual(str(tc2), '1984-2-7 0:0:0.0', "End time point not correct.")
+        #self.assertEqual(t1, 30711.0, "Start time point not correct.")
+        #self.assertEqual(t2, 30717.0, "End time point not right.")
+        self.assertEqual(t1, datetime.strptime('1984-2-1', '%Y-%m-%d'),
+                "Start time point not correct.")
+        self.assertEqual(t2, datetime.strptime('1984-2-7', '%Y-%m-%d'),
+                "End time point not correct.")
 
     def test_latAxis(self):
         latax=self.uflux.getLatitude()
@@ -60,11 +63,15 @@ class TestDataMetaData(unittest.TestCase):
         self.assertAlmostEqual(lonax[-1], 259.5, 5, "Last value in longitude wrong.")
 
     def test_dlat(self):
-        dlat=funcs.dLatitude(self.uflux)
+        latax=self.uflux.getLatitude()
+        lonax=self.uflux.getLongitude()
+        dlat=funcs.dLatitude2(latax, lonax)
         self.assertTrue(np.allclose(dlat, 83396.1949, rtol=1e-3), "dLatitude() wrong.")
 
     def test_dlon(self):
-        dlon=funcs.dLongitude(self.uflux)
+        latax=self.uflux.getLatitude()
+        lonax=self.uflux.getLongitude()
+        dlon=funcs.dLongitude2(latax, lonax)
         self.assertAlmostEqual(np.min(dlon), 15197.74930, 2, "dLongitude() wrong.")
         self.assertAlmostEqual(np.max(dlon), 81999.71815, 2, "dLongitude() wrong.")
 

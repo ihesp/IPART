@@ -4,7 +4,6 @@ When done, merge back to dev.
 
 Functions need change:
 
-* AR_detector.maskToGraph(): doc string.
 * [y?]AR_detector.applyCropIdx()
 * [y?]AR_detector.insertCropSlab()
 * [y?]AR_detector.partPeaks()
@@ -16,7 +15,7 @@ Functions need change:
 
 * [y]thr.THR()
 * [y]thr.THRCyclicLongitude()
-* thr.rotatingTHR()
+* [y]thr.rotatingTHR()
 
 * [y]utils.funcs.attribute_obj2dict()
 * [y]utils.funcs.attribute_dict2obj()
@@ -37,9 +36,9 @@ Functions need change:
 
 * [y]scripts/compute_ivt.py
 * [y]scripts/compute_thr_singlefile.py
-* scripts/compute_thr_multifile.py
+* [y]scripts/compute_thr_multifile.py
 * [y]scripts/detect_ARs.py
 * [y[scripts/detect_ARs_generator_version.py
-* scripts/test_data.py
+* [y]scripts/test_data.py
 
-* tests/*
+* [y]tests/*

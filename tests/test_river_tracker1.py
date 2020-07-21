@@ -7,9 +7,9 @@ from __future__ import print_function
 import os
 import numpy as np
 import unittest
-from ipart.utils import funcs
+from ipart.utils import funcs2 as funcs
 from ipart.thr import THR
-from ipart.AR_detector import findARs, _findARs, prepareMeta
+from ipart.AR_detector2 import findARs, _findARs, prepareMeta
 
 
 class TestDetect(unittest.TestCase):
@@ -21,22 +21,20 @@ class TestDetect(unittest.TestCase):
         fixture_dir=os.path.join(thisdir, 'fixtures')
         abpath_in=os.path.join(fixture_dir,'uflux_vflux_ivt_test.nc')
 
-        uflux=funcs.readVar(abpath_in, 'uflux')
-        vflux=funcs.readVar(abpath_in, 'vflux')
-        ivt=funcs.readVar(abpath_in, 'ivt')
+        uflux=funcs.readNC(abpath_in, 'uflux')
+        vflux=funcs.readNC(abpath_in, 'vflux')
+        ivt=funcs.readNC(abpath_in, 'ivt')
 
         _,ivtrec,ivtano=THR(ivt, [3,3,3], verbose=False)
-        self.ivt=ivt(squeeze=1)
-        self.ivtrec=ivtrec(squeeze=1)
-        self.ivtano=ivtano(squeeze=1)
-        self.uflux=uflux(squeeze=1)
-        self.vflux=vflux(squeeze=1)
+        self.ivt=ivt.squeeze()
+        self.ivtrec=ivtrec.squeeze()
+        self.ivtano=ivtano.squeeze()
+        self.uflux=uflux.squeeze()
+        self.vflux=vflux.squeeze()
 
         self.latax=ivt.getLatitude()
         self.lonax=ivt.getLongitude()
-        timeax=ivt.getTime().asComponentTime()
-        timeax=['%d-%02d-%02d %02d:00' %(timett.year,timett.month,\
-                    timett.day,timett.hour) for timett in timeax]
+        timeax=ivt.getTime()
         self.timeax=timeax
 
         self.param_dict={
@@ -101,24 +99,25 @@ class TestDetect(unittest.TestCase):
 
         # find ARs
         time_idx, labels, angles, crossfluxes, result_df = findARs(
-                self.ivt, self.ivtrec, self.ivtano, self.uflux, self.vflux,
-                self.latax, self.lonax, self.timeax, **self.param_dict)
+                self.ivt.data, self.ivtrec.data, self.ivtano.data,
+                self.uflux.data, self.vflux.data, self.latax, self.lonax,
+                self.timeax, **self.param_dict)
 
         self.assertEqual(len(result_df), 51, "Wrong number of ARs found.")
         self.assertTrue(np.all(time_idx==np.arange(25)), msg="time_idx wrong.")
-        self.assertEqual(labels.sum(), 24870, "Labels sum doesn't match.")
+        self.assertEqual(labels.data.sum(), 24870, "Labels sum doesn't match.")
 
     def test_findARsinner(self):
 
         idx=15
-        slabano=self.ivtano[idx](squeeze=1)
+        slabano=self.ivtano.data[idx].squeeze()
 
         timeax, areamap, costhetas, sinthetas, lats, lons, reso = prepareMeta(
                 self.latax, self.lonax, self.timeax,
                 self.ivt.shape[0], self.ivt.shape[1], self.ivt.shape[2])
 
         # find ARs
-        mask_list,armask=_findARs(slabano, areamap, self.param_dict)
+        mask_list,armask=_findARs(slabano, lats, areamap, self.param_dict)
 
         self.assertEqual(len(mask_list), 1, "Wrong number of ARs found.")
         self.assertAlmostEqual(armask.sum(), 276, delta=30,

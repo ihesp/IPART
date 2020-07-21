@@ -8,8 +8,8 @@ Update time: 2020-03-31 10:42:41.
 #--------Import modules-------------------------
 from __future__ import print_function
 import os, sys
-import cdms2 as cdms
-import numpy as np
+from netCDF4 import Dataset
+from ipart.utils import funcs2 as funcs
 
 
 
@@ -28,20 +28,22 @@ if __name__=='__main__':
     print('\n### <test_data>: Read in file:\n',file_path)
 
     try:
-        fin=cdms.open(file_path,'r')
+        fin=Dataset(file_path, 'r')
     except Exception as e:
         raise Exception("Failed to open file.\nException: %s" %str(e))
+    else:
+        fin.close()
 
     try:
-        var=fin[sys.argv[2]]
+        #var=fin.variables[sys.argv[2]]
+        var=funcs.readNC(file_path, sys.argv[2])
     except:
         raise Exception("Variable not found in file. Please verify the variable id is correct.")
     else:
 
         # check rank
         try:
-            ndim=np.ndim(var)
-            if ndim not in [3,4]:
+            if var.ndim not in [3,4]:
                 raise Exception("Data should be in rank 3 or 4, i.e. (time, lat, lon) or (time, level, lat, lon).")
         except:
             raise Exception("Data should be in rank 3 or 4, i.e. (time, lat, lon) or (time, level, lat, lon).")
@@ -53,7 +55,10 @@ if __name__=='__main__':
             print('#'*50)
             print('Variable time axis:')
             print('#'*50)
-            print(timeax.asComponentTime())
+            idx=funcs.interpretAxis('time', var)
+            print(var.axislist[idx].info())
+            print('Time axis values:')
+            print(timeax)
             print()
         except:
             print('Your variable probably does not have proper time axis.')
@@ -64,6 +69,9 @@ if __name__=='__main__':
             print('#'*50)
             print('Variable latitude axis:')
             print('#'*50)
+            idx=funcs.interpretAxis('latitude', var)
+            print(var.axislist[idx].info())
+            print('Latitude axis values:')
             print(latax)
             print()
         except:
@@ -75,6 +83,9 @@ if __name__=='__main__':
             print('#'*50)
             print('Variable longitude axis:')
             print('#'*50)
+            idx=funcs.interpretAxis('longitude', var)
+            print(var.axislist[idx].info())
+            print('Longitude axis values:')
             print(lonax)
             print()
         except:
@@ -86,9 +97,6 @@ if __name__=='__main__':
             print('It is advised to write a "units" attribute to the data.')
         else:
             print('Data have unit of "%s"' %units)
-
-    finally:
-        fin.close()
 
 
 
