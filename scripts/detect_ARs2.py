@@ -34,8 +34,8 @@ and have compatible shapes.
 
 The user also needs to provide time, latitude and longitude axes metadata.
 In this script, these data are read in from the netCDF files using the
-CDAT (aka UVCDAT, CDAT8) package. If you are using some other package, e.g.
-netcdf4, xarray, iris or something else, please adjust the relevant code
+netCDF4 package. If you are using some other package, e.g.
+CDAT, xarray, iris or something else, please adjust the relevant code
 accordingly.
 
 # Domain
@@ -79,11 +79,10 @@ netCDF file.
     The boundary of all detected ARs are also marked out.
 
 Author: guangzhi XU (xugzhi1987@gmail.com)
-Update time: 2020-06-07 21:53:50.
+Update time: 2020-07-22 10:17:58.
 """
 
 from __future__ import print_function
-
 
 
 #######################################################################
@@ -178,7 +177,6 @@ PARAM_DICT={
 import os
 import sys
 import numpy as np
-#import pandas as pd
 import matplotlib.pyplot as plt
 from netCDF4 import num2date
 
@@ -192,68 +190,44 @@ from ipart.AR_detector2 import plotAR, findARs
 if __name__=='__main__':
 
     #-----------Read in flux data----------------------
-    #file_in_name=UQ_FILE_NAME
-    #abpath_in=os.path.join(SOURCEDIR1,file_in_name)
-    #qu=funcs.readVar(UQ_FILE_NAME, UQ_VAR)
-    qu=funcs.readNC(UQ_FILE_NAME, UQ_VAR)
-
-    #file_in_name=VQ_FILE_NAME
-    #abpath_in=os.path.join(SOURCEDIR2,file_in_name)
-    #v=funcs.readVar(VQ_FILE_NAME, VQ_VAR)
-    qv=funcs.readNC(VQ_FILE_NAME, VQ_VAR)
+    quNV=funcs.readNC(UQ_FILE_NAME, UQ_VAR)
+    qvNV=funcs.readNC(VQ_FILE_NAME, VQ_VAR)
 
     #-----------------Shift longitude-----------------
-    #qu=qu(longitude=(SHIFT_LON,SHIFT_LON+360))
-    #qv=qv(longitude=(SHIFT_LON,SHIFT_LON+360))
-    qu=qu.shiftLon(SHIFT_LON)
-    qv=qv.shiftLon(SHIFT_LON)
+    quNV=quNV.shiftLon(SHIFT_LON)
+    qvNV=qvNV.shiftLon(SHIFT_LON)
 
     #-------------------Read in ivt and THR results-------------------
-    file_in_name=IVT_FILE_NAME
-    abpath_in=os.path.join(SOURCEDIR3,file_in_name)
+    abpath_in=os.path.join(SOURCEDIR3, IVT_FILE_NAME)
     print('\n### <detect_ARs>: Read in file:\n',abpath_in)
-    '''
-    fin=cdms.open(abpath_in,'r')
-    ivt=fin('IVT')
-    ivtrec=fin('ivt_rec')
-    ivtano=fin('ivt_ano')
-    fin.close()
-    '''
-    ivt=funcs.readNC(abpath_in, 'ivt')
-    ivtrec=funcs.readNC(abpath_in, 'ivt_rec')
-    ivtano=funcs.readNC(abpath_in, 'ivt_ano')
+    ivtNV=funcs.readNC(abpath_in, 'ivt')
+    ivtrecNV=funcs.readNC(abpath_in, 'ivt_rec')
+    ivtanoNV=funcs.readNC(abpath_in, 'ivt_ano')
 
     #--------------------Slice data--------------------
-    '''
-    qu=qu(time=(TIME_START,TIME_END), latitude=(LAT1, LAT2))(squeeze=1)
-    qv=qv(time=(TIME_START,TIME_END), latitude=(LAT1, LAT2))(squeeze=1)
-    ivt=ivt(time=(TIME_START,TIME_END))(squeeze=1)
-    ivtrec=ivtrec(time=(TIME_START,TIME_END))(squeeze=1)
-    ivtano=ivtano(time=(TIME_START,TIME_END))(squeeze=1)
-    '''
-    qu=qu.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
-    qv=qv.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
-    ivt=ivt.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
-    ivtrec=ivtrec.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
-    ivtano=ivtano.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    quNV=quNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    qvNV=qvNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    ivtNV=ivtNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    ivtrecNV=ivtrecNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    ivtanoNV=ivtanoNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
 
     #--------------------Data shape check--------------------
-    if np.ndim(qu.data)!=3 or np.ndim(qv.data)!=3:
+    if np.ndim(quNV.data)!=3 or np.ndim(qvNV.data)!=3:
         raise Exception("<qu> and <qv> should be 3D data.")
-    if qu.shape!=qv.shape or ivt.shape!=qu.shape:
+    if quNV.shape!=qvNV.shape or ivtNV.shape!=quNV.shape:
         raise Exception("Data shape dismatch: qu.shape=%s; qv.shape=%s; ivt.shape=%s"\
-                %(qu.shape, qv.shape, ivt.shape))
+                %(quNV.shape, qvNV.shape, ivtNV.shape))
 
     #-----------------Get coordinates-----------------
-    latax=qu.getLatitude()
-    lonax=qu.getLongitude()
-    timeax=ivt.getTime()
+    latax=quNV.getLatitude()
+    lonax=quNV.getLongitude()
+    timeax=ivtNV.getTime()
 
     #######################################################################
     #                           Detect ARs                                #
     #######################################################################
-    time_idx, labels, angles, crossfluxes, result_df = findARs(ivt.data,
-            ivtrec.data, ivtano.data, qu.data, qv.data, latax, lonax,
+    time_idx, labels, angles, crossfluxes, result_df = findARs(ivtNV.data,
+            ivtrecNV.data, ivtanoNV.data, quNV.data, qvNV.data, latax, lonax,
             times=timeax, **PARAM_DICT)
 
 
@@ -271,13 +245,6 @@ if __name__=='__main__':
     #-----------------Save label file-----------------
     abpath_out=os.path.join(OUTPUTDIR, LABEL_FILE_OUT_NAME)
     print('\n### <detect_ARs>: Saving output to:\n',abpath_out)
-    '''
-    ncfout=cdms.open(abpath_out,'w')
-    ncfout.write(labels)
-    ncfout.write(angles, typecode='f')
-    ncfout.write(crossfluxes, typecode='f')
-    ncfout.close()
-    '''
     funcs.saveNC(abpath_out, labels, 'w')
     funcs.saveNC(abpath_out, angles, 'a')
     funcs.saveNC(abpath_out, crossfluxes, 'a')
@@ -302,9 +269,9 @@ if __name__=='__main__':
 
             timett_str=str(timett)
 
-            slab=ivt.data[ii]
-            slabrec=ivtrec.data[ii]
-            slabano=ivtano.data[ii]
+            slab=ivtNV.data[ii]
+            slabrec=ivtrecNV.data[ii]
+            slabano=ivtanoNV.data[ii]
             ardf=result_df[result_df.time==timett]
 
             plot_vars=[slab,slabrec,slabano]

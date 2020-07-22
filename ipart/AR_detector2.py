@@ -1,7 +1,7 @@
 '''AR detection functions.
 
 Author: guangzhi XU (xugzhi1987@gmail.com)
-Update time: 2020-06-05 23:21:24.
+Update time: 2020-07-22 09:27:22.
 '''
 
 from __future__ import print_function
@@ -12,12 +12,7 @@ from skimage import measure
 from skimage import morphology
 from scipy import ndimage
 import matplotlib.pyplot as plt
-
 from netCDF4 import date2num
-#import cdms2 as cdms
-#import MV2 as MV
-#from genutil import statistics as stats
-#import cdutil
 
 from ipart.utils import rdp
 from ipart.utils import funcs2 as funcs
@@ -175,11 +170,11 @@ def maskToGraph(mask, quslab, qvslab, costhetas, sinthetas, edge_eps,
 
     Args:
         mask (ndarray): 2D binary map showing the location of an AR with 1s.
-        quslab (cdms.TransientVariable): 2D map of u-flux.
-        qvslab (cdms.TransientVariable): 2D map of v-flux.
-        costhetas (cdms.TransientVariable): (n * m) 2D slab of grid cell shape:
+        quslab (ndarray): 2D map of u-flux.
+        qvslab (ndarray): 2D map of v-flux.
+        costhetas (ndarray): (n * m) 2D slab of grid cell shape:
                                           cos=dx/sqrt(dx^2+dy^2).
-        sinthetas (cdms.TransientVariable): (n * m) 2D slab of grid cell shape:
+        sinthetas (ndarray): (n * m) 2D slab of grid cell shape:
                                           sin=dy/sqrt(dx^2+dy^2).
         edge_eps (float): float in (0,1), minimal proportion of flux component
                           in a direction to total flux to allow edge building
@@ -441,7 +436,6 @@ def cropMask(mask, edge=4):
     Args:
         mask (ndarray): 2D binary map showing the location of an AR with 1s.
         edge (int): number of pixels as edge at 4 sides.
-
     Returns:
         mask[y1:y2,x1:x2] (ndarray): a sub region cut from <mask> surrouding
                                       regions with value=1.
@@ -473,12 +467,12 @@ def applyCropIdx(slab, cropidx):
     '''Cut out a bounding box from given 2d slab given corner indices
 
     Args:
-        slab (ndarray): 2D array to cut a box from.
+        slab (NCVAR or ndarray): 2D array to cut a box from.
         cropidx (tuple): (y, x) coordinate indices, output from cropMask().
 
     Returns:
-        cropslab (ndarray): 2D sub array cut from <slab> using <cropidx> as
-                            boundary indices.
+        cropslab (NCVAR or ndarray): 2D sub array cut from <slab> using
+            <cropidx> as boundary indices.
     '''
 
     if isinstance(slab, funcs.NCVAR):
@@ -735,21 +729,19 @@ def partPeaks(cropmask, cropidx, orislab, area, min_area, max_ph_ratio,
 
 
 def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
-        lats, lons,
-        mask_list, axis_list, timestr, param_dict):
+        lats, lons, mask_list, axis_list, timestr, param_dict):
     '''Fetch AR related data
 
     Args:
-        slab (cdms.TransientVariable): (n * m) 2D array of IVT, in kg/m/s.
-        quslab (cdms.TransientVariable): (n * m) 2D array of u-flux, in kg/m/s.
-        qvslab (cdms.TransientVariable): (n * m) 2D array of v-flux, in kg/m/s.
-        anoslab (cdms.TransientVariable): (n * m) 2D array of IVT anomalies,
-                                        in kg/m/s.
-        quano (cdms.TransientVariable): (n * m) 2D array of u-flux anomalies,
-                                        in kg/m/s.
-        qvano (cdms.TransientVariable): (n * m) 2D array of v-flux anomalies,
-                                        in kg/m/s.
-        areas (cdms.TransientVariable): (n * m) 2D grid cell area slab, in km^2.
+        slab (ndarray): (n * m) 2D array of IVT, in kg/m/s.
+        quslab (ndarray): (n * m) 2D array of u-flux, in kg/m/s.
+        qvslab (ndarray): (n * m) 2D array of v-flux, in kg/m/s.
+        anoslab (ndarray): (n * m) 2D array of IVT anomalies, in kg/m/s.
+        quano (ndarray): (n * m) 2D array of u-flux anomalies, in kg/m/s.
+        qvano (ndarray): (n * m) 2D array of v-flux anomalies, in kg/m/s.
+        areas (ndarray): (n * m) 2D grid cell area slab, in km^2.
+        lats (ndarray): 1d array, latitude coordinates.
+        lons (ndarray): 1d array, longitude coordinates.
         mask_list (list): list of 2D binary masks, each with the same shape as
                       <anoslab> etc., and with 1s denoting the location of a
                       found AR.
@@ -761,19 +753,13 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
         param_dict (dict): parameter dict defined in Global preamble.
 
     Returns:
-        labels (cdms.TransientVariable): (n * m) 2D int map showing all ARs
-                                       at current time. Each AR is labeled by
-                                       an int label, starting from 1. Background
-                                       is filled with 0s.
-        angles (cdms.TransientVariable): (n * m) 2D map showing orientation
-                                       differences between AR axes and fluxes,
-                                       for all ARs. In degrees.
-        crossfluxes (cdms.TransientVariable): (n * m) 2D map showing cross-
-                                           sectional fluxes in all ARs.
-                                           In kg/m/s.
-        anocrossflux (cdms.TransientVariable): similar as <crossfluxes> but for
-                                             anomalous fluxes (corresponding
-                                             to <anoslab>).
+        labelsNV (NCVAR): (n * m) 2D int map showing all ARs at current time.
+            Each AR is labeled by an int label, starting from 1. Background is
+            filled with 0s.
+        anglesNV (NCVAR): (n * m) 2D map showing orientation differences
+            between AR axes and fluxes, for all ARs. In degrees.
+        crossfluxesNV (NCVAR): (n * m) 2D map showing cross- sectional fluxes
+            in all ARs.  In kg/m/s.
         df (pandas.DataFrame): AR record table. Each row is an AR, see code
                                below for columns.
     '''
@@ -786,23 +772,23 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
     min_area=param_dict['min_area']
     min_LW=param_dict['min_LW']
 
+    #---Create some NCVAR variables, for easy data manipulation
     lonax=funcs.NCVAR(lons, 'longitude', [], {'name': 'longitude',
         'long_name': 'longitude', 'standard_name': 'longitude',
         'units': 'degree east'})
     latax=funcs.NCVAR(lats, 'latitude', [], {'name': 'latitude',
         'long_name': 'latitude', 'standard_name': 'latitude',
         'units': 'degree north'})
-    quslabvar=funcs.NCVAR(quslab, 'qu', [latax, lonax],
+    quslabNV=funcs.NCVAR(quslab, 'qu', [latax, lonax],
             {'name': 'qu',
              'long_name': 'u-component of IVT',
              'standard_name': 'u-component of IVT',
              'units': 'kg/m/s'})
-    qvslabvar=funcs.NCVAR(qvslab, 'qv', [latax, lonax],
+    qvslabNV=funcs.NCVAR(qvslab, 'qv', [latax, lonax],
             {'name': 'qv',
              'long_name': 'v-component of IVT',
              'standard_name': 'v-component of IVT',
              'units': 'kg/m/s'})
-
 
     # prepare outputs
     labels=np.zeros(slab.shape)
@@ -885,7 +871,6 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
         strengthii=funcs.areaAverage(slabii, axis=(0,1), weights='generate',
                 lats=lats, lons=lons, keepdims=False)
 
-
         # strength std
         strengthstdii=float(funcs.areaStd(slabii, axis=(0,1),
             weights='generate', lats=lats, lons=lons, keepdims=False))
@@ -900,12 +885,11 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
 
         # compute angles and cross-section flux of total flux
         cropmask,cropidx=cropMask(maskii)
-
-        cropu=applyCropIdx(quslabvar, cropidx)
-        cropv=applyCropIdx(qvslabvar, cropidx)
+        cropuNV=applyCropIdx(quslabNV, cropidx)
+        cropvNV=applyCropIdx(qvslabNV, cropidx)
 
         anglesii,anglesmeanii,crossfluxii,seg_thetasii=crossSectionFlux(
-                cropmask, cropu, cropv, axis_rdpii)
+                cropmask, cropuNV, cropvNV, axis_rdpii)
 
         # create plots
         #if isplot:
@@ -922,7 +906,6 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
         crossfluxii=np.ma.where(maskii==1,crossfluxii,0)
 
         # mean meridional flux
-        #cropv=applyCropIdx(qvslabvar, cropidx)
         qvslabmasked=np.ma.masked_where(maskii==0,qvslab)
         qvmeanii=funcs.areaAverage(qvslabmasked, axis=(0,1), weights='generate',
                 lats=lats, lons=lons, keepdims=False)
@@ -967,20 +950,21 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
                 'qv_mean':qvmeanii
                 }
 
+    #----------------Create NCVAR variables----------------
     axislist=[latax, lonax]
-    labels=funcs.NCVAR(labels, 'labels', axislist, {
+    labelsNV=funcs.NCVAR(labels, 'labels', axislist, {
         'long_name': 'AR labels',
         'standard_name': 'AR labels',
         'tilte': 'AR labels',
         'units': ''})
 
-    angles=funcs.NCVAR(angles, 'angles', axislist, {
+    anglesNV=funcs.NCVAR(angles, 'angles', axislist, {
         'long_name': 'AR moisture flux orientation difference',
         'standard_name': 'AR moisture flux orientation difference',
         'title': 'AR moisture flux orientation difference',
         'units': 'degree'})
 
-    crossfluxes=funcs.NCVAR(crossfluxes, 'ivt_cross', axislist, {
+    crossfluxesNV=funcs.NCVAR(crossfluxes, 'ivt_cross', axislist, {
         'long_name': 'AR total cross sectional moisture flux',
         'standard_name': 'AR total cross sectional moisture flux',
         'title': 'AR total cross sectional moisture flux',
@@ -999,32 +983,26 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
         df=df[keys]
 
 
-    return labels,angles,crossfluxes,df
+    return labelsNV, anglesNV, crossfluxesNV, df
 
 
 def uvDecomp(u0, v0, i1, i2):
     '''Decompose background-transient components of u-, v- fluxes
 
     Args:
-        u0 (cdms.TransientVariable): nd array of total u-flux.
-        v0 (cdms.TransientVariable): nd array of total v-flux.
-        i1 (cdms.TransientVariable): nd array of the reconstruction component
-                                   of IVT.
-        i2 (cdms.TransientVariable): nd array of the anomalous component
-                                   of IVT (i2 = IVT - i1).
+        u0 (ndarray): nd array of total u-flux.
+        v0 (ndarray): nd array of total v-flux.
+        i1 (ndarray): nd array of the reconstruction component of IVT.
+        i2 (ndarray): nd array of the anomalous component of IVT (i2 = IVT - i1).
     Returns:
-        u1 (cdms.TransientVariable): nd array of the u-flux component
-                                   corresponding to <i1>, i.e. the background
-                                   component.
-        v1 (cdms.TransientVariable): nd array of the v-flux component
-                                   corresponding to <i1>, i.e. the background
-                                   component.
-        u2 (cdms.TransientVariable): nd array of the u-flux component
-                                   corresponding to <i2>, i.e. the transient
-                                   component.
-        v2 (cdms.TransientVariable): nd array of the v-flux component
-                                   corresponding to <i2>, i.e. the transient
-                                   component.
+        u1 (ndarray): nd array of the u-flux component corresponding to <i1>,
+            i.e. the background component.
+        v1 (ndarray): nd array of the v-flux component corresponding to <i1>,
+            i.e. the background component.
+        u2 (ndarray): nd array of the u-flux component corresponding to <i2>,
+            i.e. the transient component.
+        v2 (ndarray): nd array of the v-flux component corresponding to <i2>,
+            i.e. the transient component.
     '''
 
     i0=i1+i2
@@ -1159,46 +1137,36 @@ def getNormalVectors(point_list, idx):
     return normi,thetai
 
 
-def crossSectionFlux(mask, quslabvar, qvslabvar, axis_rdp):
+def crossSectionFlux(mask, quslabNV, qvslabNV, axis_rdp):
     '''Compute setion-wise orientation differences and cross-section fluxes
     in an AR
 
     Args:
         mask (ndarray): CROPPED (see cropMask and applyCropIdx) 2D binary map
                         showing the location of an AR with 1s.
-        quslab (cdms.TransientVariable): CROPPED (n * m) 2D array of u-flux,
-                                       in kg/m/s.
-        qvslab (cdms.TransientVariable): CROPPED (n * m) 2D array of v-flux,
-                                       in kg/m/s.
+        quslab (NCVAR): CROPPED (n * m) 2D array of u-flux, in kg/m/s.
+        qvslab (NCVAR): CROPPED (n * m) 2D array of v-flux, in kg/m/s.
         axis_rdp (ndarray): Nx2 array storing the (lat, lon) coordinates of
                            rdp-simplified AR axis.
 
     Returns:
-
-        angles (TransientVariable): 2D map with the same shape as <mask>,
-                                    showing section-wise orientation
-                                    differences between horizontal flux (as
-                                    in <quslab>, <qvslab>) and the AR axis of
-                                    that section. In degrees. Regions outside
-                                    of AR (0s in <mask>) are masked.
-
+        angles (ndarray): 2D map with the same shape as <mask>, showing
+            section-wise orientation differences between horizontal flux (as in
+            <quslab>, <qvslab>) and the AR axis of that section. In degrees.
+            Regions outside of AR (0s in <mask>) are masked.
         anglesmean (float): area-weighted averaged of <angles> inside <mask>.
-
-        crossflux (TransientVariable): 2D map with the same shape as <mask>,
-                                       the section-wise cross-section fluxes
-                                       in the AR, defined as the projection
-                                       of fluxes onto the AR axis, i.e. flux
-                                       multiplied by the cos of <angles>.
-
+        crossflux (ndarray): 2D map with the same shape as <mask>,
+           the section-wise cross-section fluxes in the AR, defined as the
+           projection of fluxes onto the AR axis, i.e. flux multiplied by the
+           cos of <angles>.
         seg_thetas (list): list of (x, y, z) Cartesian coordinates of the
                            tangent vectors along section boundaries.
     '''
     # get coordinates
-    #axislist=quslab.axislist
-    lats=quslabvar.getLatitude()
-    lons=quslabvar.getLongitude()
-    quslab=quslabvar.data
-    qvslab=qvslabvar.data
+    lats=quslabNV.getLatitude()
+    lons=quslabNV.getLongitude()
+    quslab=quslabNV.data
+    qvslab=qvslabNV.data
     lonss,latss=np.meshgrid(lons,lats)
 
     # convert to cartesian coordinates
@@ -1302,13 +1270,13 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
     '''Find AR axis
 
     Args:
-        quslab (cdms.TransientVariable): (n * m) 2D u-flux slab, in kg/m/s.
-        qvslab (cdms.TransientVariable): (n * m) 2D v-flux slab, in kg/m/s.
+        quslab (ndarray): (n * m) 2D u-flux slab, in kg/m/s.
+        qvslab (ndarray): (n * m) 2D v-flux slab, in kg/m/s.
         armask_list (list): list of 2D binary masks, each with the same shape
             as <quslab> etc., and with 1s denoting the location of a found AR.
-        costhetas (cdms.TransientVariable): (n * m) 2D slab of grid cell shape:
+        costhetas (ndarray): (n * m) 2D slab of grid cell shape:
                                           cos=dx/sqrt(dx^2+dy^2).
-        sinthetas (cdms.TransientVariable): (n * m) 2D slab of grid cell shape:
+        sinthetas (ndarray): (n * m) 2D slab of grid cell shape:
                                           sin=dy/sqrt(dx^2+dy^2).
         param_dict (dict): parameter dict. See findARs() for details.
 
@@ -1392,8 +1360,7 @@ def prepareMeta(lats, lons, times, ntime, nlat, nlon,
         ref_time (str): reference time point to create time axis.
 
     Returns:
-        timeax (cdms2.axis.TransientAxis): a time axis obj created from strings
-            in <times>.
+        timeax (list): a list of datetime objs.
         areamap (ndarray): grid cell areas in km^2, with shape (<nlat> x <nlon>).
         costhetas (ndarray): ratios of dx/sqrt(dx^2 + dy^2) for all grid cells.
             with shape (<nlat> x <nlon>).
@@ -1427,8 +1394,8 @@ def prepareMeta(lats, lons, times, ntime, nlat, nlon,
     timeax=funcs.getTimeAxis(times, ntime, ref_time)
 
     #-------------Compute grid geometries-------------
-    dxs=funcs.dLongitude2(lats, lons, R=6371)
-    dys=funcs.dLatitude2(lats, lons, R=6371)
+    dxs=funcs.dLongitude(lats, lons, R=6371)
+    dys=funcs.dLatitude(lats, lons, R=6371)
     areamap=dxs*dys # km^2
     costhetas=dxs/np.sqrt(dxs**2+dys**2)
     sinthetas=dys/np.sqrt(dxs**2+dys**2)
@@ -1539,8 +1506,9 @@ def _findARs(anoslab, latax, areas, param_dict):
     '''Find ARs from THR results at a time snap
 
     Args:
-        anoslab (cdms.TransientVariable): (n * m) 2D anomalous IVT slab, in kg/m/s.
-        areas (cdms.TransientVariable): (n * m) 2D grid cell area slab, in km^2.
+        anoslab (ndarray): (n * m) 2D anomalous IVT slab, in kg/m/s.
+        latax (ndaray): 1d array, latitude coordinates.
+        areas (ndarray): (n * m) 2D grid cell area slab, in km^2.
         param_dict (dict): parameter dict controlling the detection process.
 
     Returns:
@@ -1716,16 +1684,16 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
     '''Find ARs from THR results, get all results in one go.
 
     Args:
-        ivt (TransientVariable): 3D or 4D input IVT data, with dimensions
+        ivt (ndarray): 3D or 4D input IVT data, with dimensions
             (time, lat, lon) or (time, level, lat, lon).
-        ivtrec (TransientVariable): 3D or 4D array, the reconstruction
-            component from the THR process.
-        ivtano (TransientVariable): 3D or 4D array, the difference between
-            input <ivt> and <ivtrec>.
-        qu (TransientVariable): 3D or 4D array, zonal component of
-            integrated moisture flux.
-        qv (TransientVariable): 3D or 4D array, meridional component of
-            integrated moisture flux.
+        ivtrec (ndarray): 3D or 4D array, the reconstruction component from the
+            THR process.
+        ivtano (ndarray): 3D or 4D array, the difference between input <ivt>
+            and <ivtrec>.
+        qu (ndarray): 3D or 4D array, zonal component of integrated moisture
+            flux.
+        qv (ndarray): 3D or 4D array, meridional component of integrated
+            moisture flux.
         lats (ndarray): 1D, latitude coordinates, the length needs to be the
             same as the lat dimension of <ivt>.
         lons (ndarray): 1D, longitude coordinates, the length needs to be the
@@ -1789,16 +1757,17 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
 
     Returns:
         time_idx (list): indices of the time dimension when any AR is found.
-        labels_all (TransientVariable): 3D array, with dimension
+        labels_allNV (NCVAR): 3D array, with dimension
             (time, lat, lon). At each time slice, a unique int label is assign
             to each detected AR at that time, and the AR region is filled
             out with the label value in the (lat, lon) map.
-        angles_all (TransientVariable): 3D array showing orientation
+        angles_allNV (NCVAR): 3D array showing orientation
             differences between AR axes and fluxes, for all ARs. In degrees.
-        crossfluxes_all (TransientVariable): 3D array showing cross-
+        crossfluxes_allNV (NCVAR): 3D array showing cross-
             sectional fluxes in all ARs. In kg/m/s.
         result_df (DataFrame): AR record table. Each row is an AR, see code
             in getARData() for columns.
+
     See also:
         findARsGen(): generator version, yields results at time points
             separately.
@@ -1829,13 +1798,13 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         crossfluxes_all.append(cross)
         result_dict[timett]=ardf
 
-    labels_all=funcs.concatenate(labels_all, axis=0)
-    angles_all=funcs.concatenate(angles_all, axis=0)
-    crossfluxes_all=funcs.concatenate(crossfluxes_all, axis=0)
+    labels_allNV=funcs.concatenate(labels_all, axis=0)
+    angles_allNV=funcs.concatenate(angles_all, axis=0)
+    crossfluxes_allNV=funcs.concatenate(crossfluxes_all, axis=0)
 
     result_df=save2DF(result_dict)
 
-    return time_idx, labels_all, angles_all, crossfluxes_all, result_df
+    return time_idx, labels_allNV, angles_allNV, crossfluxes_allNV, result_df
 
 
 def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
@@ -1849,15 +1818,15 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
     '''Find ARs from THR results, generator version
 
     Args:
-        ivt (TransientVariable): 3D or 4D input IVT data, with dimensions
+        ivt (ndarray): 3D or 4D input IVT data, with dimensions
             (time, lat, lon) or (time, level, lat, lon).
-        ivtrec (TransientVariable): 3D or 4D array, the reconstruction
+        ivtrec (ndarray): 3D or 4D array, the reconstruction
             component from the THR process.
-        ivtano (TransientVariable): 3D or 4D array, the difference between
+        ivtano (ndarray): 3D or 4D array, the difference between
             input <ivt> and <ivtrec>.
-        qu (TransientVariable): 3D or 4D array, zonal component of
+        qu (ndarray): 3D or 4D array, zonal component of
             integrated moisture flux.
-        qv (TransientVariable): 3D or 4D array, meridional component of
+        qv (ndarray): 3D or 4D array, meridional component of
             integrated moisture flux.
         lats (ndarray): 1D, latitude coordinates, the length needs to be the
             same as the lat dimension of <ivt>.
@@ -1924,16 +1893,17 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
     Returns:
         ii (int): index of the time dimension when any AR is found.
         timett_str (str): time when any AR is found, in string format.
-        labels (TransientVariable): 2D array, with dimension
+        labelsNV (NCVAR): 2D array, with dimension
             (lat, lon). A unique int label is assign
             to each detected AR at the time, and the AR region is filled
             out with the label value in the (lat, lon) map.
-        angles (TransientVariable): 2D array showing orientation
+        anglesNV (NCVAR): 2D array showing orientation
             differences between AR axes and fluxes, for all ARs. In degrees.
-        crossfluxes (TransientVariable): 2D array showing cross-
+        crossfluxesNV (NCVAR): 2D array showing cross-
             sectional fluxes in all ARs. In kg/m/s.
         ardf (DataFrame): AR record table. Each row is an AR, see code
             in getARData() for columns.
+
     See also:
         findARs(): collect and return all results in one go.
     New in v2.0.
@@ -2016,32 +1986,24 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         qurec,quano,qvrec,qvano=uvDecomp(quslab,qvslab,slabrec,slabano)
 
         # fetch AR related data
-        labels,angles,crossfluxes,ardf=getARData(
-                slab,quslab,qvslab,
-                slabano,quano,qvano,
-                areamap, lats, lons,
-                mask_list,axis_list,timett_str,param_dict)
+        labelsNV, anglesNV, crossfluxesNV, ardf=getARData(slab, quslab, qvslab,
+                slabano, quano, qvano, areamap, lats, lons,
+                mask_list, axis_list, timett_str, param_dict)
 
         if verbose:
             print('# <findARsGen>: NO. of ARs found =  %d' %len(ardf))
 
         # prepare nc output
-        '''
-        timeaxii=cdms.createAxis([timett.torel('days since 1900-1-1').value])
-        timeaxii.designateTime()
-        timeaxii.id='time'
-        timeaxii.units='days since 1900-1-1'
-        '''
         timeaxii=funcs.createAxis('time',
                 np.array([date2num(timett, 'days since 1900-1-1')]),
                     {'name': 'time', 'long_name': 'time',
                         'standard_name': 'time',
                         'units': 'days since 1900-1-1'})
 
-        labels=funcs.addExtraAxis(labels,timeaxii)
-        angles=funcs.addExtraAxis(angles,timeaxii)
-        crossfluxes=funcs.addExtraAxis(crossfluxes,timeaxii)
+        labelsNV=funcs.addExtraAxis(labelsNV, timeaxii)
+        anglesNV=funcs.addExtraAxis(anglesNV, timeaxii)
+        crossfluxesNV=funcs.addExtraAxis(crossfluxesNV, timeaxii)
 
-        yield ii, timett_str, labels, angles, crossfluxes, ardf
+        yield ii, timett_str, labelsNV, anglesNV, crossfluxesNV, ardf
 
 

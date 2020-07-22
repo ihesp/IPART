@@ -56,7 +56,7 @@ Usage:
         ```
 
 Author: guangzhi XU (xugzhi1987@gmail.com)
-Update time: 2019-12-06 22:55:40.
+Update time: 2020-07-22 10:23:35.
 '''
 
 from __future__ import print_function
@@ -98,7 +98,6 @@ OUTPUTDIR='/home/guangzhi/datasets/quicksave2/THR/'
 
 #--------Import modules-------------------------
 import os
-#from cdms2.selectors import Selector
 from ipart.utils import funcs2 as funcs
 from ipart import thr
 
@@ -114,11 +113,10 @@ if __name__=='__main__':
         os.makedirs(OUTPUTDIR)
 
     #--------------------Read in orographic data--------------------
-    oro=funcs.readNC(ORO_FILE, 'z')
-    oro.data=oro.data/9.8
-    oro=funcs.increasingLatitude(oro, 1)
-    oro=oro.sliceData(LAT1, LAT2, axis=1)
-    oro=oro.shiftLon(SHIFT_LON).squeeze()
+    oroNV=funcs.readNC(ORO_FILE, 'z')
+    oroNV.data=oroNV.data/9.8
+    oroNV=oroNV.sliceData(LAT1, LAT2, axis=1)
+    oroNV=oroNV.shiftLon(SHIFT_LON).squeeze()
 
     for year in YEARS:
         #-----------Read in data----------------------
@@ -131,5 +129,5 @@ if __name__=='__main__':
 
     selector=funcs.Selector(LAT1, LAT2, axis=2)
     thr.rotatingTHR(filelist, VARIN, KERNEL, OUTPUTDIR,
-            oro=oro, selector=selector, high_terrain=HIGH_TERRAIN)
+            oroNV=oroNV, selector=selector, high_terrain=HIGH_TERRAIN)
 

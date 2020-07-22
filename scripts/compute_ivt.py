@@ -3,7 +3,7 @@
 IVT = sqrt(uflux^2 + vflux^2), in kg/m/s.
 
 Author: guangzhi XU (xugzhi1987@gmail.com)
-Update time: 2020-03-28 12:09:59.
+Update time: 2020-07-22 10:08:31.
 '''
 
 #--------------Globals------------------------------------------
@@ -18,7 +18,6 @@ VFLUX_VARID='vflux'
 OUTPUTFILE='/home/guangzhi/datasets/quicksave2/THR/ivt_m1-60_6_2007_crop2.nc';
 
 
-
 #--------Import modules-------------------------
 import numpy as np
 from ipart.utils import funcs2 as funcs
@@ -30,27 +29,27 @@ from ipart.utils import plot2 as plot
 if __name__=='__main__':
 
     #-----------Read in data----------------------
-    uflux=funcs.readNC(UFLUX_FILE, UFLUX_VARID)
-    vflux=funcs.readNC(VFLUX_FILE, VFLUX_VARID)
+    ufluxNV=funcs.readNC(UFLUX_FILE, UFLUX_VARID)
+    vfluxNV=funcs.readNC(VFLUX_FILE, VFLUX_VARID)
 
-    ivtdata=np.ma.sqrt(uflux.data**2+vflux.data**2)
-    ivt=funcs.NCVAR(ivtdata, 'ivt', uflux.axislist, {'name': 'ivt',
+    ivtdata=np.ma.sqrt(ufluxNV.data**2+vfluxNV.data**2)
+    ivtNV=funcs.NCVAR(ivtdata, 'ivt', ufluxNV.axislist, {'name': 'ivt',
         'long_name': 'integrated vapor transport (IVT)',
         'standard_name': 'integrated vapor transport (IVT)',
         'title': 'integrated vapor transport (IVT)',
-        'units': getattr(uflux, 'units', '')})
+        'units': getattr(ufluxNV, 'units', '')})
 
     #--------Save------------------------------------
     print('\n### <compute_ivt>: Saving output to:\n',OUTPUTFILE)
-    funcs.saveNC(OUTPUTFILE, ivt, 'w')
+    funcs.saveNC(OUTPUTFILE, ivtNV, 'w')
 
     #-------------------Plot------------------------
     import matplotlib.pyplot as plt
     figure=plt.figure(figsize=(7,10),dpi=100)
     idx=40
-    time_str=str(uflux.getTime()[idx])
+    time_str=str(ufluxNV.getTime()[idx])
 
-    plot_vars=[uflux.data[idx], vflux.data[idx], ivt.data[idx]]
+    plot_vars=[ufluxNV.data[idx], vfluxNV.data[idx], ivtNV.data[idx]]
     titles=['U', 'V', 'IVT']
 
     for ii, vii in enumerate(plot_vars):
@@ -58,8 +57,8 @@ if __name__=='__main__':
         iso=plot.Isofill(vii, 10, 1, 2)
         plot.plot2(vii, iso, axii,
                 title='%s, %s' %(str(time_str), titles[ii]),
-                xarray=uflux.getLongitude(),
-                yarray=uflux.getLatitude(),
+                xarray=ufluxNV.getLongitude(),
+                yarray=ufluxNV.getLatitude(),
                 legend='local',
                 projection='cyl',
                 fix_aspect=False)

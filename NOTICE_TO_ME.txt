@@ -4,41 +4,41 @@ When done, merge back to dev.
 
 Functions need change:
 
-* [y?]AR_detector.applyCropIdx()
-* [y?]AR_detector.insertCropSlab()
-* [y?]AR_detector.partPeaks()
-* [y?]AR_detector.getARData()
-* [y?]AR_detector.crossSectionFlux()
-* [y?]AR_detector.prepareMeta()
-* [y?]AR_detector.findARs()
-* [y?]AR_detector.findARsGen()
+* [d][y?]AR_detector.applyCropIdx()
+* [d][y?]AR_detector.insertCropSlab()
+* [d][y?]AR_detector.partPeaks()
+* [d][y?]AR_detector.getARData()
+* [d][y?]AR_detector.crossSectionFlux()
+* [d][y?]AR_detector.prepareMeta()
+* [d][y?]AR_detector.findARs()
+* [d][y?]AR_detector.findARsGen()
 
-* [y]thr.THR()
-* [y]thr.THRCyclicLongitude()
-* [y]thr.rotatingTHR()
+* [d][y]thr.THR()
+* [d][y]thr.THRCyclicLongitude()
+* [d][y]thr.rotatingTHR()
 
-* [y]utils.funcs.attribute_obj2dict()
-* [y]utils.funcs.attribute_dict2obj()
-* [y]utils.funcs.addExtraAxis()
-* [y]utils.funcs.cat()
-* [y]utils.funcs.interpretAxis()
-* [y]utils.funcs.getMissingMask() ?
-* [d]utils.funcs.getAxis()
-* [y]utils.funcs.increasingLatitude()
-* [y]utils.funcs.dLatitude2()
-* [y]utils.funcs.dLongitude2()
-* utils.funcs.readVar() -> replace with readNC()
-* [y]utils.funcs.getTimeAxis()
+* [d][y]utils.funcs.attribute_obj2dict()
+* [d][y]utils.funcs.attribute_dict2obj()
+* [d][y]utils.funcs.addExtraAxis()
+* [d][y]utils.funcs.cat()
+* [d][y]utils.funcs.interpretAxis()
+* [d][y]utils.funcs.getMissingMask() ?
+* [d][d]utils.funcs.getAxis()
+* [d][y]utils.funcs.increasingLatitude()
+* [d][y]utils.funcs.dLatitude2()
+* [d][y]utils.funcs.dLongitude2()
+* [d]utils.funcs.readVar() -> replace with readNC()
+* [d][y]utils.funcs.getTimeAxis()
 
-* [y]utils.plot.get1stTime()
-* [y?]utils.plot.Plot2D
-* [y?]utils.plot.Plot2Basemap
+* [d][y]utils.plot.get1stTime()
+* [d][y?]utils.plot.Plot2D
+* [d][y?]utils.plot.Plot2Basemap
 
-* [y]scripts/compute_ivt.py
-* [y]scripts/compute_thr_singlefile.py
-* [y]scripts/compute_thr_multifile.py
-* [y]scripts/detect_ARs.py
-* [y[scripts/detect_ARs_generator_version.py
-* [y]scripts/test_data.py
+* [d][y]scripts/compute_ivt.py
+* [d][y]scripts/compute_thr_singlefile.py
+* [d][y]scripts/compute_thr_multifile.py
+* [d][y]scripts/detect_ARs.py
+* [d][y[scripts/detect_ARs_generator_version.py
+* [d][y]scripts/test_data.py
 
 * [y]tests/*

@@ -34,8 +34,8 @@ and have compatible shapes.
 
 The user also needs to provide time, latitude and longitude axes metadata.
 In this script, these data are read in from the netCDF files using the
-CDAT (aka UVCDAT, CDAT8) package. If you are using some other package, e.g.
-netcdf4, xarray, iris or something else, please adjust the relevant code
+netCDF4 package. If you are using some other package, e.g.
+CDAT, xarray, iris or something else, please adjust the relevant code
 accordingly.
 
 # Domain
@@ -79,11 +79,10 @@ netCDF file.
     The boundary of all detected ARs are also marked out.
 
 Author: guangzhi XU (xugzhi1987@gmail.com)
-Update time: 2020-06-07 21:53:50.
+Update time: 2020-07-22 10:13:31.
 """
 
 from __future__ import print_function
-
 
 
 #######################################################################
@@ -185,7 +184,6 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-#import cdms2 as cdms
 from netCDF4 import Dataset
 
 from ipart.utils import funcs2 as funcs
@@ -194,72 +192,43 @@ from ipart.AR_detector2 import plotAR, findARsGen
 
 
 
-
 #-------------Main---------------------------------
 if __name__=='__main__':
 
 
     #-----------Read in flux data----------------------
-    #file_in_name=UQ_FILE_NAME
-    #abpath_in=os.path.join(SOURCEDIR1,file_in_name)
-    #qu=funcs.readVar(abpath_in, UQ_VAR)
-    #qu=funcs.readVar(UQ_FILE_NAME, UQ_VAR)
-    qu=funcs.readNC(UQ_FILE_NAME, UQ_VAR)
-
-    #file_in_name=VQ_FILE_NAME
-    #abpath_in=os.path.join(SOURCEDIR2,file_in_name)
-    #qv=funcs.readVar(abpath_in, VQ_VAR)
-    #qv=funcs.readVar(VQ_FILE_NAME, VQ_VAR)
-    qv=funcs.readNC(VQ_FILE_NAME, VQ_VAR)
+    quNV=funcs.readNC(UQ_FILE_NAME, UQ_VAR)
+    qvNV=funcs.readNC(VQ_FILE_NAME, VQ_VAR)
 
     #-----------------Shift longitude-----------------
-    #qu=qu(longitude=(SHIFT_LON,SHIFT_LON+360))
-    #qv=qv(longitude=(SHIFT_LON,SHIFT_LON+360))
-    qu=qu.shiftLon(SHIFT_LON)
-    qv=qv.shiftLon(SHIFT_LON)
+    quNV=quNV.shiftLon(SHIFT_LON)
+    qvNV=qvNV.shiftLon(SHIFT_LON)
 
     #-------------------Read in ivt and THR results-------------------
-    file_in_name=IVT_FILE_NAME
-    abpath_in=os.path.join(SOURCEDIR3,file_in_name)
+    abpath_in=os.path.join(SOURCEDIR3, IVT_FILE_NAME)
     print('\n### <detect_ARs2>: Read in file:\n',abpath_in)
-    '''
-    fin=cdms.open(abpath_in,'r')
-    ivt=fin('IVT')
-    ivtrec=fin('ivt_rec')
-    ivtano=fin('ivt_ano')
-    fin.close()
-    '''
-    ivt=funcs.readNC(abpath_in, 'ivt')
-    ivtrec=funcs.readNC(abpath_in, 'ivt_rec')
-    ivtano=funcs.readNC(abpath_in, 'ivt_ano')
+    ivtNV=funcs.readNC(abpath_in, 'ivt')
+    ivtrecNV=funcs.readNC(abpath_in, 'ivt_rec')
+    ivtanoNV=funcs.readNC(abpath_in, 'ivt_ano')
 
     #--------------------Slice data--------------------
-    '''
-    qu=qu(time=(TIME_START,TIME_END), latitude=(LAT1, LAT2))(squeeze=1)
-    qv=qv(time=(TIME_START,TIME_END), latitude=(LAT1, LAT2))(squeeze=1)
-    ivt=ivt(time=(TIME_START,TIME_END), latitude=(LAT1, LAT2))(squeeze=1)
-    ivtrec=ivtrec(time=(TIME_START,TIME_END), latitude=(LAT1, LAT2))(squeeze=1)
-    ivtano=ivtano(time=(TIME_START,TIME_END), latitude=(LAT1, LAT2))(squeeze=1)
-    '''
-    qu=qu.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
-    qv=qv.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
-    ivt=ivt.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
-    ivtrec=ivtrec.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
-    ivtano=ivtano.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    quNV=quNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    qvNV=qvNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    ivtNV=ivtNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    ivtrecNV=ivtrecNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    ivtanoNV=ivtanoNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
 
     #--------------------Data shape check--------------------
-    if np.ndim(qu.data)!=3 or np.ndim(qv.data)!=3:
+    if np.ndim(quNV.data)!=3 or np.ndim(qvNV.data)!=3:
         raise Exception("<qu> and <qv> should be 3D data.")
-    if qu.shape!=qv.shape or ivt.shape!=qu.shape:
+    if quNV.shape!=qvNV.shape or ivtNV.shape!=quNV.shape:
         raise Exception("Data shape dismatch: qu.shape=%s; qv.shape=%s; ivt.shape=%s"\
-                %(qu.shape, qv.shape, ivt.shape))
+                %(quNV.shape, qvNV.shape, ivtNV.shape))
 
     #-----------------Get coordinates-----------------
-    latax=qu.getLatitude()
-    lonax=qu.getLongitude()
-    timeax=ivt.getTime()
-    #timeax=['%d-%02d-%02d %02d:00' %(timett.year,timett.month,\
-            #timett.day,timett.hour) for timett in timeax]
+    latax=quNV.getLatitude()
+    lonax=quNV.getLongitude()
+    timeax=ivtNV.getTime()
 
     #-----------------Prepare outputs-----------------
     if not os.path.exists(OUTPUTDIR):
@@ -273,7 +242,6 @@ if __name__=='__main__':
     # nc file to save AR location labels
     abpath_out=os.path.join(OUTPUTDIR, LABEL_FILE_OUT_NAME)
     print('\n### <detect_ARs2>: Saving output to:\n',abpath_out)
-    #ncfout=cdms.open(abpath_out,'w')
     ncfout=Dataset(abpath_out, 'w')
 
     # csv file to save AR record table
@@ -290,12 +258,9 @@ if __name__=='__main__':
         #############################################################
         #                     Start processing                      #
         #############################################################
-        finder_gen = findARsGen(ivt.data, ivtrec.data, ivtano.data, qu.data,
-                qv.data, latax, lonax,
-               times=timeax, **PARAM_DICT)
+        finder_gen = findARsGen(ivtNV.data, ivtrecNV.data, ivtanoNV.data,
+                quNV.data, qvNV.data, latax, lonax, times=timeax, **PARAM_DICT)
         next(finder_gen)  # prime the generator to prepare metadata
-
-        #funcs.saveNCDims(ncfout, ivt.axislist)
 
         for (tidx, timett, label, angle, cross, result_df) in finder_gen:
 
@@ -303,14 +268,7 @@ if __name__=='__main__':
             result_df.to_csv(dfout, header=dfout.tell()==0, index=False)
 
             #-------------------Save labels to nc file-------------------
-            #ncfout.write(label)
-            #ncfout.write(angle,typecode='f')
-            #ncfout.write(cross,typecode='f')
-            #funcs.saveNC(abpath_out, label, 'a', dtype='int')
-            #funcs.saveNC(abpath_out, angle, 'a')
-            #funcs.saveNC(abpath_out, cross, 'a')
             funcs.saveNCDims(ncfout, label.axislist)
-
             funcs._saveNCVAR(ncfout, label, 'int')
             funcs._saveNCVAR(ncfout, angle)
             funcs._saveNCVAR(ncfout, cross)
@@ -320,14 +278,12 @@ if __name__=='__main__':
 
                 timett_str=str(timett)
 
-                slab=ivt.data[tidx]
-                slabrec=ivtrec.data[tidx]
-                slabano=ivtano.data[tidx]
+                slab=ivtNV.data[tidx]
+                slabrec=ivtrecNV.data[tidx]
+                slabano=ivtanoNV.data[tidx]
 
-                #plot_vars=[slab,slabrec,slabano]
-                #titles=['IVT', 'Reconstruction', 'THR']
-                plot_vars=[slab,slabano]
-                titles=['IVT', 'THR']
+                plot_vars=[slab,slabrec,slabano]
+                titles=['IVT', 'Reconstruction', 'THR']
                 iso=plot.Isofill(plot_vars,12,1,1,min_level=0,max_level=800)
 
                 figure=plt.figure(figsize=(12,10),dpi=100)

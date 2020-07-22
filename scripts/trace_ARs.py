@@ -30,23 +30,24 @@ from __future__ import print_function
 #--------------Globals------------------------------------------
 RECORD_FILE_IN_NAME='/home/guangzhi/datasets/erai/ERAI_AR_THR/2007/ar_records_2007.csv'
 RECORD_FILE_IN_NAME='/home/guangzhi/datasets/artmip_merra_global/ar_records_1980.csv'
-OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_global/'
-RECORD_FILE_OUT_NAME='ar_tracks_1980.csv'
+RECORD_FILE_IN_NAME='/home/guangzhi/datasets/quicksave2/THR/ar_records_2007.csv'
+OUTPUTDIR='/home/guangzhi/datasets/quicksave2/THR/'
+RECORD_FILE_OUT_NAME='ar_tracks_2007.csv'
 
 PLOT=True         # plot track movements or not
 SCHEMATIC=False   # plot schematic or not
-LAT1=-90; LAT2=90; LON1=-180; LON2=180         # domain to plot
+LAT1=0; LAT2=90; LON1=0; LON2=360         # domain to plot
 
 # Int, hours, gap allowed to link 2 records. Should be the time resolution of
 # the data.
-TIME_GAP_ALLOW=3
+TIME_GAP_ALLOW=6
 
 # tracking scheme. 'simple': all tracks are simple paths.
 # 'full': use the network scheme, tracks are connected by their joint points.
 TRACK_SCHEME='simple'  # 'simple' | 'full'
 
 # int, max Hausdorff distance in km to define a neighborhood relationship
-MAX_DIST_ALLOW=600  # km
+MAX_DIST_ALLOW=1200  # km
 
 # int, min duration in hrs to keep a track.
 MIN_DURATION=24

@@ -1,7 +1,7 @@
 '''Check meta data of netcdf file.
 
 Author: guangzhi XU (xugzhi1987@gmail.com)
-Update time: 2020-03-31 10:42:41.
+Update time: 2020-07-22 10:24:21.
 '''
 
 

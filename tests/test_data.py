@@ -65,13 +65,13 @@ class TestDataMetaData(unittest.TestCase):
     def test_dlat(self):
         latax=self.uflux.getLatitude()
         lonax=self.uflux.getLongitude()
-        dlat=funcs.dLatitude2(latax, lonax)
+        dlat=funcs.dLatitude(latax, lonax)
         self.assertTrue(np.allclose(dlat, 83396.1949, rtol=1e-3), "dLatitude() wrong.")
 
     def test_dlon(self):
         latax=self.uflux.getLatitude()
         lonax=self.uflux.getLongitude()
-        dlon=funcs.dLongitude2(latax, lonax)
+        dlon=funcs.dLongitude(latax, lonax)
         self.assertAlmostEqual(np.min(dlon), 15197.74930, 2, "dLongitude() wrong.")
         self.assertAlmostEqual(np.max(dlon), 81999.71815, 2, "dLongitude() wrong.")
 

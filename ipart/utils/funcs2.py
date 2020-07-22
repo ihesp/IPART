@@ -1,13 +1,14 @@
 '''Utility functions
 
 Author: guangzhi XU (xugzhi1987@gmail.com)
-Update time: 2020-06-05 23:23:22.
+Update time: 2020-07-22 09:27:36.
 '''
 from __future__ import print_function
+import sys, os
 import copy
 from datetime import datetime, timedelta
 import numpy as np
-#import pandas as pd
+import pandas as pd
 from netCDF4 import Dataset, date2num, num2date
 
 
@@ -23,28 +24,93 @@ def isInteger(x):
 
     Args:
         x (unknow type): input
-
-    Returns: True if <x> is integer type, False otherwise.
+    Returns:
+        True if <x> is integer type, False otherwise.
     """
-
-    import sys
-    import numpy
-
     if sys.version_info.major==2:
-        return isinstance(x, (int, long, numpy.integer))
+        return isinstance(x, (int, long, np.integer))
     else:
-        return isinstance(x, (int, numpy.integer))
+        return isinstance(x, (int, np.integer))
 
 class Selector(object):
     def __init__(self, v1, v2, axis=0):
-        #if v1>v2:
-            #v1, v2= v2, v1
+        '''Similar to slice to slice NCVAR variable'''
         self.v1=v1
         self.v2=v2
         self.axis=axis
 
+
 class NCVAR(object):
     def __init__(self, data, id=None, axislist=None, attributes=None):
+        '''An object to store netcdf data and metadata
+
+        Args:
+            data (ndarray): data array.
+        Keyword Args:
+            id (str or None): id of data. If None, use a default "unnamed".
+            axislist (tuple or list or None): a tuple/list of NCVAR objs
+                acting as axes of the data. The length should equal the rank
+                of <data>. If None, create one axis for each dimension using
+                integer indices.
+            attributes (dict or None): variable attribute dictionary. If None,
+                create a new dict filled with some basic attributes.
+
+        This is a rudimentary attempt to mimic the API of CDAT package in
+        handling netcdf data. The netCDF4 API, imo, goes against the philosiphy
+        of of netcdf format. The data and metadata, after read in using
+        netCDF4, are saved to different variables, rather than bandled
+        together. One has to maintain these metadata himself, and it gets
+        bloody annoying quickly when things get complicated.
+
+        This class will try to save data and metadata together, and provide
+        some utility methods for interacting via metadata.
+
+        Examples:
+            * to create a variable:
+                ```
+                var = NCVAR(data_array, 'sst', (times, lats, lons),
+                     {'name': 'sst,
+                      'long_name': 'sea surface temperature',
+                      'standard_name': 'sea surface temperature',
+                      'units': 'K'})
+                ```
+            * to get the np data array:
+                ```var.data```
+            * to query the shape:
+                ```
+                var.shape, var.ndim, len(var)
+                ```
+            * to get the time axis:
+                ```var.getTime()```
+            * to get the latitude axis:
+                ```var.getLatitude()```
+            * to slice by latitude:
+                ```slab = var.sliceData(10, 60, axis=1)```
+            * to get the 1st time slice:
+                ```slab = var[0]```
+            * to slice by indices:
+                ```slab = var.sliceIndex(1, 10, axis=2)```
+                Alternatively, can slice by indices using a Selector:
+            * to create a selector:
+                ```sel = Selector(1, 10, axis=2)```
+            * to slice using the selector:
+                ```slab = var(sel)```
+                This will slice the data as ```data[:,:,1:10]```, the 2nd
+                axis will be sliced accordingly.
+
+        The native CDAT API is more intuitive.
+
+        Unlike CDAT, the obj can not be used directly as ndarray. To do
+        computations using data, one has to access the "data" attribute:
+            ```
+            res = np.sin(var.data)
+            ```
+
+        It can be confusing when something is an NCVAR or an ndarray. To help
+        distinguish, will use a naming convention that appends a "NV" after
+        a variable name to indicate that this is an NCVAR: ivtNV, sstNV, etc..
+        Their correponding ndarray are named ivt, sst, etc..
+        '''
 
         if id is None:
             id='unnamed'
@@ -52,12 +118,14 @@ class NCVAR(object):
         self.id=str(id)
         self.data=data
 
+        # create axes using indices
         if axislist is None:
             axislist=[]
             for ii in range(data.ndim):
                 axisii=createAxis(ii, np.arange(data.shape[ii]).astype('f'))
                 axislist.append(axisii)
 
+        # fill some basic attributes
         if attributes is None:
             attributes={'id': str(id),
                     'name': str(id),
@@ -78,6 +146,15 @@ class NCVAR(object):
         return self.data.__repr__()
 
     def __getitem__(self, idx):
+        '''Indexing method
+
+        Args:
+            idx (int or tuple/list): if int, indexing the 1st dimension by
+                the given index.
+                If tuple/list, a tuple/list of slice objs to slice the data.
+        Returns:
+            result (NCVAR): sliced result.
+        '''
         if isInteger(idx):
             return self.sliceIndex(idx, idx+1)
         elif isinstance(idx, (list, tuple)):
@@ -90,6 +167,16 @@ class NCVAR(object):
                 return result
 
     def __call__(self, selectors):
+        '''Indexing using selectors
+
+        Args:
+            selectors (Selector or tuple/list or None): if None, return
+                self.
+                If Selector or tuple/list of Selectors, slice the data using
+                ranges defined in Selectors.
+        Returns:
+            result (NCVAR): sliced result.
+        '''
         if selectors is None:
             return self
         if isinstance(selectors, Selector):
@@ -106,7 +193,6 @@ class NCVAR(object):
             return result
         else:
             raise Exception("Input needs to be a tuple of Selectors.")
-
 
 
     @property
@@ -145,6 +231,8 @@ class NCVAR(object):
         return self.data.shape[0]
 
     def info(self):
+        '''Print some summary info of the variable'''
+
         result=['### Description of slab ###',
                 '  id: %s' %self.id,
                 '  shape: %s' %str(self.shape),
@@ -180,10 +268,20 @@ class NCVAR(object):
         return
 
     def sliceIndex(self,idx1,idx2,axis=0,squeeze=True):
+        '''Slice the data by start, end indices along a given dimension
 
-        #if idx1>idx2:
-            #idx1,idx2=idx2,idx1
+        Args:
+            idx1, idx2 (int or None): start, end indices. If idx1 is None,
+                changed to 0. If idx2 is None, changed to the length of the
+                dimension specified by <axis>.
+            axis (int): axis to do slicing.
+        Keyword Args:
+            squeeze (bool): if True, will squeeze singleton dimensions.
+        Returns:
+            result (NCVAR): sliced data.
+        '''
 
+        #--------------------Slice axis--------------------
         axisobj=self._axislist[axis]
         axisdata=axisobj.data
         if idx1 is None:
@@ -192,15 +290,13 @@ class NCVAR(object):
             idx2=len(axisdata)
 
         newaxisdata=axisdata[idx1:idx2]
-
         if len(newaxisdata)==0:
             raise Exception("No data found in [idx1,idx2).")
 
+        #--------------------Slice data--------------------
         slicer=[slice(None),]*self.ndim
         slicer[axis]=slice(idx1,idx2)
-
         newdata=self.data[slicer]
-
         if idx2-idx1==1 and squeeze:
             newdata=np.squeeze(newdata, axis=axis)
 
@@ -211,6 +307,7 @@ class NCVAR(object):
         else:
             newaxis=NCVAR(newaxisdata, axisobj.id, [], axisobj.attributes)
             axislist[axis]=newaxis
+
         result=NCVAR(newdata, self.id, axislist, self.attributes)
         for ii in axislist:
             setattr(result, ii.id, ii)
@@ -219,9 +316,23 @@ class NCVAR(object):
 
 
     def sliceData(self, v1, v2, axis=0):
+        '''Slice the data by start, end values along a given dimension
+
+        Args:
+            v1, v2 (float): start, end dimension values within which to slice
+                the data.
+            axis (int): axis to do slicing.
+        Returns:
+            result (NCVAR): sliced data.
+        '''
         if v1>v2:
             v1,v2=v2,v1
 
+        if axis==interpretAxis('time', self):
+            v1=pd.to_datetime(v1).to_pydatetime()
+            v2=pd.to_datetime(v2).to_pydatetime()
+
+        #--------------------Slice axis--------------------
         axisobj=self._axislist[axis]
         axisdata=axisobj.data
         idx=np.ma.where((axisdata>=v1) & (axisdata<v2))[0]
@@ -241,11 +352,12 @@ class NCVAR(object):
         axislist[axis]=newaxis
         result=NCVAR(newdata, self.id, axislist, self.attributes)
         for ii in axislist:
-            #exec('result.%s=ii' %str(ii.id))
             setattr(result, ii.id, ii)
         return result
 
     def squeeze(self):
+        '''Squeeze singleton dimensions
+        '''
         axislist=[]
         for ii in self.axislist:
             if len(ii.data)!=1:
@@ -253,43 +365,62 @@ class NCVAR(object):
         self.data=np.squeeze(self.data)
         self.axislist=axislist
         result=NCVAR(self.data, self.id, self.axislist, self.attributes)
+
         return result
 
     def getAxis(self, idx):
+        '''Get the dimension obj given by axis index
+
+        Args:
+            idx (int): axis number.
+        Returns:
+            result (NCVAR): NCVAR obj acting as the dimension.
+        '''
         if idx not in range(self.ndim):
             raise Exception("<idx> not in data shape.")
         return self.axislist[idx]
 
     def getLatitude(self):
-
+        '''Get latitude dimension values
+        '''
         for axisii in self.axislist:
             if axisii.id.lower() in ['y', 'lat', 'latitude']:
                 return axisii.data
         return
 
     def getLongitude(self):
-
+        '''Get longitude dimension values
+        '''
         for axisii in self.axislist:
             if axisii.id.lower() in ['x', 'lon', 'longitude']:
                 return axisii.data
         return
 
     def getTime(self):
-
+        '''Get time dimension values
+        '''
         for axisii in self.axislist:
             if axisii.id.lower() in ['t', 'time']:
                 return axisii.data
         return
 
     def getLevel(self):
-
+        '''Get level dimension values
+        '''
         for axisii in self.axislist:
             if axisii.id.lower() in ['z', 'level']:
                 return axisii.data
         return
 
     def shiftLon(self, dx):
+        '''Shift data along longitude dimension
 
+        Args:
+            dx (float): target longitude to shift to.
+        Returns:
+            result (NCVAR): new variable with longitude shifted so that it
+                starts from the lonigutde of <dx>.
+        '''
         lonidx=interpretAxis('longitude', self)
         if lonidx<0:
             raise Exception("Longitude axis not found in var.")
@@ -304,6 +435,15 @@ class NCVAR(object):
         return self
 
 def squeezeTo3D(vv):
+    '''Squeeze ndarray to 3D
+
+    Args:
+        vv (ndarray): 3d or 4d ndarray. If 3d, return as it is. If 4d and 1st
+            dimension length is not 1, squeeze all singleton dimensions.
+            If 4d and 1st dimension length 1, squeeze the 2nd dimension.
+    Returns:
+        vv (ndarray): 3d ndarray.
+    '''
 
     if np.ndim(vv) not in [3, 4]:
         raise Exception("Input <ivt>, <ivtrec>, <ivtano>, <qu> and <qv> should be 3D or 4D.")
@@ -317,18 +457,39 @@ def squeezeTo3D(vv):
     return vv
 
 def createAxis(id, data, attributes=None):
+    '''Create a NCVAR for axis
 
+    Args:
+        id (str): axis id, e.g. 'time', 'latitude'.
+        data (ndarray): 1d array, axis data.
+    Keyword Args:
+        attributes (dict or None): attribute dictionary.
+    Returns:
+        resultNV (NCVAR): an NCVAR obj acting as the axis for a variable.
+    '''
     if attributes is None:
         attributes={'id': str(id),
                 'name': str(id),
                 'long_name': 'axis_%s' %str(id),
                 'units': ''}
-
-    result=NCVAR(data, id, [], attributes)
-    return result
+    resultNV=NCVAR(data, id, [], attributes)
+    return resultNV
 
 def getBounds(axisdata, width=1.):
-    # only for axis
+    '''Compute axis bounds
+
+    Args:
+        axisdata (ndarray): 1d array, axis data.
+    Keyword Args:
+        width (float): default data spacing, only used when len(axisdata)==1.
+    Returns:
+        result (ndarray): Nx2 ndarray. 1st column is the lower bounds for
+            each axis value, 2nd column the upper bounds.
+
+    Notes: bounds are computed as the mid points between axis points. The
+    2 outer bounds are computed using linear extrapolation using the 2 end
+    points.
+    '''
     if np.ndim(axisdata)>1:
         raise Exception("Only work for axis data.")
     if len(axisdata)==1:
@@ -338,6 +499,7 @@ def getBounds(axisdata, width=1.):
     bound1=0.5*(axisdata[1:]+axisdata[:-1])
     b_lower=np.hstack([axisdata[0]*2.-bound1[0], bound1])
     b_upper=np.hstack([bound1, axisdata[-1]*2.-bound1[-1]])
+
     return np.vstack([b_lower,b_upper]).T
 
 def get3DEllipse(t,y,x):
@@ -406,62 +568,18 @@ def getQuantiles(slab,percents=None,verbose=False):
     return quantiles
 
 
-#-------Copies selected attributes from source object to dict--
-def attribute_obj2dict(source_object,dictionary=None,verbose=False):
-    '''Copies selected attributes from source object to dict
-    to <dictionary>.
-
-    <source_object>: object from which attributes are copied.
-    <dictionary>: None or dict. If None, create a new dict to store
-                  the result. If a dict, use attributes from <source_object>
-                  to overwrite or fill the dict.
-
-    Update time: 2016-01-18 11:00:55.
-    '''
-
-    if dictionary is None:
-        dictionary={}
-
-    for kk, vv in source_object.attributes.items():
-        dictionary[kk]=vv
-        if verbose:
-            print('\n# <attribute_obj2dict>: %s: %s' %(kk, vv))
-
-    return dictionary
-
-
-#-------------Copy attributes from dict to target object----------
-def attribute_dict2obj(dictionary,target_object,verbose=False):
-    '''Copies attributes from dictionary to target object.
-
-    <dictionary>: dict, contains attributes to copy.
-    <target_object>: obj, attributes are copied to.
-
-    Return <target_object>: target object with new attributes.
-
-    Update time: 2016-01-18 11:31:25.
-    '''
-
-    for kk, vv in dictionary.items():
-        setattr(target_object, kk, vv)
-        target_object.attributes[kk]=vv
-        if verbose:
-            print('\n# <attribute_dict2obj>: Copy attribute: %s = %s' %(kk,vv))
-
-    return target_object
-
-
-def addExtraAxis(slab, newaxis, axis=0, verbose=False):
+def addExtraAxis(slabNV, newaxis, axis=0, verbose=False):
     """Adds an extra axis to a data slab.
 
-    <slab>: variable to which the axis is to insert.
-    <newaxis>: axis object, could be of any length. If None, create a dummy
-               singleton axis.
-    <axis>: index of axis to be inserted, e.g. 0 if <newaxis> is inserted
-            as the 1st dimension.
-
-    Return: <slab2>.
-    Update time: 2013-10-09 12:34:32.
+    Args:
+        slabNV (NCVAR): variable to which the axis is to insert.
+        newaxis (NCVAR): axis object, could be of any length. If None,
+            create a dummy singleton axis.
+    Keyword Args:
+        axis (int): index of axis to be inserted, e.g. 0 if <newaxis> is
+            inserted as the 1st dimension.
+    Returns:
+        slab2NV (NCVAR): variable with an extra axis inserted.
     """
 
     if newaxis is None:
@@ -469,51 +587,66 @@ def addExtraAxis(slab, newaxis, axis=0, verbose=False):
             'name': 'newaxis', 'units': ''})
 
     # add new axis to axis list of input <slab>
-    axislist=slab.axislist
+    axislist=slabNV.axislist
     axislist.insert(axis, newaxis)
 
     #----------------Reshape----------------
-    shape=list(slab.shape)
+    shape=list(slabNV.shape)
     shape.insert(axis,len(newaxis))
-    slab2=np.reshape(slab.data, shape)
+    slab2NV=np.reshape(slabNV.data, shape)
 
     #------------Create variable------------
-    att_dict=slab.attributes
-    slab2=NCVAR(slab2, id=slab.id, axislist=axislist, attributes=att_dict)
+    att_dict=slabNV.attributes
+    slab2NV=NCVAR(slab2NV, id=slabNV.id, axislist=axislist, attributes=att_dict)
 
     if verbose:
-        print('\n# <addExtraAxis>: Originial variable shape:',slab.shape)
-        print('# <addExtraAxis>: New variable shape:',slab2.shape)
+        print('\n# <addExtraAxis>: Originial variable shape:',slabNV.shape)
+        print('# <addExtraAxis>: New variable shape:',slab2NV.shape)
 
-    return slab2
+    return slab2NV
 
 
 #-------------Concatenate transient variables---------------------
-def cat(var1,var2,axis=0,verbose=False):
-    '''Concatenate 2 variables along axis.
+def cat(var1NV, var2NV, axis=0, verbose=False):
+    '''Concatenate 2 NCVAR variables along axis.
 
-    <var1>,<var2>: Variables to be concatenated, in the order of \
-            <var1>, <var2>;
-    <axis>: int, index of axis to be concatenated along.
+    Args:
+        var1NV, var2NV (NCVAR): variables to be concatenated, in the order of
+            <var1NV>, <var2NV>.
+    Keyword Args:
+        axis (int): index of axis to be concatenated along.
+    Returns:
+        result (NCVAR): concatenated variable.
 
-    Return <result>
+    Result will use the metadata of the 1st variable.
     '''
 
-    attdict=getattr(var1, 'attributes', None)
-    axis1=var1.getAxis(axis)
-    axis2=var2.getAxis(axis)
+    attdict=getattr(var1NV, 'attributes', None)
+    axis1=var1NV.getAxis(axis)
+    axis2=var2NV.getAxis(axis)
     newaxis=np.r_[axis1.data, axis2.data]
     newaxis=NCVAR(newaxis, axis1.id, [], axis1.attributes)
 
-    result=np.ma.concatenate((var1.data, var2.data), axis=axis)
-    axislist=var1.axislist
+    result=np.ma.concatenate((var1NV.data, var2NV.data), axis=axis)
+    axislist=var1NV.axislist
     axislist[axis]=newaxis
-    result=NCVAR(result, id=var1.id, axislist=axislist, attributes=attdict)
+    result=NCVAR(result, id=var1NV.id, axislist=axislist, attributes=attdict)
 
     return result
 
 
 def concatenate(var_list, axis=0, verbose=False):
+    '''Concatenate multiple NCVAR variables along axis.
+
+    Args:
+        var_list (list/tuple): variables to be concatenated.
+    Keyword Args:
+        axis (int): index of axis to be concatenated along.
+    Returns:
+        resultNV (NCVAR): concatenated variable.
+
+    Result will use the metadata of the 1st variable.
+    '''
 
     if not isinstance(var_list, (list, tuple)):
         raise Exception("<var_list> needs to be a tuple of NCVAR variables.")
@@ -540,29 +673,27 @@ def concatenate(var_list, axis=0, verbose=False):
 
     newaxis=NCVAR(newaxisdata, newaxis.id, [], newaxis.attributes)
     axislist[axis]=newaxis
-    result=NCVAR(resultdata, id=result.id, axislist=axislist, attributes=attdict)
+    resultNV=NCVAR(resultdata, id=result.id, axislist=axislist,
+            attributes=attdict)
 
-    return result
+    return resultNV
 
 #------Interpret and convert an axis id to index----------
-def interpretAxis(axis, ref_var, verbose=True):
+def interpretAxis(axis, ref_varNV, verbose=True):
     '''Interpret and convert an axis id to index
 
-    <axis>: axis option, integer or string.
-    <ref_var>: reference variable.
+    Args:
+        axis (int or str): axis option, integer or string.
+        ref_varNV (NCVAR): NCVAR variable.
+    Returns:
+        axis_index (int): the index of required axis in <ref_varNV>.
 
-    Return <axis_index>: the index of required axis in <ref_var>.
-
-    E.g. index=interpretAxis('time',ref_var)
+    E.g. index=interpretAxis('time', ref_varNV)
          index=0
 
-         index=interpretAxis(1,ref_var)
+         index=interpretAxis(1, ref_varNV)
          index=1
-
-    Update time: 2013-09-23 13:36:53.
     '''
-
-    import sys
 
     if isinstance(axis, (int, np.integer)):
         return axis
@@ -572,7 +703,7 @@ def interpretAxis(axis, ref_var, verbose=True):
         axis=axis.lower()
         dim_idx = -1
 
-        for ii, axisii in enumerate(ref_var.axislist):
+        for ii, axisii in enumerate(ref_varNV.axislist):
             idii=axisii.id
 
             if axis in ['time', 'tim', 't']:
@@ -595,21 +726,32 @@ def interpretAxis(axis, ref_var, verbose=True):
         raise Exception("<axis> type not recognized.")
 
 def getAttributes(var):
+    '''Get attribute dict from an NETCDF obj'''
     attr={}
     for kk in var.ncattrs():
         attr[kk]=var.getncattr(kk)
     return attr
 
 def readNC(abpath_in, varid):
+    '''Read in a variable from an netcdf file
+
+    Args:
+        abpath_in (str): absolute file path to the netcdf file.
+        varid (str): id of variable to read.
+    Returns:
+        ncvarNV (NCVAR): variable stored as an NCVAR obj.
+    '''
 
     fin=Dataset(abpath_in, 'r')
     var=fin.variables[varid]
 
+    #---------------------Get axes---------------------
     dims=var.dimensions
     axislist=[]
     for dd in dims:
         ncaxis=fin.variables[dd]
         if dd=='time':
+            # convert time to datetime objs
             try:
                 axisii=num2date(ncaxis[:], ncaxis.units,
                         only_use_cftime_datetimes=False,
@@ -617,7 +759,6 @@ def readNC(abpath_in, varid):
             except:
                 axisii=num2date(ncaxis[:], ncaxis.units,
                         only_use_cftime_datetimes=False)
-            #axisii=pd.to_datetime(axisii)
         else:
             axisii=ncaxis[:]
         axisattr=getAttributes(ncaxis)
@@ -628,77 +769,89 @@ def readNC(abpath_in, varid):
     attributes=getAttributes(var)
     data=var[:]
 
-    ncvar=NCVAR(data, varid, axislist, attributes)
+    # create NCVAR var
+    ncvarNV=NCVAR(data, varid, axislist, attributes)
     for ii in axislist:
-        #exec('ncvar.%s=ii' %str(ii.id))
-        setattr(ncvar, ii.id, ii)
+        setattr(ncvarNV, ii.id, ii)
 
-    return ncvar
+    return ncvarNV
 
 
-def saveNC(abpath_out, var, mode='w', dtype=None):
+def saveNC(abpath_out, varNV, mode='w', dtype=None):
+    '''Save data to netcdf file
+
+    Args:
+        abpath_out (str): absolute file path.
+        varNV (NCVAR): NCVAR obj.
+    Keyword Args:
+        mode (str): writing mode.
+        dtype (None or str): date type. Default to np.float32.
+    '''
 
     with Dataset(abpath_out, mode) as fout:
+        saveNCDims(fout, varNV.axislist)
+        _saveNCVAR(fout, varNV, dtype)
 
-        saveNCDims(fout, var.axislist)
-        _saveNCVAR(fout, var, dtype)
 
+def _saveNCVAR(fout, varNV, dtype=None):
+    '''Write variable data to netcdf file
 
-def _saveNCVAR(fout, var, dtype=None):
+    Args:
+        fout (netcdf file handle): opened netcdf file handle.
+        varNV (NCVAR): NCVAR obj.
+    Keyword Args:
+        dtype (None or str): date type. Default to np.float.
+    '''
 
     #-----------------Create variable-----------------
     if dtype is None:
         dtype=np.float32
 
-    if var.id not in fout.variables.keys():
-        varout=fout.createVariable(var.id, dtype, var.dims, zlib=True)
+    if varNV.id not in fout.variables.keys():
+        varout=fout.createVariable(varNV.id, dtype, varNV.dims, zlib=True)
         #varout.set_collective(True)
         #----------------Create attributes----------------
-        for kk, vv in var.attributes.items():
+        for kk, vv in varNV.attributes.items():
             try:
                 varout.setncattr(kk, vv)
             except:
                 pass
-        varout[:]=var.data
+        # assign data
+        varout[:]=varNV.data
     else:
-        varout=fout.variables[var.id]
-        '''
-        if np.all(varout[-1].mask):
-            varout[-1]=var.data
-        else:
-            newdata=np.concatenate([varout[:], var.data])
-            varout[:]=newdata
-        timeax=fout.variables['time']
-        if timeax[-1].mask:
-            timeax[-1]=var.getTime()
-        '''
+        varout=fout.variables[varNV.id]
         timeax=fout.variables['time']
         tlen=len(timeax)
-        tnew=var.getTime()
+        tnew=varNV.getTime()
         t0=tnew[0]
         tidx=np.where(timeax==t0)[0]
         if len(tidx)>0:
+            # if time already exists
             tidx=tidx[0]
         else:
+            # new time point
             tidx=tlen
         timeax[tidx:tidx+len(tnew)]=tnew
-        varout[tidx:tidx+len(tnew)]=var.data
-
+        varout[tidx:tidx+len(tnew)]=varNV.data
 
     return
 
 
 def saveNCDims(fout, axislist):
+    '''Write dimension info to netcdf file
+
+    Args:
+        fout (netcdf file handle): opened netcdf file handle.
+        axislist (tuple or list): tuple/list of NCVAR objs acting as axes.
+    '''
 
     #----------------Create dimensions----------------
     for aa in axislist:
 
         if aa.id in fout.dimensions.keys():
             continue
-
         if aa.id in ['t', 'time', 'Time', 'T']:
             lenii=None
-
             if all([isinstance(ii, datetime) for ii in aa.data]):
                 axisdata=date2num(aa.data, aa.units)
             else:
@@ -718,13 +871,15 @@ def saveNCDims(fout, axislist):
             if kk!='isunlimited':
                 axisvar.setncattr(kk, vv)
 
+    return
 
 
 #----------Check exsitance of files in file list-----------
-def checkFiles(file_list,verbose=True):
+def checkFiles(file_list, verbose=True):
     '''Check existance of files in a list.
 
-    <file_list>: a list of ABSOLUTE paths to be checked;
+    Args:
+        file_list (list): a list of ABSOLUTE paths to be checked.
 
     Usefull before a long list of iteration to make sure every data
     file are ready on the disk.
@@ -732,8 +887,6 @@ def checkFiles(file_list,verbose=True):
     Function prompts enquiry if any file is missing in the list.
     '''
 
-    import os
-    import sys
     if sys.version_info.major==3:
         from builtins import input as input # py2 py3 compatible
     else:
@@ -751,9 +904,10 @@ def checkFiles(file_list,verbose=True):
 def getMissingMask(slab):
     '''Get a bindary denoting missing (masked or nan).
 
-    <slab>: nd array, possibly contains masked values or nans.
-
-    Return <mask>: nd bindary, 1s for missing, 0s otherwise.
+    Args:
+        slab (ndarray): ndarray, possibly contains masked values or nans.
+    Returns:
+        mask (ndarray): bindary, 1s for missing, 0s otherwise.
     '''
 
     if isinstance(slab, NCVAR):
@@ -826,17 +980,17 @@ def greatCircle(lat1,lon1,lat2,lon2,r=None,verbose=False):
 
 
 #----------------------Get a slab from a variable----------------------
-def getSlab(var,index1=-1,index2=-2,verbose=True):
-    '''Get a slab from a variable
+def getSlab(var, index1=-1, index2=-2, verbose=True):
+    '''Get a 2d slab from a variable
 
-    <var>: nd array with dimension >=2.
-    <index1>,<index2>: str, indices denoting the dimensions from which a slab is to slice.
-
-    Return <slab>: the (1st) slab from <var>.
-                   E.g. <var> has dimension (12,1,241,480), getSlab(var) will
-                   return the 1st time point with singleton dimension squeezed.
-
-    Update time: 2015-07-14 19:23:42.
+    Args:
+        var (ndarray): ndarray with dimension >=2.
+        index1,index2 (int): indices denoting the dimensions from which a 2d
+            slab is to slice.
+    Returns:
+        slab (ndarray): the (1st) 2d slab from <var>.
+               E.g. <var> has dimension (12,1,241,480), getSlab(var) will
+               return the 1st time point with singleton dimension squeezed.
     '''
 
     ndim=np.ndim(var)
@@ -853,21 +1007,23 @@ def getSlab(var,index1=-1,index2=-2,verbose=True):
     exec(string)
     return slab
 
-
 #-------------Change latitude axis to south-to-north-----------------
 def increasingLatitude(slab, axis, lats=None, verbose=False):
     '''Changes a slab so that is always has latitude running from
     south to north.
 
-    <slab>: input transientvariable. Need to have a proper latitude axis.
+    Args:
+        slab (NCVAR or ndarray): input data.
+        axis (int): axis index for the latitude dimension.
+    Keyword Args:
+        lats (None or ndarray): if 1darray, the latitude values. Use None
+            when <slab> is an NCVAR which comes with its latitude axis.
+    Returns:
+        slab2 (NCVAR or ndarray): data with latitude orientated from south
+            to north. It is an NCVAR if <slab> is NCVAR, ndarray if <slab>
+            is ndarray.
 
-    Return: <slab2>, if latitude axis is reversed, or <slab> otherwise.
-
-    If <slab> has a latitude axis, and the latitudes run from north to south, a
-    copy <slab2> is made with the latitudes reversed, i.e., running from south
-    to north.
-
-    Update time: 2016-01-18 11:58:11.
+    See also increasingLatitude2()
     '''
 
     if isinstance(slab, NCVAR):
@@ -884,7 +1040,6 @@ def increasingLatitude(slab, axis, lats=None, verbose=False):
         lats_data=lats
         data=slab
         isnc=False
-
 
     #-----Reverse latitudes if necessary------------------
     if lats_data[0]>lats_data[-1]:
@@ -912,22 +1067,22 @@ def increasingLatitude2(slab, axis, lats, verbose=False):
     '''Changes a slab so that is always has latitude running from
     south to north.
 
-    <slab>: input transientvariable. Need to have a proper latitude axis.
+    Args:
+        slab (ndarray): input data.
+        axis (int): axis index for the latitude dimension.
+        lats (ndarray): 1darray, the latitude values.
+    Returns:
+        slab (ndarray): data with latitude orientated from south
+            to north.
+        lats (ndarray): 1darray, oriented latitude values.
 
-    Return: <slab2>, if latitude axis is reversed, or <slab> otherwise.
-
-    If <slab> has a latitude axis, and the latitudes run from north to south, a
-    copy <slab2> is made with the latitudes reversed, i.e., running from south
-    to north.
-
-    Update time: 2016-01-18 11:58:11.
+    See also increasingLatitude()
     '''
 
     #-----Reverse latitudes if necessary------------------
     if lats[0]>lats[-1]:
         if verbose:
             print('\n# <increasingLatitude>: Reversing latitude axis.')
-
         slab=np.flip(slab, axis=axis)
         lats=lats[::-1]
         return slab, lats
@@ -937,14 +1092,13 @@ def increasingLatitude2(slab, axis, lats, verbose=False):
         return slab, lats
 
 
-
-
-def dLongitude2(lats, lons, side='c', R=6371000):
+def dLongitude(lats, lons, side='c', R=6371000):
     '''Return a slab of longitudinal increment (meter) delta_x.
 
     Args:
         lats (ndarray): 1d array, latitude coordinates in degrees.
         lons (ndarray): 1d array, longitude coordinates in degrees.
+    Keyword Args:
         side (str): 'n': northern boundary of each latitudinal band;
                     's': southern boundary of each latitudinal band;
                     'c': central line of latitudinal band;
@@ -953,14 +1107,9 @@ def dLongitude2(lats, lons, side='c', R=6371000):
                 /-----\     'c'
                /_______\     's'
 
-
-    Keyword Args:
         R (float): radius of Earth.
-
     Returns:
-        delta_x (TransientVariable): a 2-D slab with grid information copied from <var>.
-
-    New in v2.0.
+        delta_x (ndarray): 2d array, longitudinal increments.
     '''
 
     lons=np.sort(lons)
@@ -985,21 +1134,17 @@ def dLongitude2(lats, lons, side='c', R=6371000):
 
 
 #----------Delta_Longitude----------------------------
-def dLatitude2(lats, lons, R=6371000, verbose=True):
+def dLatitude(lats, lons, R=6371000, verbose=True):
     '''Return a slab of latitudinal increment (meter) delta_y.
 
     Args:
         lats (ndarray): 1d array, latitude coordinates in degrees.
         lons (ndarray): 1d array, longitude coordinates in degrees.
-
     Keyword Args:
         R (float): radius of Earth;
-
     Returns:
-        delta_y (TransientVariable): a 2-D slab with grid information copied from\
+        delta_x (ndarray): 2d array, latitudinal increments.
             <var>.
-
-    New in v2.0.
     '''
 
     lons=np.sort(lons)
@@ -1013,15 +1158,17 @@ def dLatitude2(lats, lons, R=6371000, verbose=True):
 
     return delta_y
 
-
 #--------------------Get contour from a binary mask--------------------
 def getBinContour(mask,lons=None,lats=None,return_largest=True):
     '''Get contour from a binary mask
 
-    <mask>: 2d array, binary mask.
-    <lons>,<lats>: 1d array, x, y coordinates for <mask>.
-
-    Return <cont>: Nx2 array, coordinates of the contour of the largest
+    Args:
+        mask (ndarray): 2d array, binary mask.
+    Keyword Args:
+        lons,lats (1darray or None): if 1d array, x, y coordinates for <mask>.
+            if None, create a coordinate array with indices.
+    Returns:
+        cont (ndarray): Nx2 array, coordinates of the contour of the largest
                    continuous region represented by 1s in <mask>.
     '''
 
@@ -1057,14 +1204,15 @@ def getBinContour(mask,lons=None,lats=None,return_largest=True):
 #-----------Find index of value in array-----------
 def findIndex(x,a):
     '''Find index of value in array
-    <x>: scalar, value to search.
-    <a>: 1d array.
 
-    Return <idx>: int, index in <a> that a[idx] is closest to <x>.
-                  If <idx> is 0 or len(a)-1, and <x> is too far from the
-                  closest value, return None.
+    Args:
+        x (float or int): scalar, value to search.
+        a (1d array): array to search from.
+    Returns:
+        idx (int): index in <a> that a[idx] is closest to <x>.
+              If <idx> is 0 or len(a)-1, and <x> is too far from the
+              closest value, return None.
     '''
-
     if not np.isscalar(x):
         raise Exception("<x> needs to be scalar.")
     if np.ndim(a)!=1:
@@ -1073,22 +1221,22 @@ def findIndex(x,a):
     idx=np.argmin(abs(x-a))
     if idx==0 and abs(a[0]-x) > abs(a[1]-a[0]):
         idx=None
-        #raise Exception("<x> not in range of <a>.")
     if idx==len(a)-1 and abs(x-a[-1]) > abs(a[-1]-a[-2]):
         idx=None
-        #raise Exception("<x> not in range of <a>.")
     return idx
 
 
 def getBearing(lat1,lon1,lat2,lon2):
     '''Compute bearing from point 1 to point2
 
-    <lat1>, <lat2>: scalar float or nd-array, latitudes in degree for
-                    location 1 and 2.
-    <lon1>, <lon2>: scalar float or nd-array, longitudes in degree for
-                    location 1 and 2.
+    Args:
+        lat1,lat2 (float or ndarray): scalar float or nd-array, latitudes in
+            degree for location 1 and 2.
+        lon1,lon2 (float or ndarray): scalar float or nd-array, longitudes in
+            degree for location 1 and 2.
+    Returns:
+        theta (float or ndarray): (forward) bearing in degree.
 
-    Return <theta>: (forward) bearing in degree.
     NOTE that the bearing from P1 to P2 is in general not the same as that
     from P2 to P1.
     '''
@@ -1097,7 +1245,6 @@ def getBearing(lat1,lon1,lat2,lon2):
     d2r=lambda x:x*np.pi/180
     lat1,lon1,lat2,lon2=map(d2r,[lat1,lon1,lat2,lon2])
     dlon=lon2-lon1
-
     theta=np.arctan2(sin(dlon)*cos(lat2),
             cos(lat1)*sin(lat2)-sin(lat1)*cos(lat2)*cos(dlon))
     theta=theta/np.pi*180
@@ -1116,7 +1263,6 @@ def getCrossTrackDistance(lat1,lon1,lat2,lon2,lat3,lon3,r=None):
                         degree, end point of the great circle.
         lat3, lon3 (float): scalar float or nd-array, latitudes and longitudes in
                         degree, a point away from the great circle.
-
     Returns:
         dxt (float): great cicle distance between point P3 to the closest point
                   on great circle that connects P1 and P2.
@@ -1152,11 +1298,13 @@ def readVar(abpath_in, varid):
         varid (str): id of variable to read.
     Returns:
         var (TransientVariable): 4d TransientVariable.
+
+    NOTE: deprecated, use netCDF4 instead of CDAT.
     '''
 
+    """
     import cdms2 as cdms
     import MV2 as MV
-
     print('\n# <readVar>: Read in file:\n',abpath_in)
     fin=cdms.open(abpath_in,'r')
     var=fin(varid)
@@ -1205,6 +1353,8 @@ def readVar(abpath_in, varid):
     fin.close()
 
     return var
+    """
+    pass
 
 
 def getTimeAxis(times, ntime, ref_time='days since 1900-01-01'):
@@ -1212,20 +1362,19 @@ def getTimeAxis(times, ntime, ref_time='days since 1900-01-01'):
 
     Args:
         times (list or tuple or array): array of datetime objs, or strings,
-            giving the time stamps. It is assumed to be in chronological order.
+            giving the time stamps in the format of 'yyyy-mm-dd HH:MM'. It is
+            assumed to be in chronological order.
             If None, default to create a dummy time axis, with 6-hourly time
             step, starting from <ref_time>, with a length of <ntime>.
         ntime (int): length of the time axis. If <times> is not None, it is
             checked to insure that length of <times> equals <ntime>. If <times>
             is None, <ntime> is used to create a dummy time axis with a length
             of <ntime>.
-
     Keyword Args:
         ref_time (str): reference time point. If <times> is not None, used to
             create the numerical values of the resulant time axis with this
             reference time. If <times> is None, used to create a dummy time
             axis with this reference time.
-
     Returns:
         result (list): a list of datetime objs. If <times> is not None,
             the datetime objs are using the provided time stamps.
@@ -1236,7 +1385,6 @@ def getTimeAxis(times, ntime, ref_time='days since 1900-01-01'):
     '''
 
     import sys
-    import numpy as np
     import warnings
 
     #---If no time stamps given, create a dummy one---
@@ -1319,15 +1467,17 @@ def breakCurveAtEdge(xs, ys, left_bound, right_bound):
 
 
 #------ Get binary grids inside a contour ------------
-def getGridsInContour(contour,x,y):
+def getGridsInContour(contour, x, y):
     '''Get binary grids inside a contour
-    <contour>: Nx2 ndarray, (x,y) coordinates of a contour.
+
+    Args:
+        contour (ndarray): Nx2 ndarray, (x,y) coordinates of a contour.
                Or a matplotlib Path obj. If the latter, function can
                remove holes if exists in the contour.
-    <x>,<y>: 1d array, x and y coordinates of the grid.
-
-    Return <validcoords>: 2d array of shape (len(y), len(x)), binary slab
-                          with 1s inside of <contour> and 0s elsewhere.
+        x,y (ndarray): 1d array, x and y coordinates of the grid.
+    Returns:
+        validcoords (ndarray): 2d array of shape (len(y), len(x)), binary slab
+            with 1s inside of <contour> and 0s elsewhere.
     '''
     from matplotlib.path import Path
 
@@ -1396,26 +1546,16 @@ def getGridsInContour(contour,x,y):
     return mask
 
 def polygonArea(x,y):
-
-    '''
-    def isClosed(xs,ys):
-        if np.alltrue([np.allclose(xs[0],xs[-1]),\
-            np.allclose(ys[0],ys[-1]),xs.ptp(),ys.ptp()]):
-            return True
-        else:
-            return False
-
-    if not isClosed(x,y):
-        # here is a minor issue: isclosed() on lat/lon can be closed,
-        # but after projection, unclosed. Happens to spurious small
-        # contours usually a triangle. just return 0.
-        return 0
-    area=np.sum(y[:-1]*np.diff(x)-x[:-1]*np.diff(y))
-    return np.abs(0.5*area)
-    '''
     return np.abs(signedArea(x, y))
 
 def signedArea(x, y):
+    '''Get signed polygon area
+
+    Args:
+        x, y (ndarray): 1d array, x and y coordinates of the polygon.
+    Returns:
+        area (float): signed area of the polygon.
+    '''
 
     x=np.asarray(x)
     y=np.asarray(y)
@@ -1436,6 +1576,23 @@ def signedArea(x, y):
 
 def averager(slab, axis=-1, weights='equal', coords=None, keepdims=True,
         verbose=True):
+    '''Compute weighted average along a given axis/axes.
+
+    Args:
+        slab (ndarray): data to compute average.
+    Keyword Args:
+        axis (int or tuple/list): if int, axis to compute average along.
+            if tuple/list, multiple axes to compute averages along.
+        weights (str): 'equal': compute normal average.
+                       'generate': compute weighted average using axis
+                       coordinates increments as weights.
+        coords (ndarray or tuple/list or None): if ndarray, an 1d array
+            giving the axis coordinates of the axis/axes given in <axis>.
+            If None, the same as weights='equal', i.e. equal weights.
+        keepdims (bool): if True, remove the singleton axis after averaging.
+    Returns:
+        result (ndarray): averaged result.
+    '''
 
     if not isinstance(axis, (tuple, list)):
         axis=(axis,)
@@ -1475,6 +1632,22 @@ def averager(slab, axis=-1, weights='equal', coords=None, keepdims=True,
 
 def areaAverage(slab, axis=(-2, -1), weights='equal', lats=None, lons=None,
         keepdims=True, verbose=True):
+    '''Compute area-weighted average.
+
+    Args:
+        slab (ndarray): data to compute average.
+    Keyword Args:
+        axis (tuple/list): tuple/list of the axes to compute areal averages.
+        weights (str): 'equal': compute normal average.
+                       'generate': compute weighted average using grid cell
+                       areas as weights.
+        lats, lons (ndarray or None): if ndarray, an 1d array
+            giving the y- and x- coordinates.
+            If both None, the same as weights='equal', i.e. equal weights.
+        keepdims (bool): if True, remove the singleton axis after averaging.
+    Returns:
+        result (ndarray): averaged result.
+    '''
 
     if not isinstance(axis, (tuple, list)):
         axis=(axis,)
@@ -1492,10 +1665,9 @@ def areaAverage(slab, axis=(-2, -1), weights='equal', lats=None, lons=None,
             if lats is None or lons is None:
                 raise Exception("Need to provide lat and lon coordinates.")
 
-            dlat=dLatitude2(lats, lons)
-            dlon=dLongitude2(lats, lons)
+            dlat=dLatitude(lats, lons)
+            dlon=dLongitude(lats, lons)
             area=dlat*dlon
-
             area=slabGrow(area, slab.shape)
 
             if hasattr(slab, 'mask'):
@@ -1505,18 +1677,6 @@ def areaAverage(slab, axis=(-2, -1), weights='equal', lats=None, lons=None,
             den=np.ma.sum(area, axis=axis, keepdims=True)
             result=num/den
 
-            '''
-            result=slab
-            for idxii, cii in zip(axis, [dlat, dlon]):
-                wii=arrayGrow(cii, result.shape, axis=idxii)
-                wii=np.ma.array(wii)
-                if hasattr(slab, 'mask'):
-                    wii.mask=slab.mask
-
-                result=np.ma.sum(result*wii, axis=idxii, keepdims=True)/\
-                        np.ma.sum(wii, axis=idxii, keepdims=True)
-            '''
-
     if not keepdims:
         result=np.squeeze(result, axis=axis)
 
@@ -1525,6 +1685,22 @@ def areaAverage(slab, axis=(-2, -1), weights='equal', lats=None, lons=None,
 
 def areaStd(slab, axis=(-2, -1), weights='equal', lats=None, lons=None,
         keepdims=True, verbose=True):
+    '''Compute area-weighted standard deviations.
+
+    Args:
+        slab (ndarray): data to compute std.
+    Keyword Args:
+        axis (tuple/list): tuple/list of the axes to compute std.
+        weights (str): 'equal': compute normal std.
+                       'generate': compute weighted std using grid cell
+                       areas as weights.
+        lats, lons (ndarray or None): if ndarray, an 1d array
+            giving the y- and x- coordinates.
+            If both None, the same as weights='equal', i.e. equal weights.
+        keepdims (bool): if True, remove the singleton axis after averaging.
+    Returns:
+        result (ndarray): area-weighted standard deviations.
+    '''
 
     if not isinstance(axis, (tuple, list)):
         axis=(axis,)
@@ -1542,10 +1718,9 @@ def areaStd(slab, axis=(-2, -1), weights='equal', lats=None, lons=None,
             if lats is None or lons is None:
                 raise Exception("Need to provide lat and lon coordinates.")
 
-            dlat=dLatitude2(lats, lons)
-            dlon=dLongitude2(lats, lons)
+            dlat=dLatitude(lats, lons)
+            dlon=dLongitude(lats, lons)
             area=dlat*dlon
-
             area=slabGrow(area, slab.shape)
 
             if hasattr(slab, 'mask'):
@@ -1563,18 +1738,19 @@ def areaStd(slab, axis=(-2, -1), weights='equal', lats=None, lons=None,
 
     return result
 
-#---------------Grow a 2-D slab to 3-D or 4-D--------------------
+#---------------Grow a 2D slab to 3D or 4D--------------------
 def slabGrow(slab, shape, verbose=False):
-    '''Grow an 2-D slab to 3-D or 4-D slab, according to a reference variable.
+    '''Grow an 2D slab to 3D or 4D slab given target shape
 
-    <slab> An MV 2-D slab to be repeated;
-    <ref_var> Multi-dimentional (3-D or 4-D) reference variable;
+    Args;
+        slab (ndarray): 2d array to be repeated.
+        shape (tuple/list): target shape to broadcast to.
+    Returns:
+        slab (ndarray): slab repeatd to target shape.
 
-    Return <slab>.
     Usually used to extend one coeffient to match the size of a variable.
-    e.g. <slab> is a 2-D land-sea-mask, the function then grows the 2-D slab\
-            to match dimention of reference variable <ref_var>, either \
-            (t,z,y,x) or (t,y,x).
+    e.g. <slab> is a 2D land-sea-mask, the function then grows the 2D slab
+            to match dimention of a variable, either (t,z,y,x) or (t,y,x).
     '''
 
     slabshape=slab.shape
@@ -1584,19 +1760,15 @@ def slabGrow(slab, shape, verbose=False):
         if ii==slabshape[0] and jj==slabshape[1]:
             match=True
             break
-
     if not match:
         raise Exception("Doesn't find matching slab in shape.")
 
     order=range(len(shape))
-
     order_remain=order[0:-2]
     order_remain.reverse()
-
     for indexii in order_remain:
         slab=np.ma.reshape(slab, (1,)+slab.shape)
         slab=np.ma.repeat(slab, shape[indexii], axis=0)
-
     slab=np.ma.array(slab)
 
     if verbose:
@@ -1605,39 +1777,37 @@ def slabGrow(slab, shape, verbose=False):
     return slab
 
 
-#------------Grow an 1-D array to 2-D, 3-D or 4-D-------------------
-def arrayGrow(array,shape,axis=None,verbose=True):
-    '''Grow an 1-D array to a 2-D, 3-D or 4-D slab, according to a\
-            reference variable.
+#------------Grow an 1D array to 2D, 3D or 4D-------------------
+def arrayGrow(array, shape, axis=None, verbose=True):
+    '''Grow an 1D array to a 2D, 3D or 4D slab given target shape
 
-    <array>: 1-D array to be repeated;
-    <ref_var>: nd (2-D, 3-D or 4-D) reference variable;
-    <axis>: an optional argument to specify the axis of the array using\
-            indices (0,1,2,or 3).
-            usefull when 2 axes in ref_var have same length.\
-
-    Return <newarray>.
+    Args:
+        array (ndarray): 1d array to be repeated.
+        shape (tuple/list): target shape to broadcast to.
+    Keyword Args:
+        axis (int or None): an optional argument to specify the axis index of
+            the array after broadcast. Usefull when 2 axes in <shape> have
+            same length.
+            If None, use the length of <array> to find the axis index.
+            E.g. len(array)=100, shape=(4, 100, 200). Then axis is 1.
+            If len(array)=100, shape=(3, 100, 100), can use axis=1 or axis=2
+            to specify which axis should match <array>.
+    Returns:
+        newarray (ndarray): array repeatd to target shape.
 
     Usually used to extend one coefficient to match the size of a variable.
-    e.g. <array> is longitudinal increment calculated using latitude values,\
-            the function then grows the 1-D array to match dimentions of reference
-            variable <ref_var>, which could be (t,z,y,x) or (t,y,x).
-
-    NOTE: difference to arrayGrowOld(): <ref_var> can be an numpy.ndarray rather
-          than transientVariable.
-
-    Update time: 2016-01-18 16:30:43.
+    e.g. <array> is longitudinal increment calculated using latitude values,
+    the function then grows the 1d array to match dimentions of reference
+    variable <ref_var>, which could be (t,z,y,x) or (t,y,x).
     '''
-
-    import numpy
 
     #-----------------Check dimension-----------------
     array=np.atleast_1d(np.squeeze(array))
-    if numpy.ndim(array)>1:
+    if np.ndim(array)>1:
         raise Exception("<array> needs to be 1d array.")
 
+    #--------------------Find axis--------------------
     length=len(array)
-
     if axis is None:
         try:
             index=shape.index(length)
@@ -1651,19 +1821,17 @@ def arrayGrow(array,shape,axis=None,verbose=True):
     #-----------Switch this axis to the end of shape list------
     ndim=len(shape)
     order=range(ndim)
-
     if index!=len(shape)-1:
         order[index]=order[-1]
         order[-1]=index
-
-    tmpshape=numpy.array(shape)[order]
+    tmpshape=np.array(shape)[order]
 
     #---------------Expand by repeating---------------
-    array=numpy.array(array)
-    newarray=array[numpy.newaxis,:]
-    newarray=numpy.repeat(newarray, numpy.prod(shape)/length, axis=0)
-    newarray=numpy.reshape(newarray,tmpshape)
-    newarray=numpy.transpose(newarray,order)
+    array=np.array(array)
+    newarray=array[np.newaxis,:]
+    newarray=np.repeat(newarray, np.prod(shape)/length, axis=0)
+    newarray=np.reshape(newarray,tmpshape)
+    newarray=np.transpose(newarray,order)
 
     return newarray
 
