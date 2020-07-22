@@ -3,7 +3,7 @@
 ## Dependencies
 
 * Python2.7 or Python3.7.
-* netCDF4 (tested 1.4.2)
+* netCDF4 (tested 1.4.2 in py2, tested 1.5.1.2 in py3)
 * numpy (developed in 1.16.5 in py2, tested 1.18.1 in py3)
 * scipy (developed in 1.2.1 in py2, tested 1.4.1 in py3)
 * matplotlib (2.2.3 for both py2 and py3, having [issues](https://github.com/matplotlib/matplotlib/issues/12820) with 3.1.3)

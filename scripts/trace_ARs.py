@@ -28,8 +28,6 @@ Update time: 2020-06-05 23:22:25.
 from __future__ import print_function
 
 #--------------Globals------------------------------------------
-RECORD_FILE_IN_NAME='/home/guangzhi/datasets/erai/ERAI_AR_THR/2007/ar_records_2007.csv'
-RECORD_FILE_IN_NAME='/home/guangzhi/datasets/artmip_merra_global/ar_records_1980.csv'
 RECORD_FILE_IN_NAME='/home/guangzhi/datasets/quicksave2/THR/ar_records_2007.csv'
 OUTPUTDIR='/home/guangzhi/datasets/quicksave2/THR/'
 RECORD_FILE_OUT_NAME='ar_tracks_2007.csv'

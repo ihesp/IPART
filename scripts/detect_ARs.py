@@ -95,30 +95,19 @@ TIME_START='%d-01-01 00:00:00' %YEAR
 TIME_END='%d-01-10 18:00:00' %YEAR
 
 #-----------u-qflux----------------------
-#SOURCEDIR1='/home/guangzhi/datasets/erai_qflux/'
-UQ_FILE_NAME='/home/guangzhi/datasets/artmip_merra_added_time/ivt_s_3_1980_merra2-NH.xml'
 UQ_FILE_NAME='/home/guangzhi/datasets/erai_qflux/uflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
-#UQ_FILE_NAME='uflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
 UQ_VAR='uflux'
 
 #-----------v-qflux----------------------
-#SOURCEDIR2='/home/guangzhi/datasets/erai_qflux'
-#VQ_FILE_NAME='vflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
-VQ_FILE_NAME=UQ_FILE_NAME
 VQ_FILE_NAME='/home/guangzhi/datasets/erai_qflux/vflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
 VQ_VAR='vflux'
 
 #-----------------ivt reconstruction and anomalies-----------------
-SOURCEDIR3='/home/guangzhi/datasets/artmip_merra_added_time/'
-SOURCEDIR3='/home/guangzhi/datasets/quicksave2/THR'
-IVT_FILE_NAME='ivt_s_3_%d_merra2-NH-THR-kernel-t32-s9.nc' %YEAR
-IVT_FILE_NAME='ivt_m1-60_6_%d_cln-cea-proj-THR-kernel-t10-s6.nc' %YEAR
-
+IVT_FILE_NAME='/home/guangzhi/datasets/quicksave2/THR/ivt_m1-60_6_%d_cln-cea-proj-THR-kernel-t10-s6.nc' %YEAR
 
 #------------------Output folder------------------
-#OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_added_time'
 OUTPUTDIR='/home/guangzhi/datasets/quicksave2/THR'
-LABEL_FILE_OUT_NAME='ar_s_6_%d_label-angle-flux.nc' %YEAR
+LABEL_FILE_OUT_NAME='ar_label-angle-flux_%d.nc' %YEAR
 RECORD_FILE_OUT_NAME='ar_records_%d.csv' %YEAR
 
 
@@ -157,7 +146,7 @@ PARAM_DICT={
     'fill_radius': None,
     # do peak partition or not, used to separate systems that are merged
     # together with an outer contour.
-    'single_dome': True,
+    'single_dome': False,
     # max prominence/height ratio of a local peak. Only used when single_dome=True
     'max_ph_ratio': 0.7,
     # minimal proportion of flux component in a direction to total flux to
@@ -198,11 +187,9 @@ if __name__=='__main__':
     qvNV=qvNV.shiftLon(SHIFT_LON)
 
     #-------------------Read in ivt and THR results-------------------
-    abpath_in=os.path.join(SOURCEDIR3, IVT_FILE_NAME)
-    print('\n### <detect_ARs>: Read in file:\n',abpath_in)
-    ivtNV=funcs.readNC(abpath_in, 'ivt')
-    ivtrecNV=funcs.readNC(abpath_in, 'ivt_rec')
-    ivtanoNV=funcs.readNC(abpath_in, 'ivt_ano')
+    ivtNV=funcs.readNC(IVT_FILE_NAME, 'ivt')
+    ivtrecNV=funcs.readNC(IVT_FILE_NAME, 'ivt_rec')
+    ivtanoNV=funcs.readNC(IVT_FILE_NAME, 'ivt_ano')
 
     #--------------------Slice data--------------------
     quNV=quNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
@@ -263,7 +250,8 @@ if __name__=='__main__':
     #-------------------Create plots and save------------------------
     if PLOT:
         print('\n# <detect_ARs>: Plotting ...')
-        label_timeax=num2date(labels.getTime(), labels.axislist[0].units)
+        label_timeax=num2date(labels.getTime(), labels.axislist[0].units,
+                only_use_cftime_datetimes=False)
 
         for (ii, timett) in zip(time_idx, label_timeax):
 

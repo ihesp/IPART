@@ -649,7 +649,7 @@ def partPeaks(cropmask, cropidx, orislab, area, min_area, max_ph_ratio,
         cropidx (tuple): (y, x) coordinate indices, output from cropMask().
         orislab (ndarray): 2D array, giving magnitude/height/intensity values
                            defining the topography.
-        area (cdms.TransientVariable): (n * m) 2D grid cell area slab, in km^2.
+        area (ndarray): (n * m) 2D grid cell area slab, in km^2.
         min_area (float): km^2, drop AR candidates smaller than this area.
         max_ph_ratio (float): maximum peak/height ratio. Local peaks with
                               a peak/height ratio larger than this value is
@@ -1064,7 +1064,7 @@ def plotAR(ardf, ax, bmap):
         for xjj, yjj in zip(px_segs, py_segs):
 
             xjj,yjj=bmap(xjj,yjj)
-            linewidth=1.5 if isrelaxkk else 1.5
+            linewidth=2.0 if isrelaxkk else 2.0
             linestyle=':' if isrelaxkk else '-'
             ax.plot(xjj,yjj,color='k',linestyle=linestyle,linewidth=linewidth)
 
