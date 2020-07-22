@@ -8,7 +8,7 @@ import os
 import unittest
 from datetime import datetime
 import numpy as np
-from ipart.utils import funcs2 as funcs
+from ipart.utils import funcs
 
 
 class TestDataMetaData(unittest.TestCase):

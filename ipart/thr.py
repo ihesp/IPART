@@ -8,7 +8,7 @@ from __future__ import print_function
 import os
 import numpy as np
 from skimage import morphology
-from ipart.utils import funcs2 as funcs
+from ipart.utils import funcs
 #import recon
 
 def THR(ivtNV, kernel, oroNV=None, high_terrain=600, verbose=True):

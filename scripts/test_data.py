@@ -9,7 +9,7 @@ Update time: 2020-07-22 10:24:21.
 from __future__ import print_function
 import os, sys
 from netCDF4 import Dataset
-from ipart.utils import funcs2 as funcs
+from ipart.utils import funcs
 
 
 

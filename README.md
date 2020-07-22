@@ -3,7 +3,7 @@
 ## Dependencies
 
 * Python2.7 or Python3.7.
-* CDAT (Climatic Data Analysis Tool): (https://github.com/CDAT/cdat).
+* netCDF4 (tested 1.4.2)
 * numpy (developed in 1.16.5 in py2, tested 1.18.1 in py3)
 * scipy (developed in 1.2.1 in py2, tested 1.4.1 in py3)
 * matplotlib (2.2.3 for both py2 and py3, having [issues](https://github.com/matplotlib/matplotlib/issues/12820) with 3.1.3)
@@ -11,7 +11,7 @@
 * pandas (developed in 0.23.4 in py2, tested 1.0.3 in py3)
 * networkx (developed in 1.11 and 2.2 in py2, tested 2.4 in py3)
 * scikit-image (developed in 0.14.2 in py2, tested 0.16.2 in py3)
-* OS: Linux or Mac.
+* OS: Linux or Mac, may work in Windows.
 
 ## Installation
 

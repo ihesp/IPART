@@ -56,7 +56,7 @@ Usage:
         ```
 
 Author: guangzhi XU (xugzhi1987@gmail.com)
-Update time: 2019-12-06 22:55:40.
+Update time: 2020-07-22 10:23:35.
 '''
 
 from __future__ import print_function
@@ -71,24 +71,24 @@ SOURCEDIR1='/home/guangzhi/datasets/erai/erai_qflux'
 FILE1_BASE='ivt_m1-60_6_%d_cln.nc'
 VARIN='ivt'          # data id in nc file
 
-LAT1=0; LAT2=90      # degree, latitude domain
+LAT1=20; LAT2=60      # degree, latitude domain
 
 #-------Structuring element for erosion (E)-------
-KERNEL=[16,6,6]   # half length of time (time steps), and half length of spatial (number of grids)
+KERNEL=[8,6,6]   # half length of time (time steps), and half length of spatial (number of grids)
 
 SHIFT_LON=80  # shift longitudinally to center Pacific and Altantic
 
 # Orographic file, providing surface terrain elevation info.
 # This is optional, can be used to enhance the continent-penetration
 # of landfalling ARs.
-ORO_FILE='/home/guangzhi/datasets/oro_s_a_1900_erai-cea-proj.nc'
+ORO_FILE='/home/guangzhi/datasets/oro_s_a_1900_erai.nc'
 HIGH_TERRAIN=600 # surface height (in m) above which land surface is defined
                  # as high terrain. Extra computations are performed over
                  # high terrain areas to enhance continent-penetration of
                  # landfalling ARs.
 
 #------------------Output folder------------------
-OUTPUTDIR='/home/guangzhi/datasets/erai/ivt_thr/'
+OUTPUTDIR='/home/guangzhi/datasets/quicksave2/THR/'
 
 
 
@@ -98,7 +98,6 @@ OUTPUTDIR='/home/guangzhi/datasets/erai/ivt_thr/'
 
 #--------Import modules-------------------------
 import os
-from cdms2.selectors import Selector
 from ipart.utils import funcs
 from ipart import thr
 
@@ -114,9 +113,10 @@ if __name__=='__main__':
         os.makedirs(OUTPUTDIR)
 
     #--------------------Read in orographic data--------------------
-    oro=funcs.readVar(ORO_FILE, 'oro')
-    oro=oro(latitude=(LAT1, LAT2))
-    oro=oro(longitude=(SHIFT_LON,SHIFT_LON+360))(squeeze=1)
+    oroNV=funcs.readNC(ORO_FILE, 'z')
+    oroNV.data=oroNV.data/9.8
+    oroNV=oroNV.sliceData(LAT1, LAT2, axis=1)
+    oroNV=oroNV.shiftLon(SHIFT_LON).squeeze()
 
     for year in YEARS:
         #-----------Read in data----------------------
@@ -127,7 +127,7 @@ if __name__=='__main__':
     if len(filelist)<2:
         raise Exception("Need to give at least 2 files. For single file, use compute_thr_singlefile.py")
 
-    selector=Selector(latitude=(LAT1,LAT2))
-    thr.rotatingTHR(filelist, VARIN, selector, KERNEL, OUTPUTDIR,
-            oro=oro, high_terrain=HIGH_TERRAIN)
+    selector=funcs.Selector(LAT1, LAT2, axis=2)
+    thr.rotatingTHR(filelist, VARIN, KERNEL, OUTPUTDIR,
+            oroNV=oroNV, selector=selector, high_terrain=HIGH_TERRAIN)
 

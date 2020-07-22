@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 import unittest
 import numpy as np
-from ipart.utils import funcs2 as funcs
+from ipart.utils import funcs
 from ipart.thr import THR
 
 

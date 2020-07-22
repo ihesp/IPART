@@ -7,9 +7,9 @@ from __future__ import print_function
 import os
 import numpy as np
 import unittest
-from ipart.utils import funcs2 as funcs
+from ipart.utils import funcs
 from ipart.thr import THR
-from ipart.AR_detector2 import findARs, _findARs, prepareMeta
+from ipart.AR_detector import findARs, _findARs, prepareMeta
 
 
 class TestDetect(unittest.TestCase):

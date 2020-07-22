@@ -39,7 +39,7 @@ Usage:
         ```
 
 Author: guangzhi XU (xugzhi1987@gmail.com)
-Update time: 2020-04-01 12:14:48.
+Update time: 2020-07-22 10:22:08.
 '''
 
 from __future__ import print_function
@@ -48,16 +48,16 @@ from __future__ import print_function
 #--------------Globals------------------------------------------
 
 #-----------IVT data----------------------
-IVT_FILE='/home/guangzhi/datasets/artmip_merra_global/ivt_s_3_1980_merra2-global.xml'
 IVT_FILE='/home/guangzhi/datasets/artmip_merra_added_time/ivt_s_3_1980_merra2-SH.xml'
-VARIN='IVT'          # data id in nc file
+IVT_FILE='/home/guangzhi/datasets/erai_qflux/ivt_m1-60_6_2007_cln-cea-proj.nc'
+VARIN='ivt'          # data id in nc file
 
-LAT1=-90; LAT2=0      # degree, latitude domain
+LAT1=0; LAT2=90      # degree, latitude domain
 
 #-------Structuring element for erosion (E)-------
-KERNEL=[16,9,9]   # half length of time (time steps), and half length of spatial (number of grids)
+KERNEL=[10,6,6]   # half length of time (time steps), and half length of spatial (number of grids)
 
-SHIFT_LON=0  # shift longitudinally to center Pacific and Altantic
+SHIFT_LON=80  # shift longitudinally to center Pacific and Altantic
 
 # Orographic file, providing surface terrain elevation info.
 # This is optional, can be used to enhance the continent-penetration
@@ -69,7 +69,7 @@ HIGH_TERRAIN=600 # surface height (in m) above which land surface is defined
                  # landfalling ARs.
 
 #------------------Output folder------------------
-OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_added_time/THR'
+OUTPUTDIR='/home/guangzhi/datasets/quicksave2/THR'
 
 
 
@@ -79,7 +79,6 @@ OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_added_time/THR'
 
 #--------Import modules-------------------------
 import os
-import cdms2 as cdms
 from ipart.utils import funcs
 from ipart import thr
 
@@ -93,29 +92,20 @@ if __name__=='__main__':
         os.makedirs(OUTPUTDIR)
 
     #-----------Read in data----------------------
-    #var=funcs.readVar(IVT_FILE, 'ivt')
     print('\n### <compute_thr_singlefile>: Read in file:\n',IVT_FILE)
-    fin=cdms.open(IVT_FILE,'r')
-    var=fin(VARIN, time=slice(0,480))
-    fin.close()
+    var=funcs.readNC(IVT_FILE, VARIN)
+    var=var.sliceIndex(0, 200, axis=0)
 
     #--------------------Read in orographic data--------------------
-    #oro=funcs.readVar(ORO_FILE, 'oro')
-    oro=None
+    oroNV=None
 
     #-----------------Shift longitude-----------------
-    var=var(latitude=(LAT1, LAT2))
-    #var=var(longitude=(SHIFT_LON,SHIFT_LON+360))
-    #oro=oro(latitude=(LAT1, LAT2))
-    #oro=oro(longitude=(SHIFT_LON,SHIFT_LON+360))(squeeze=1)
+    var=var.sliceData(LAT1, LAT2, 2)
+    var=var.shiftLon(SHIFT_LON)
 
     #----------------------Do THR----------------------
-    #ivt, ivtrec, ivtano=thr.THR(var, KERNEL, oro=oro,
-    ivt, ivtrec, ivtano=thr.THRCyclicLongitude(var, KERNEL, oro=oro,
+    ivt, ivtrec, ivtano=thr.THR(var, KERNEL, oroNV=oroNV,
             high_terrain=HIGH_TERRAIN)
-    #ivt2, ivtrec2, ivtano2=thr.THR(var, KERNEL, oro=oro,
-            #high_terrain=HIGH_TERRAIN)
-    #__import__('pdb').set_trace()
 
     #--------Save------------------------------------
     fname=os.path.split(IVT_FILE)[1]
@@ -124,9 +114,8 @@ if __name__=='__main__':
 
     abpath_out=os.path.join(OUTPUTDIR,file_out_name)
     print('\n### <testrotatingfilter>: Saving output to:\n',abpath_out)
-    fout=cdms.open(abpath_out,'w')
-    fout.write(ivt,typecode='f')
-    fout.write(ivtrec,typecode='f')
-    fout.write(ivtano,typecode='f')
-    fout.close()
+    funcs.saveNC(abpath_out, ivt, 'w')
+    funcs.saveNC(abpath_out, ivtrec, 'a')
+    funcs.saveNC(abpath_out, ivtano, 'a')
+
 

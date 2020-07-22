@@ -34,8 +34,8 @@ and have compatible shapes.
 
 The user also needs to provide time, latitude and longitude axes metadata.
 In this script, these data are read in from the netCDF files using the
-CDAT (aka UVCDAT, CDAT8) package. If you are using some other package, e.g.
-netcdf4, xarray, iris or something else, please adjust the relevant code
+netCDF4 package. If you are using some other package, e.g.
+CDAT, xarray, iris or something else, please adjust the relevant code
 accordingly.
 
 # Domain
@@ -79,11 +79,10 @@ netCDF file.
     The boundary of all detected ARs are also marked out.
 
 Author: guangzhi XU (xugzhi1987@gmail.com)
-Update time: 2020-06-07 21:53:50.
+Update time: 2020-07-22 10:17:58.
 """
 
 from __future__ import print_function
-
 
 
 #######################################################################
@@ -91,29 +90,34 @@ from __future__ import print_function
 #######################################################################
 
 #--------------------Time range--------------------
-YEAR=1980
-TIME_START='%d-01-05 00:00:00' %YEAR
-TIME_END='%d-01-20 18:00:00' %YEAR
+YEAR=2007
+TIME_START='%d-01-01 00:00:00' %YEAR
+TIME_END='%d-01-10 18:00:00' %YEAR
 
 #-----------u-qflux----------------------
 #SOURCEDIR1='/home/guangzhi/datasets/erai_qflux/'
 UQ_FILE_NAME='/home/guangzhi/datasets/artmip_merra_added_time/ivt_s_3_1980_merra2-NH.xml'
+UQ_FILE_NAME='/home/guangzhi/datasets/erai_qflux/uflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
 #UQ_FILE_NAME='uflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
-UQ_VAR='uIVT'
+UQ_VAR='uflux'
 
 #-----------v-qflux----------------------
 #SOURCEDIR2='/home/guangzhi/datasets/erai_qflux'
 #VQ_FILE_NAME='vflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
 VQ_FILE_NAME=UQ_FILE_NAME
-VQ_VAR='vIVT'
+VQ_FILE_NAME='/home/guangzhi/datasets/erai_qflux/vflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
+VQ_VAR='vflux'
 
 #-----------------ivt reconstruction and anomalies-----------------
 SOURCEDIR3='/home/guangzhi/datasets/artmip_merra_added_time/'
+SOURCEDIR3='/home/guangzhi/datasets/quicksave2/THR'
 IVT_FILE_NAME='ivt_s_3_%d_merra2-NH-THR-kernel-t32-s9.nc' %YEAR
+IVT_FILE_NAME='ivt_m1-60_6_%d_cln-cea-proj-THR-kernel-t10-s6.nc' %YEAR
 
 
 #------------------Output folder------------------
-OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_added_time'
+#OUTPUTDIR='/home/guangzhi/datasets/artmip_merra_added_time'
+OUTPUTDIR='/home/guangzhi/datasets/quicksave2/THR'
 LABEL_FILE_OUT_NAME='ar_s_6_%d_label-angle-flux.nc' %YEAR
 RECORD_FILE_OUT_NAME='ar_records_%d.csv' %YEAR
 
@@ -121,8 +125,8 @@ RECORD_FILE_OUT_NAME='ar_records_%d.csv' %YEAR
 
 PLOT=True          # create maps of found ARs or not
 
-LAT1=-90; LAT2=0      # degree, latitude domain
-SHIFT_LON=0          # degree, shift left bound to longitude.
+LAT1=0; LAT2=90      # degree, latitude domain
+SHIFT_LON=80          # degree, shift left bound to longitude.
 
 PARAM_DICT={
     # kg/m/s, define AR candidates as regions >= than this anomalous ivt.
@@ -173,11 +177,11 @@ PARAM_DICT={
 import os
 import sys
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import cdms2 as cdms
+from netCDF4 import num2date
 
-from ipart.utils import funcs,plot
+from ipart.utils import funcs
+from ipart.utils import plot
 from ipart.AR_detector import plotAR, findARs
 
 
@@ -186,60 +190,50 @@ from ipart.AR_detector import plotAR, findARs
 if __name__=='__main__':
 
     #-----------Read in flux data----------------------
-    #file_in_name=UQ_FILE_NAME
-    #abpath_in=os.path.join(SOURCEDIR1,file_in_name)
-    qu=funcs.readVar(UQ_FILE_NAME, UQ_VAR)
-
-    #file_in_name=VQ_FILE_NAME
-    #abpath_in=os.path.join(SOURCEDIR2,file_in_name)
-    qv=funcs.readVar(VQ_FILE_NAME, VQ_VAR)
+    quNV=funcs.readNC(UQ_FILE_NAME, UQ_VAR)
+    qvNV=funcs.readNC(VQ_FILE_NAME, VQ_VAR)
 
     #-----------------Shift longitude-----------------
-    #qu=qu(longitude=(SHIFT_LON,SHIFT_LON+360))
-    #qv=qv(longitude=(SHIFT_LON,SHIFT_LON+360))
+    quNV=quNV.shiftLon(SHIFT_LON)
+    qvNV=qvNV.shiftLon(SHIFT_LON)
 
     #-------------------Read in ivt and THR results-------------------
-    file_in_name=IVT_FILE_NAME
-    abpath_in=os.path.join(SOURCEDIR3,file_in_name)
+    abpath_in=os.path.join(SOURCEDIR3, IVT_FILE_NAME)
     print('\n### <detect_ARs>: Read in file:\n',abpath_in)
-    fin=cdms.open(abpath_in,'r')
-    ivt=fin('IVT')
-    ivtrec=fin('ivt_rec')
-    ivtano=fin('ivt_ano')
-    fin.close()
+    ivtNV=funcs.readNC(abpath_in, 'ivt')
+    ivtrecNV=funcs.readNC(abpath_in, 'ivt_rec')
+    ivtanoNV=funcs.readNC(abpath_in, 'ivt_ano')
 
     #--------------------Slice data--------------------
-    qu=qu(time=(TIME_START,TIME_END), latitude=(LAT1, LAT2))(squeeze=1)
-    qv=qv(time=(TIME_START,TIME_END), latitude=(LAT1, LAT2))(squeeze=1)
-    ivt=ivt(time=(TIME_START,TIME_END))(squeeze=1)
-    ivtrec=ivtrec(time=(TIME_START,TIME_END))(squeeze=1)
-    ivtano=ivtano(time=(TIME_START,TIME_END))(squeeze=1)
+    quNV=quNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    qvNV=qvNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    ivtNV=ivtNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    ivtrecNV=ivtrecNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
+    ivtanoNV=ivtanoNV.sliceData(TIME_START, TIME_END).sliceData(LAT1, LAT2, axis=2).squeeze()
 
     #--------------------Data shape check--------------------
-    if np.ndim(qu)!=3 or np.ndim(qv)!=3:
+    if np.ndim(quNV.data)!=3 or np.ndim(qvNV.data)!=3:
         raise Exception("<qu> and <qv> should be 3D data.")
-    if qu.shape!=qv.shape or ivt.shape!=qu.shape:
+    if quNV.shape!=qvNV.shape or ivtNV.shape!=quNV.shape:
         raise Exception("Data shape dismatch: qu.shape=%s; qv.shape=%s; ivt.shape=%s"\
-                %(qu.shape, qv.shape, ivt.shape))
+                %(quNV.shape, qvNV.shape, ivtNV.shape))
 
     #-----------------Get coordinates-----------------
-    latax=qu.getLatitude()
-    lonax=qu.getLongitude()
-    timeax=ivt.getTime().asComponentTime()
-    timeax=['%d-%02d-%02d %02d:00' %(timett.year,timett.month,\
-                timett.day,timett.hour) for timett in timeax]
+    latax=quNV.getLatitude()
+    lonax=quNV.getLongitude()
+    timeax=ivtNV.getTime()
 
     #######################################################################
     #                           Detect ARs                                #
     #######################################################################
-    time_idx, labels, angles, crossfluxes, result_df = findARs(ivt, ivtrec,
-            ivtano, qu, qv, latax, lonax, times=timeax, **PARAM_DICT)
+    time_idx, labels, angles, crossfluxes, result_df = findARs(ivtNV.data,
+            ivtrecNV.data, ivtanoNV.data, quNV.data, qvNV.data, latax, lonax,
+            times=timeax, **PARAM_DICT)
 
 
     #######################################################################
     #                          Save all records                           #
     #######################################################################
-
     if not os.path.exists(OUTPUTDIR):
         os.makedirs(OUTPUTDIR)
 
@@ -251,11 +245,9 @@ if __name__=='__main__':
     #-----------------Save label file-----------------
     abpath_out=os.path.join(OUTPUTDIR, LABEL_FILE_OUT_NAME)
     print('\n### <detect_ARs>: Saving output to:\n',abpath_out)
-    ncfout=cdms.open(abpath_out,'w')
-    ncfout.write(labels)
-    ncfout.write(angles, typecode='f')
-    ncfout.write(crossfluxes, typecode='f')
-    ncfout.close()
+    funcs.saveNC(abpath_out, labels, 'w')
+    funcs.saveNC(abpath_out, angles, 'a')
+    funcs.saveNC(abpath_out, crossfluxes, 'a')
 
     #-----------------Save record file-----------------
     abpath_out=os.path.join(OUTPUTDIR, RECORD_FILE_OUT_NAME)
@@ -271,16 +263,16 @@ if __name__=='__main__':
     #-------------------Create plots and save------------------------
     if PLOT:
         print('\n# <detect_ARs>: Plotting ...')
-        label_timeax=labels.getTime().asComponentTime()
+        label_timeax=num2date(labels.getTime(), labels.axislist[0].units)
 
         for (ii, timett) in zip(time_idx, label_timeax):
 
             timett_str=str(timett)
 
-            slab=ivt[ii]
-            slabrec=ivtrec[ii]
-            slabano=ivtano[ii]
-            ardf=result_df[result_df.time==pd.to_datetime(timett_str)]
+            slab=ivtNV.data[ii]
+            slabrec=ivtrecNV.data[ii]
+            slabano=ivtanoNV.data[ii]
+            ardf=result_df[result_df.time==timett]
 
             plot_vars=[slab,slabrec,slabano]
             titles=['IVT', 'THR_recon', 'THR_ano']
@@ -291,6 +283,7 @@ if __name__=='__main__':
             for jj in range(len(plot_vars)):
                 ax=figure.add_subplot(3,1,jj+1)
                 pobj=plot.plot2(plot_vars[jj],iso,ax,projection='cyl',
+                        xarray=lonax, yarray=latax,
                         title='%s %s' %(timett_str, titles[jj]),
                         fix_aspect=False)
 

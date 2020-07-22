@@ -4,14 +4,14 @@ When done, merge back to dev.
 
 Functions need change:
 
-* [d][y?]AR_detector.applyCropIdx()
-* [d][y?]AR_detector.insertCropSlab()
-* [d][y?]AR_detector.partPeaks()
-* [d][y?]AR_detector.getARData()
-* [d][y?]AR_detector.crossSectionFlux()
-* [d][y?]AR_detector.prepareMeta()
-* [d][y?]AR_detector.findARs()
-* [d][y?]AR_detector.findARsGen()
+* [d][y]AR_detector.applyCropIdx()
+* [d][y]AR_detector.insertCropSlab()
+* [d][y]AR_detector.partPeaks()
+* [d][y]AR_detector.getARData()
+* [d][y]AR_detector.crossSectionFlux()
+* [d][y]AR_detector.prepareMeta()
+* [d][y]AR_detector.findARs()
+* [d][y]AR_detector.findARsGen()
 
 * [d][y]thr.THR()
 * [d][y]thr.THRCyclicLongitude()
@@ -31,8 +31,8 @@ Functions need change:
 * [d][y]utils.funcs.getTimeAxis()
 
 * [d][y]utils.plot.get1stTime()
-* [d][y?]utils.plot.Plot2D
-* [d][y?]utils.plot.Plot2Basemap
+* [d][y]utils.plot.Plot2D
+* [d][y]utils.plot.Plot2Basemap
 
 * [d][y]scripts/compute_ivt.py
 * [d][y]scripts/compute_thr_singlefile.py

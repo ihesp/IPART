@@ -20,8 +20,8 @@ OUTPUTFILE='/home/guangzhi/datasets/quicksave2/THR/ivt_m1-60_6_2007_crop2.nc';
 
 #--------Import modules-------------------------
 import numpy as np
-from ipart.utils import funcs2 as funcs
-from ipart.utils import plot2 as plot
+from ipart.utils import funcs
+from ipart.utils import plot
 
 
 

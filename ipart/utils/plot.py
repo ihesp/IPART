@@ -1,7 +1,7 @@
 '''Plotting Functions.
 
 Author: guangzhi XU (xugzhi1987@gmail.com)
-Update time: 2017-10-09 14:32:05.
+Update time: 2020-07-22 09:27:30.
 '''
 
 #--------Import modules--------------
@@ -128,9 +128,10 @@ def mkscale(n1,n2,nc=12,zero=1):
 def index2Letter(index,verbose=True):
     '''Translate an integer index to letter index
 
-    <index>: integer index for a subplot.
-
-    Return <letter>: corresponding letter index for <index>.
+    Args:
+        index (int): integer index for a subplot.
+    Returns:
+        letter (str): corresponding letter index for <index>.
 
     <index> to letter indexing is defined as following:
     ----------------------------------------------------
@@ -181,46 +182,46 @@ def index2Letter(index,verbose=True):
     else:
         return index_dict[index]
 
-
 #--------------Get a matplotlib blue-to-red colormap obj--------------
 def colormapBR(reverse=False,verbose=True):
     '''Get a matplotlib blue-to-red colormap obj
 
-    <reverse>: bool, if True, colormap goes from red-white-blue.
-
-    Return <cmap>: matplotlib colormap.
-    Update time: 2015-10-25 16:09:53.
+    Args:
+        reverse (bool): if True, colormap goes from red-white-blue.
+    Returns:
+        cmap (matplotlib colormap): a blue-white-red colormap.
     '''
 
     import matplotlib.pyplot as plt
-
     if reverse:
         return plt.cm.bwr_r
     else:
         return plt.cm.bwr
 
-
 #-------------Map color indices----------------------
 def mapColor(levels,cmap,split=0,verbose=True):
     '''Map a list of levels linearly onto a colormap.
 
-    <levels>: a list of level values;
-    <cmap>: matplotlib colormap obj;
-    <split>: int, control behavior of negative and positive values\
-            0: Do not split negatives and positives, map onto entire\
-               range of [0,1];
-            1: split only when vmin<0 and vmax>0, otherwise\
-               map onto entire range of [0,1];
-               If split is to be applied, negative values are mapped onto first half [0,0.5],
-               and postives onto second half (0.5,1].
-            2: force split, if vmin<0 and vmax>0, same as <split>==1;
-                If vmin<0 and vmax<0, map onto 1st half [0,0.5];
-                If vmin>0 and vmax>0, map onto 2nd half (0.5,1].
-
-    Return: <colors>: a list of matplotlib colors sampled from <cmap>,
-                      each corresponds to a level in <levels>.
+    Args:
+        levels (1darray): a array/list/tuple of level values.
+        cmap (matplotlib colormap): colormap obj.
+    Keyword Args:
+        split (int): controls the behavior of negative and positive values
+                0: Do not split negatives and positives, map onto entire
+                   range of [0,1];
+                1: split only when vmin<0 and vmax>0, otherwise
+                   map onto entire range of [0,1];
+                   If split is to be applied, negative values are mapped onto
+                   first half [0,0.5], and postives onto second half (0.5,1].
+                2: force split, if vmin<0 and vmax>0, same as <split>==1;
+                    If vmin<0 and vmax<0, map onto 1st half [0,0.5];
+                    If vmin>0 and vmax>0, map onto 2nd half (0.5,1].
+    Returns:
+        colors (list): a list of matplotlib colors sampled from <cmap>,
+                       each corresponds to a level in <levels>.
 
     Usage:
+        ```
         cmap=plt.cm.jet
         xx=numpy.arange(12)
         colors=plot.mapColor(range(10),cmap,split=0)
@@ -228,8 +229,7 @@ def mapColor(levels,cmap,split=0,verbose=True):
             yy=numpy.sin(xx)+ii
             plt.plot(xx,yy,color=colors[ii])
         plt.show()
-
-    Update time: 2015-10-26 14:03:44.
+        ```
     '''
 
     import numpy
@@ -248,19 +248,21 @@ def mapColor(levels,cmap,split=0,verbose=True):
 def remappedColorMap(cmap,vmin,vmax,split=2,name='shiftedcmap'):
     '''Re-map the colormap to split positives and negatives.
 
-    <cmap> : The matplotlib colormap to be altered
-    <vmin> : float, minimal level in data.
-    <vmax> : float, maximal level in data.
-    <split>: int, control behavior of negative and positive values\
-            0: Do not split negatives and positives, map onto entire\
-               range of [0,1];
-            1: split only when vmin<0 and vmax>0, otherwise\
-               map onto entire range of [0,1];
-               If split is to be applied, negative values are mapped onto first half [0,0.5],
-               and postives onto second half (0.5,1].
-            2: force split, if vmin<0 and vmax>0, same as <split>==1;
-                If vmin<0 and vmax<0, map onto 1st half [0,0.5];
-                If vmin>0 and vmax>0, map onto 2nd half (0.5,1].
+    Args:
+        cmap (matplotlib colormap): The matplotlib colormap to be altered.
+        vmin (float): minimal level in data.
+        vmax (float): maximal level in data.
+    Keyword Args:
+        split (int): controls the behavior of negative and positive values
+                0: Do not split negatives and positives, map onto entire
+                   range of [0,1];
+                1: split only when vmin<0 and vmax>0, otherwise
+                   map onto entire range of [0,1];
+                   If split is to be applied, negative values are mapped onto
+                   first half [0,0.5], and postives onto second half (0.5,1].
+                2: force split, if vmin<0 and vmax>0, same as <split>==1;
+                    If vmin<0 and vmax<0, map onto 1st half [0,0.5];
+                    If vmin>0 and vmax>0, map onto 2nd half (0.5,1].
     '''
     import numpy
     import matplotlib
@@ -320,7 +322,6 @@ def remappedColorMap(cmap,vmin,vmax,split=2,name='shiftedcmap'):
     plt.register_cmap(cmap=newcmap)
 
     return newcmap
-
 
 #--------------Get levels for isofill--------------
 def isoLevels(vars,num=15,zero=1,max_level=None,min_level=None,\
@@ -397,7 +398,6 @@ def isoLevels(vars,num=15,zero=1,max_level=None,min_level=None,\
 
 
     return levels,ext1,ext2
-
 
 #----------------Get min/max from 1 or more variables----------------
 def getRange(vars,min_level=None,max_level=None,\
@@ -732,7 +732,7 @@ class Boxfill(object):
 
 
 #-------------------Get first time point in variable-------------------
-def get1stTime(var,verbose=True):
+def get1stTimeold(var,verbose=True):
     '''Get first time point in variable
 
     <var>: nd variable. If is transient variable, slice
@@ -769,35 +769,68 @@ def get1stTime(var,verbose=True):
 
     return var
 
+#-------------------Get first time point in variable-------------------
+def get1stTime(var, verbose=True):
+    '''Get first time point in variable
+
+    Args:
+        var (NCVAR or ndarray): nd variable.
+    Returns:
+        result (NCVAR or ndarray): same as input type. The 1st time slice
+            of <var>.
+    '''
+
+    from .funcs import NCVAR, interpretAxis
+    import numpy as np
+
+    if isinstance(var, NCVAR):
+        vardata=np.squeeze(var.data)
+        if np.ndim(vardata)>2:
+            try:
+                time_idx=interpretAxis('time', var)
+            except:
+                time_idx=0
+            result=var.sliceData(var.getTime()[0], var.getTime()[1], time_idx)
+            result=result.squeeze()
+
+    else:
+        result=np.squeeze(var)
+        if np.ndim(result)>2:
+            time_idx=0
+            result=np.take(result,[0,],axis=time_idx)
+            result=np.squeeze(result)
+
+    return result
+
 
 class Plot2D(object):
 
-    cdms=__import__('cdms2')
-    transient=cdms.tvariable.TransientVariable
+    ncvar=functions.NCVAR
 
-    def __init__(self,var,method,ax=None,xarray=None,yarray=None,\
-            title=None,latlon=True,latlongrid=False,legend='global',
-            legend_ori='horizontal',clean=False):
+    def __init__(self, var, method, ax=None, xarray=None, yarray=None,\
+            title=None, latlon=True, latlongrid=False, legend='global',
+            legend_ori='horizontal', clean=False):
         '''Utility class for 2D plots
 
         Args:
-            var (ndarray): variable to plot. At least 2D.
+            var (NCVAR or ndarray): variable to plot. At least 2D.
             method: plotting method, could be an instance of Boxfill, Isofill.
         Keyword Args:
             ax: matplotlib axis obj. If None, create a new.
-            xarray (ndarray): 1d array, the array values for the x-axis. If None, use
-                              the int indices for the x-dimension.
-            yarray (ndarray): 1d array, the array values for the y-axis. If None, use
-                              the int indices for the y-dimension.
-            title (str): title to plot at subtitle. If None, plot only an alphabetical index.
+            xarray (ndarray): 1d array, the array values for the x-axis. If
+                None, use the int indices for the x-dimension.
+            yarray (ndarray): 1d array, the array values for the y-axis. If
+                None, use the int indices for the y-dimension.
+            title (str): title to plot at subtitle. If None, plot only an
+                alphabetical index.
             latlon (bool): plot lat/lon axis labels or not.
             latlongrid (bool): plot lat/lon grid lines or not.
-            legend (str): location of colorbar. Could be: 'global': all subplots share
-                          the colorbar of the 1st subplot in figure. or
-                          'local': each subplot in figure uses its own colorbar.
+            legend (str): location of colorbar. Could be: 'global': all
+                subplots share the colorbar of the 1st subplot in figure. or
+                'local': each subplot in figure uses its own colorbar.
             legend_ori (str): 'horizontal' or 'vertical', colorbar orientation.
-            clean (bool): if True, omit axis labels, colorbar, subtitle, continents, boundaries etc..
-                          Useful to overlay plots.
+                clean (bool): if True, omit axis labels, colorbar, subtitle,
+                continents, boundaries etc..  Useful to overlay plots.
         '''
         import matplotlib.pyplot as plt
 
@@ -824,103 +857,53 @@ class Plot2D(object):
         self.geo, self.subidx, self.font_size=self.getGeo()
 
 
-
-
     @classmethod
     def checkBasemap(cls,var,xarray,yarray):
         '''Check variable should be plotted using basemap or not'''
         import numpy
 
-        if type(var)==cls.transient and var.getLatitude() is not None\
+        if isinstance(var, cls.ncvar) and var.getLatitude() is not None\
                 and var.getLongitude() is not None:
             return True
-        elif type(var)==numpy.ndarray and numpy.ndim(numpy.squeeze(var))>1\
-                and xarray is not None and yarray is not None:
+        elif isinstance(var, numpy.ndarray) and\
+                numpy.ndim(numpy.squeeze(var))>1 and\
+                xarray is not None and yarray is not None:
             return True
         else:
             return False
 
-
-
-
-
     #-------------------Get first time point in variable-------------------
     @classmethod
-    def getSlab(cls,var):
+    def getSlab(cls, var):
         '''Get a 2D slab from variable
 
         Args:
-            var (ndarray): nd variable. If is transient variable, try to slice
-                   its 1st time point.
-                   If numpy.ndarray, try to take a slab from its last 2 dimensions.
+            var (NCVAR or ndarray): nd variable. If is transient variable, try
+            to slice its 1st time point.  If numpy.ndarray, try to take a slab
+            from its last 2 dimensions.
         Returns:
-            ndarray: 2D slab from input <var> to plot.
-
-        Note:
-            if transient variable, var.squeeze() will squeeze but with axes
-            info gone. Therefore treat ndarray and transient variable
-            differently.
-
-        Update time: 2016-02-05 12:59:55.
+            result (ndarray): a 2d slab from input <var> to plot.
         '''
         import numpy
 
         #------------------Numpy ndarray------------------
-        if type(var)!=cls.transient:
+        if not isinstance(var, functions.NCVAR):
             var=numpy.squeeze(var)
-
             if numpy.ndim(var)==2:
                 return var
 
             if numpy.ndim(var)>2:
                 return functions.getSlab(var)
 
-        #----------------Transient variable----------------
+        #----------------NCVAR variable----------------
         else:
-            var=var(squeeze=1) #NOTE the difference squezzing methods
+            var=var.squeeze()
+            if numpy.ndim(var.data)==2:
+                return var.data
 
-            if numpy.ndim(var)==2:
-                return var
-
-            if numpy.ndim(var)>2:
-                #-------------------Try get axes-------------------
-                axes={}
-                timeax=var.getTime()
-                levax=var.getLevel()
-                latax=var.getLatitude()
-                lonax=var.getLongitude()
-                if timeax is not None:
-                    axes['time']=timeax
-                if levax is not None:
-                    axes['level']=levax
-                if latax is not None:
-                    axes['lat']=latax
-                if lonax is not None:
-                    axes['lon']=lonax
-
-                #----------------Select by priority----------------
-                if 'lat' in axes and 'lon' in axes:
-                    yidx=var.getAxisIndex(latax.id)
-                    xidx=var.getAxisIndex(lonax.id)
-                elif 'lat' in axes and 'level' in axes:
-                    yidx=var.getAxisIndex(levax.id)
-                    xidx=var.getAxisIndex(latax.id)
-                elif 'lon' in axes and 'level' in axes:
-                    yidx=var.getAxisIndex(levax.id)
-                    xidx=var.getAxisIndex(lonax.id)
-                elif 'time' in axes and 'lat' in axes:
-                    yidx=var.getAxisIndex(latax.id)
-                    xidx=var.getAxisIndex(timeax.id)
-                elif 'time' in axes and 'lon' in axes:
-                    yidx=var.getAxisIndex(lonax.id)
-                    xidx=var.getAxisIndex(timeax.id)
-                else:
-                    yidx=-1; xidx=-2
-
-                return functions.getSlab(var,yidx,xidx)
-
-
-
+            if numpy.ndim(var.data)>2:
+                yidx=-1; xidx=-2
+                return functions.getSlab(var.data,yidx,xidx)
 
 
     #---------------------Get grid---------------------
@@ -948,8 +931,6 @@ class Plot2D(object):
         return lonax,latax,lons,lats
 
 
-
-
     def getGeo(self):
 
         geo=self.ax.get_geometry()[:2]
@@ -958,8 +939,6 @@ class Plot2D(object):
         font_size=7*scale+8
 
         return geo, subidx, font_size
-
-
 
 
     #-------------Plot according to method-------------
@@ -1011,21 +990,22 @@ class Plot2D(object):
             if self.method.method=='isofill':
                 # make masked value grey, otherwise they will be white
                 self.ax.patch.set_color('0.5')
-                cs=self.ax.contourf(self.lons,self.lats,self.var,self.method.levels,\
-                        cmap=self.method.cmap,extend=extend,hatch='/')
+                cs=self.ax.contourf(self.lons, self.lats, self.var,
+                        self.method.levels, cmap=self.method.cmap,
+                        extend=extend,hatch='/')
 
             elif self.method.method=='isoline':
                 if self.method.black:
                     colors=['k']*len(self.method.levels)
-                    cs=self.ax.contour(self.lons,self.lats,self.var,self.method.levels,\
-                            colors=colors,extend=extend,
+                    cs=self.ax.contour(self.lons, self.lats, self.var,
+                            self.method.levels, colors=colors,extend=extend,
                             linewidth=self.method.linewidth,
                             alpha=self.method.alpha)
                 else:
                     # Plot as colored lines
-                    cs=self.ax.contour(self.lons,self.lats,self.var,self.method.levels,\
-                            cmap=self.method.cmap,extend=extend,
-                            linewidth=self.method.linewidth,
+                    cs=self.ax.contour(self.lons, self.lats, self.var,
+                            self.method.levels, cmap=self.method.cmap,
+                            extend=extend, linewidth=self.method.linewidth,
                             alpha=self.method.alpha)
 
                 #-----------------Set line styles-----------------
@@ -1327,9 +1307,6 @@ class Plot2D(object):
         else:
             return
 
-
-
-
     #-------------Plot subplot title/index-------------
     def plotTitle(self):
 
@@ -1370,7 +1347,7 @@ class Plot2Basemap(Plot2D):
         '''Utility class for 2D geographical plots using basemap
 
         Args:
-            var (ndarray): variable to plot. At least 2D.
+            var (NCVAR or ndarray): variable to plot. At least 2D.
             method: plotting method, could be an instance of Boxfill, Isofill.
         Keyword Args:
             ax: matplotlib axis obj. If None, create a new.
@@ -1393,9 +1370,9 @@ class Plot2Basemap(Plot2D):
                                for control of aspect ratio.
         '''
 
-        Plot2D.__init__(self,var,method,ax=ax,\
-                xarray=xarray,yarray=yarray,\
-                title=title,latlon=latlon,\
+        Plot2D.__init__(self,var,method,ax=ax,
+                xarray=xarray,yarray=yarray,
+                title=title,latlon=latlon,
                 latlongrid=latlongrid,legend=legend,
                 legend_ori=legend_ori,clean=clean)
 
@@ -1673,8 +1650,8 @@ class Plot2Basemap(Plot2D):
         return cbar
 
 
-def plot2(var,method,ax=None,legend='global',\
-        xarray=None,yarray=None,\
+def plot2(var,method,ax=None,legend='global',
+        xarray=None,yarray=None,
         title=None,latlon=True,latlongrid=False,fill_color='0.8',
         projection='merc',legend_ori='horizontal',clean=False,
         isbasemap=True,
@@ -1682,7 +1659,7 @@ def plot2(var,method,ax=None,legend='global',\
     '''A helper function for quickly create 2D plots
 
     Args:
-        var (ndarray): variable to plot. At least 2D.
+        var (NCVAR or ndarray): variable to plot. At least 2D.
         method: plotting method, could be an instance of Boxfill, Isofill.
     Keyword Args:
         ax: matplotlib axis obj. If None, create a new.
@@ -1728,6 +1705,7 @@ def plot2(var,method,ax=None,legend='global',\
     cs=plotobj.plot()
 
     return plotobj
+
 
 
 
