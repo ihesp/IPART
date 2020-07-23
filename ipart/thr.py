@@ -69,7 +69,7 @@ def THR(ivtNV, kernel, oroNV=None, high_terrain=600, verbose=True):
     if verbose:
         print('\n# <THR>: Computing erosion ...')
 
-    lm=morphology.erosion(ivt.data, selem=ele)
+    lm=morphology.erosion(ivt, selem=ele)
 
     if verbose:
         print('\n# <THR>: Computing reconstruction ...')

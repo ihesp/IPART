@@ -48,7 +48,6 @@ from __future__ import print_function
 #--------------Globals------------------------------------------
 
 #-----------IVT data----------------------
-IVT_FILE='/home/guangzhi/datasets/artmip_merra_added_time/ivt_s_3_1980_merra2-SH.xml'
 IVT_FILE='/home/guangzhi/datasets/erai_qflux/ivt_m1-60_6_2007_cln-cea-proj.nc'
 VARIN='ivt'          # data id in nc file
 

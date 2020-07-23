@@ -1,14 +1,15 @@
 name: ipartpy2
 channels:
-  - defaults
   - conda-forge
+  - defaults
 dependencies:
   - python=2.7
-  - pandas
+  - netcdf4
+  - numpy
   - scipy
-  - matplotlib
-  - scikit-image
-  - networkx
   - basemap
-  - cdat-lite
+  - matplotlib=2.2.3
+  - scikit-image
+  - pandas
+  - networkx
 

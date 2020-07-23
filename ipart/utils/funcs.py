@@ -735,6 +735,21 @@ def getAttributes(var):
         attr[kk]=var.getncattr(kk)
     return attr
 
+def num2dateWrapper(values, units):
+
+    try:
+        axis=num2date(values, units,
+                only_use_cftime_datetimes=False,
+                only_use_python_datetimes=True)
+    except:
+        try:
+            axis=num2date(values, units,
+                    only_use_cftime_datetimes=False)
+        except:
+            axis=num2date(values, units)
+
+    return axis
+
 def readNC(abpath_in, varid):
     '''Read in a variable from an netcdf file
 
@@ -755,13 +770,7 @@ def readNC(abpath_in, varid):
         ncaxis=fin.variables[dd]
         if dd=='time':
             # convert time to datetime objs
-            try:
-                axisii=num2date(ncaxis[:], ncaxis.units,
-                        only_use_cftime_datetimes=False,
-                        only_use_python_datetimes=True)
-            except:
-                axisii=num2date(ncaxis[:], ncaxis.units,
-                        only_use_cftime_datetimes=False)
+            axisii=num2dateWrapper(ncaxis[:], ncaxis.units)
         else:
             axisii=ncaxis[:]
         axisattr=getAttributes(ncaxis)

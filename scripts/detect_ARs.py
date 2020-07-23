@@ -167,7 +167,6 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from netCDF4 import num2date
 
 from ipart.utils import funcs
 from ipart.utils import plot
@@ -250,8 +249,8 @@ if __name__=='__main__':
     #-------------------Create plots and save------------------------
     if PLOT:
         print('\n# <detect_ARs>: Plotting ...')
-        label_timeax=num2date(labels.getTime(), labels.axislist[0].units,
-                only_use_cftime_datetimes=False)
+        label_timeax=funcs.num2dateWrapper(labels.getTime(),
+                labels.axislist[0].units)
 
         for (ii, timett) in zip(time_idx, label_timeax):
 

@@ -103,9 +103,9 @@ class TestDetect(unittest.TestCase):
                 self.uflux.data, self.vflux.data, self.latax, self.lonax,
                 self.timeax, **self.param_dict)
 
-        self.assertEqual(len(result_df), 51, "Wrong number of ARs found.")
+        self.assertEqual(len(result_df), 52, "Wrong number of ARs found.")
         self.assertTrue(np.all(time_idx==np.arange(25)), msg="time_idx wrong.")
-        self.assertEqual(labels.data.sum(), 24870, "Labels sum doesn't match.")
+        self.assertEqual(labels.data.sum(), 25226, "Labels sum doesn't match.")
 
     def test_findARsinner(self):
 
