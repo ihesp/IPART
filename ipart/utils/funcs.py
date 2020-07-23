@@ -736,6 +736,18 @@ def getAttributes(var):
     return attr
 
 def num2dateWrapper(values, units):
+    '''A wrapper of netCDF4.num2date to work for different versions
+
+    Args:
+        values (ndarray): date values.
+        units (str): date units.
+    Returns:
+        axis (ndarray): date values converted to python datetime objs.
+
+    NOTE this is to work for different netcdf4 version. Versions prior to
+    1.4 do not seem to have the kwarg "only_use_cftime_datetimes" and
+    "only_use_python_datetimes".
+    '''
 
     try:
         axis=num2date(values, units,
