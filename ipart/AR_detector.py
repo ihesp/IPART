@@ -699,7 +699,12 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
                      (indices defined in the matrix of corresponding mask
                      in <masks>.)
         timestr (str): string of time snap.
-        param_dict (dict): parameter dict defined in Global preamble.
+        param_dict (dict): a dict containing parameters controlling the
+            detection process. Keys of the dict:
+            'thres_low', 'min_area', 'max_area', 'max_isoq', 'max_isoq_hard',
+            'min_lat', 'max_lat', 'min_length', 'min_length_hard', 'rdp_thres',
+            'fill_radius', 'single_dome', 'max_ph_ratio', 'edge_eps'.
+            See the doc string of findARs() for more.
 
     Returns:
         labels (cdms.TransientVariable): (n * m) 2D int map showing all ARs
@@ -1199,7 +1204,11 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
         sinthetas (cdms.TransientVariable): (n * m) 2D slab of grid cell shape:
                                           sin=dy/sqrt(dx^2+dy^2).
         param_dict (dict): a dict containing parameters controlling the
-            detection process. See the doc string of findARs() for more.
+            detection process. Keys of the dict:
+            'thres_low', 'min_area', 'max_area', 'max_isoq', 'max_isoq_hard',
+            'min_lat', 'max_lat', 'min_length', 'min_length_hard', 'rdp_thres',
+            'fill_radius', 'single_dome', 'max_ph_ratio', 'edge_eps'.
+            See the doc string of findARs() for more.
     Keyword Args:
         verbose (bool): print some messages or not.
 
@@ -1311,7 +1320,11 @@ def _findARs(anoslab, areas, param_dict):
     Args:
         anoslab (cdms.TransientVariable): (n * m) 2D anomalous IVT slab, in kg/m/s.
         areas (cdms.TransientVariable): (n * m) 2D grid cell area slab, in km^2.
-        param_dict (dict): parameter dict controlling the detection process.
+        param_dict (dict): a dict containing parameters controlling the
+            detection process. Keys of the dict:
+            'thres_low', 'min_area', 'max_area', 'max_isoq', 'max_isoq_hard',
+            'min_lat', 'max_lat', 'min_length', 'min_length_hard', 'rdp_thres',
+            'fill_radius', 'single_dome', 'max_ph_ratio', 'edge_eps'.
             See the doc string of findARs() for more.
 
     Returns:

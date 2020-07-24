@@ -8,19 +8,19 @@ from .funcs import greatCircle, getCrossTrackDistance
 import numpy as np
 
 def distance(a, b):
-    '''Eularian distance between 2 points
+    '''Euclidean distance between 2 points
 
     Args:
         a (tuple): (x, y) coordinates of point A.
         b (tuple): (x, y) coordinates of point B.
     Returns:
-        result (float): Eularian distance between 2 points
+        result (float): Euclidean distance between 2 points
 
     '''
     return  sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
 
 def point_line_distance(point, start, end):
-    '''Eularian distance between a point and a line
+    '''Euclidean distance between a point and a line
 
     Args:
         point (tuple): (x, y) coordinates of a point.
