@@ -21,12 +21,12 @@ def get3DEllipse(t,y,x):
         t (int): ellipse axis length in the t (1st) dimension.
         y (int): ellipse axis length in the y (2nd) dimension.
         x (int): ellipse axis length in the x (3rd) dimension.
-        Note that the axis length is half the size of the ellipse
-        in that dimension.
-
     Returns:
         result (ndarray): 3D binary array, with 1s side the ellipse
             defined as (T/t)^2 + (Y/y)^2 + (X/x)^2 <= 1.
+
+    Note that the axis length is half the size of the ellipse
+    in that dimension.
     '''
     import numpy as np
 
@@ -825,10 +825,10 @@ def readVar(abpath_in, varid):
     '''Read in netcdf variable
 
     Args:
-        abpath_in (str): absolute file path to nc file.
+        abpath_in (str): absolute file path to netcdf file.
         varid (str): id of variable to read.
     Returns:
-        var (TransientVariable): 4d TransientVariable.
+        var (TransientVariable): 3d or 4d TransientVariable.
     '''
 
     import cdms2 as cdms

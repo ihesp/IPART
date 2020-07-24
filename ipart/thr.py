@@ -37,6 +37,7 @@ def THR(ivt, kernel, oro=None, high_terrain=600, verbose=True):
             Only used if <oro> is not None.
 
             New in v2.0.
+        verbose (bool): print some messages or not.
 
     Returns:
         ivt (TransientVariable): 3D or 4D array, input <ivt>.
@@ -128,7 +129,9 @@ def rotatingTHR(filelist, varin, selector, kernel, outputdir, oro=None,
                     make sure files in list have correct chronological order.
                     Note that time axis in data files should be the 1st axis.
         varin (str): variable id in files.
-        selector: selector obj to select subset of data.
+        selector (cdms.Selector): selector obj to select subset of data.
+        kernel (list or tuple): list/tuple of integers specifying the shape of
+            the kernel/structuring element used in the gray erosion process.
         outputdir (str): path to folder to save outputs.
 
     Keyword Args:
@@ -146,6 +149,7 @@ def rotatingTHR(filelist, varin, selector, kernel, outputdir, oro=None,
             Only used if <oro> is not None.
 
             New in v2.0.
+        verbose (bool): print some messages or not.
 
     Designed to perform temporal filtering on data that are too large to fit
     into memory, e.g. high-resolution data across multiple decades.
