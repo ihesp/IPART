@@ -94,7 +94,7 @@ After Anaconda installation, create a working environment:
 
 This creates a Python environment named "ipartpy3" with Python version 3.7.
 
-Then install the above listed dependencies, e.g.
+Then install the dependencies listed below, e.g.
 ::
 
     conda install numpy
@@ -129,12 +129,12 @@ Install from conda (experimental)
 For py2:
 ::
 
-    conda create -n ipartpy2 python=2.7 -c guangzhi -c conda-forge ipart
+    conda create -n ipartpy2 python=2.7 ipart -c guangzhi -c conda-forge
 
 For py3 (good luck with ``cdms2`` and ``cdutil``):
 ::
 
-    conda create -n ipartpy3 python=3.7 -c guangzhi -c conda-forge ipart
+    conda create -n ipartpy3 python=3.7 ipart -c guangzhi -c conda-forge
 
 Then activate the environment:
 ::
