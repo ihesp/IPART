@@ -50,11 +50,8 @@ Similarly for Python 2.7, use
 conda env create -f environment_py2.yml
 ```
 
-Finally install IPART using either:
-```
-python setup.py develop
-```
-or
+Finally install IPART using:
+
 ```
 pip install -e .
 ```
