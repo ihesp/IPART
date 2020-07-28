@@ -22,7 +22,12 @@ from ipart.utils import peak_prominence2d as pp2d
 
 
 def plotGraph(graph, ax=None, show=True):
-    '''Helper func to plot the graph of an AR coordinates
+    '''Helper func to plot the graph of an AR coordinates. For debugging.
+    Args:
+        graph (networkx.Graph): networkx Graph obj to visualize.
+    Keyword Args:
+        ax (matplotlib axis obj): axis to plot on. If None, create a new one.
+        show (bool): whether to show the plot or not.
     '''
 
     if ax is None:
@@ -50,7 +55,6 @@ def areaFilt(mask, area, min_area=None, max_area=None, zonal_cyclic=False):
         max_area (float or None): if not None, maximum area to filter objects
                                   in <mask>.
         zonal_cyclic (bool): if True, treat zonal boundary as cyclic.
-
     Returns:
         result (ndarray): 2D binary mask with objects area-filtered.
     '''
@@ -75,6 +79,13 @@ def areaFilt(mask, area, min_area=None, max_area=None, zonal_cyclic=False):
 
 
 def spherical2Cart(lat, lon):
+    '''Convert spherical to Cartesian coordiantes
+    Args:
+        lat,lon (float or ndarray): latitude and longitude coordinates.
+    Returns:
+        result (ndarray): Nx3 array, the columns are the x-, y- and z-
+            coordinates.
+    '''
     clat=(90-lat)*np.pi/180.
     lon=lon*np.pi/180.
     x=np.cos(lon)*np.sin(clat)
@@ -85,7 +96,15 @@ def spherical2Cart(lat, lon):
 
 
 def cart2Spherical(x, y, z, shift_lon):
-
+    '''Convert Cartesian to spherical coordiantes
+    Args:
+        x,y,z (float): x-, y- and z- coordiantes.
+        shift_lon (float): longitude to shift so the longitude dimension
+            starts from this number.
+    Returns:
+        result (ndrray): 1x3 array, the columns are the lat-, lon- and r-
+            coordinates. r- coordinates are all 1s (unit sphere).
+    '''
     r=np.sqrt(x**2+y**2+z**2)
     clat=np.arccos(z/r)/np.pi*180
     lat=90.-clat
@@ -102,6 +121,9 @@ def computeTheta(p1, p2):
 
     Args:
         p1,p2 (float): (lat,lon) coordinates
+    Returns:
+        theta (float): unit vector tangent at point <p1> pointing at <p2>
+            on unit sphere.
     '''
     p1=spherical2Cart(p1[0],p1[1])
     p2=spherical2Cart(p2[0],p2[1])
@@ -114,6 +136,14 @@ def computeTheta(p1, p2):
 
 def wind2Cart(u, v, lats, lons):
     '''Convert u,v winds to Cartesian, consistent with spherical2Cart.
+
+    Args:
+        u,v (float or ndarray): u- and v- components of horizontal winds.
+        lats,lons (float or ndarray): latitude and longitude coordinates
+            corresponding to the wind vectors given by <u> and <v>.
+    Returns:
+        vs (float or ndarray): Cartesian representation of the horizontal
+            winds.
     '''
 
     latsr=lats*np.pi/180
@@ -129,7 +159,14 @@ def wind2Cart(u, v, lats, lons):
 
 
 def cart2Wind(vs, lats, lons):
-    '''Convert winds in Cartesian to u,v, inverse to wind2Cart.
+    '''Convert winds in Cartesian coordinates to u,v, inverse to wind2Cart.
+    Args:
+        vs (float or ndarray): Cartesian representation of the horizontal
+            winds.
+        lats,lons (float or ndarray): latitude and longitude coordinates
+            corresponding to the wind vectors given by <u> and <v>.
+    Returns:
+        u,v (float or ndarray): u- and v- components of horizontal winds.
     '''
 
     latsr=lats*np.pi/180
@@ -185,7 +222,6 @@ def maskToGraph(mask, quslab, qvslab, costhetas, sinthetas, edge_eps,
         g (networkx.DiGraph): directed planar graph constructed from AR mask
                               and flows.
     '''
-
 
     quslab=np.ma.array(quslab)
     qvslab=np.ma.array(qvslab)
@@ -319,7 +355,6 @@ def getARAxis(g, quslab, qvslab, mask):
         quslab (cdms.TransientVariable): 2D map of u-flux.
         qvslab (cdms.TransientVariable): 2D map of v-flux.
         mask (ndarray): 2D binary map showing the location of an AR with 1s.
-
     Returns:
         path (ndarray): Nx2 array storing the AR axis coordinate indices in
                         (y, x) format.
@@ -469,7 +504,6 @@ def applyCropIdx(slab, cropidx):
     Args:
         slab (NCVAR or ndarray): 2D array to cut a box from.
         cropidx (tuple): (y, x) coordinate indices, output from cropMask().
-
     Returns:
         cropslab (NCVAR or ndarray): 2D sub array cut from <slab> using
             <cropidx> as boundary indices.
@@ -750,7 +784,12 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
                      (indices defined in the matrix of corresponding mask
                      in <masks>.)
         timestr (str): string of time snap.
-        param_dict (dict): parameter dict defined in Global preamble.
+        param_dict (dict): a dict containing parameters controlling the
+            detection process. Keys of the dict:
+            'thres_low', 'min_area', 'max_area', 'max_isoq', 'max_isoq_hard',
+            'min_lat', 'max_lat', 'min_length', 'min_length_hard', 'rdp_thres',
+            'fill_radius', 'single_dome', 'max_ph_ratio', 'edge_eps'.
+            See the doc string of findARs() for more.
 
     Returns:
         labelsNV (NCVAR): (n * m) 2D int map showing all ARs at current time.
@@ -1278,7 +1317,14 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
                                           cos=dx/sqrt(dx^2+dy^2).
         sinthetas (ndarray): (n * m) 2D slab of grid cell shape:
                                           sin=dy/sqrt(dx^2+dy^2).
-        param_dict (dict): parameter dict. See findARs() for details.
+        param_dict (dict): a dict containing parameters controlling the
+            detection process. Keys of the dict:
+            'thres_low', 'min_area', 'max_area', 'max_isoq', 'max_isoq_hard',
+            'min_lat', 'max_lat', 'min_length', 'min_length_hard', 'rdp_thres',
+            'fill_radius', 'single_dome', 'max_ph_ratio', 'edge_eps'.
+            See the doc string of findARs() for more.
+    Keyword Args:
+        verbose (bool): print some messages or not.
 
     Returns:
         axes (list): list of AR axis coordinates. Each coordinate is defined
@@ -1355,9 +1401,16 @@ def prepareMeta(lats, lons, times, ntime, nlat, nlon,
         times (list or array): time stamps of the input data as a list of strings,
             e.g. ['2007-01-01 06:00:00', '2007-01-01 12:00', ...].
             Needs to have the a length of <ntime>.
+        ntime (int): length of the time axis, should equal the length of
+            <times>.
+        nlat (int): length of the latitude axis, should equal the length of
+            <lats>.
+        nlon (int): length of the longitude axis, should equal the length of
+            <lons>.
 
     Keyword Args:
         ref_time (str): reference time point to create time axis.
+        verbose (bool): print some messages or not.
 
     Returns:
         timeax (list): a list of datetime objs.
@@ -1420,6 +1473,9 @@ def cyclicLabel(mask, connectivity=1, iszonalcyclic=False):
             shift the map zonally by half the zonal length, do another
             measure.label() to find zonally linked regions. Then use this
             to update the original labels.
+    Returns:
+        result (ndarray): 2d array with same shape as <mask>. Each connected
+            region in <mask> is given an int label.
     '''
 
     if not iszonalcyclic:
@@ -1462,7 +1518,7 @@ def determineThresLow(anoslab, sill=0.8):
     '''Determine the threshold for anomalous IVT field, experimental
 
     Args:
-        anoslab (cdms.TransientVariable): (n * m) 2D anomalous IVT slab, in kg/m/s.
+        anoslab (ndarray): (n * m) 2D anomalous IVT slab, in kg/m/s.
 
     Keyword Args:
         sill (float): float in (0, 1). Fraction of max score to define as the
@@ -1509,7 +1565,12 @@ def _findARs(anoslab, latax, areas, param_dict):
         anoslab (ndarray): (n * m) 2D anomalous IVT slab, in kg/m/s.
         latax (ndaray): 1d array, latitude coordinates.
         areas (ndarray): (n * m) 2D grid cell area slab, in km^2.
-        param_dict (dict): parameter dict controlling the detection process.
+        param_dict (dict): a dict containing parameters controlling the
+            detection process. Keys of the dict:
+            'thres_low', 'min_area', 'max_area', 'max_isoq', 'max_isoq_hard',
+            'min_lat', 'max_lat', 'min_length', 'min_length_hard', 'rdp_thres',
+            'fill_radius', 'single_dome', 'max_ph_ratio', 'edge_eps'.
+            See the doc string of findARs() for more.
 
     Returns:
         masks (list): list of 2D binary masks, each with the same shape as
@@ -1698,7 +1759,6 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
             same as the lat dimension of <ivt>.
         lons (ndarray): 1D, longitude coordinates, the length needs to be the
             same as the lon dimension of <ivt>.
-        param_dict (dict): parameter dict controlling the detection process.
     Keyword Args:
         times (list or array): time stamps of the input data as a list of strings,
             e.g. ['2007-01-01 06:00:00', '2007-01-01 12:00', ...].
@@ -1754,6 +1814,7 @@ def findARs(ivt, ivtrec, ivtano, qu, qv, lats, lons,
             is not zonally cyclic, or a zonal shift of the data can put the
             domain of interest to the center, consider doing the shift and
             setting this to False, as it will save computations.
+        verbose (bool): print some messages or not.
 
     Returns:
         time_idx (list): indices of the time dimension when any AR is found.
@@ -1832,7 +1893,6 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
             same as the lat dimension of <ivt>.
         lons (ndarray): 1D, longitude coordinates, the length needs to be the
             same as the lon dimension of <ivt>.
-        param_dict (dict): parameter dict controlling the detection process.
 
     Keyword Args:
         times (list or array): time stamps of the input data as a list of strings,
@@ -1889,6 +1949,7 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
             is not zonally cyclic, or a zonal shift of the data can put the
             domain of interest to the center, consider doing the shift and
             setting this to False, as it will save computations.
+        verbose (bool): print some messages or not.
 
     Returns:
         ii (int): index of the time dimension when any AR is found.

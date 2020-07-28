@@ -290,6 +290,8 @@ def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',
 
     Args:
         arlist (list): list of AR objects to plot.
+        latax,lonax (ndarray): 1darrays giving latitude- and longitude-
+            coordinates of the plotting domain.
 
     Keyword Args:
         full (bool): if True, plot tracks of an AR from its entire lifecycle.
@@ -480,10 +482,12 @@ def matchCenters(tr_list, newrec, time_gap_allow, max_dist_allow,
                                 2 records, in km.
 
     Keyword Args:
-        track_scheme (str): tracking scheme. 'simple': all tracks are simple paths.
-            'full': use the network scheme, tracks are connected by their joint points.
+        track_scheme (str): tracking scheme. 'simple': all tracks are simple
+        paths.  'full': use the network scheme, tracks are connected by their
+        joint points.
         isplot (bool): create schematic plot or not.
         plot_dir (str): folder to save schematic plot. Only used if isplot=True.
+        verbose (bool): print some messages or not.
 
     Returns:
         tr_list (list): list of AR objs, ARs with new matching records
@@ -645,10 +649,12 @@ def trackARs(record, time_gap_allow, max_dist_allow, track_scheme='simple',
                                 2 records, in km.
 
     Keyword Args:
-        track_scheme (str): tracking scheme. 'simple': all tracks are simple paths.
-            'full': use the network scheme, tracks are connected by their joint points.
+        track_scheme (str): tracking scheme. 'simple': all tracks are simple
+        paths.  'full': use the network scheme, tracks are connected by their
+        joint points.
         isplot (bool): whether to create schematic plots of linking.
         plot_dir (str): folder to save schematic plot.
+        verbose (bool): print some messages or not.
 
     Returns:
         finished_list (list): list of AR objs. Found tracks.
@@ -710,7 +716,7 @@ def trackARs(record, time_gap_allow, max_dist_allow, track_scheme='simple',
 
     return finished_list
 
-def filterTracks(tr_list, min_duration, min_nonrelax ,verbose=True):
+def filterTracks(tr_list, min_duration, min_nonrelax, verbose=True):
     '''Filter tracks
 
     Args:
@@ -718,6 +724,8 @@ def filterTracks(tr_list, min_duration, min_nonrelax ,verbose=True):
         min_duration (int): min duration in hrs to keep a track.
         min_nonrelax (int): min number of non-relaxed records in a track to
                             keep a track.
+    Keyword Args:
+        verbose (bool): print some messages or not.
 
     Returns:
         tr_list (list): list of AR objects, filtered tracks.

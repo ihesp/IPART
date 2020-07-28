@@ -8,9 +8,24 @@ from .funcs import greatCircle, getCrossTrackDistance
 import numpy as np
 
 def distance(a, b):
+    '''Euclidean distance between 2 points
+    Args:
+        a (tuple): (x, y) coordinates of point A.
+        b (tuple): (x, y) coordinates of point B.
+    Returns:
+        result (float): Euclidean distance between 2 points
+    '''
     return  sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
 
 def point_line_distance(point, start, end):
+    '''Eucliean distance between a point and a line
+    Args:
+        point (tuple): (x, y) coordinates of a point.
+        start (tuple): (x, y) coordinates of the starting point of a line.
+        end (tuple): (x, y) coordinates of the end point of a line.
+    Returns:
+        result (float): shortest distance from point to line.
+    '''
     if (start == end):
         return distance(point, start)
     else:
@@ -21,10 +36,15 @@ def point_line_distance(point, start, end):
         return n / d
 
 def rdp(points, epsilon):
-    """
-    Reduces a series of points to a simplified version that loses detail, but
+    '''Reduces a series of points to a simplified version that loses detail, but
     maintains the general shape of the series.
-    """
+
+    Args:
+        points (list): a list of (x, y) coordinates forming a simple curve.
+        epsilon (float): error threshold.
+    Returns:
+        results (list): a list of (x, y) coordinates of simplified curve.
+    '''
     dmax = 0.0
     index = 0
     for i in range(1, len(points) - 1):
@@ -41,11 +61,27 @@ def rdp(points, epsilon):
 
 def distanceGC(a,b):
     '''Great circle distance
-    <a>, <b>: (lat, lon)
+
+    Args:
+        a (tuple): (lat, lon) coordinates of point A.
+        b (tuple): (lat, lon) coordinates of point B.
+    Returns:
+        result (float): great circle distance from A to B, on unit sphere.
     '''
     return greatCircle(a[0],a[1],b[0],b[1],r=1)
 
 def point_line_distanceGC(point,start,end):
+    '''Shortest distance between a point and a great circle curve on unit sphere
+
+    Args:
+        point (tuple): (lon, lat) coordinates of a point on unit sphere.
+        start (tuple): (lon, lat) coordinates of the starting point of a curve
+            on unit sphere.
+        end (tuple): (lon, lat) coordinates of the end point of a curve
+            on unit sphere.
+    Returns:
+        result (float): shortest distance from point to line.
+    '''
     if (start == end):
         return distanceGC(point, start)/np.pi*180.
     else:
@@ -58,15 +94,14 @@ def point_line_distanceGC(point,start,end):
         return dxt
 
 def rdpGC(points, epsilon):
-    """
-    Geodesic version of rdp.
+    '''Geodesic version of rdp.
 
-    Points are using lat, lon coordinates.
-    Distances are measured in great circle distance on a unit sphere, then
-    converted to degree.
-
-    epsilon is in unit degree latitude/longitude
-    """
+    Args:
+        points (list): list of (lon, lat) coordinates on unit sphere.
+        epsilon (float): error threshold.
+    Returns:
+        results (list): a list of (lon, lat) coordinates of simplified curve.
+    '''
 
     dmax = 0.0
     index = 0
