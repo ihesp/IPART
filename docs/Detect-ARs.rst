@@ -12,11 +12,12 @@ An AR occurrence at a given time point is defined using these following rules:
 
 1. A connected region in the IVT anomaly field (:math:`I - \delta(I)`,
    computed in the section ":ref:`compute_thr`") where its values is greater than 0.
-2. The centroid (weighted by IVT values of the grid cells) of the region is north of :math:`20 ^{\circ} N`,
-   and south of :math:`80 ^{\circ}`, i.e. we are only interested in mid-latitude systems.
+2. The centroid (weighted by IVT values of the grid cells) of the region is north of :math:`20 ^{\circ} N` (or south of :math:`20 ^{\circ} S` for the Southern Hemisphere),
+   and south of :math:`80 ^{\circ} N` (or north of :math:`80 ^{\circ} S` for the Southern Hemisphere), i.e. we are only interested in mid-latitude systems.
 3. The region's area has to be within :math:`50 - 1800 \times 10^4 km^2`.
-4. After the computation of this AR candidates axis (see :ref:`compute_axis`) and the effective width (defined as area/length ratio), the length has to be :math:`\ge\, 1500 km`, and length/width ratio has to be :math:`\ge \,2`.
+4. After the computation of this AR candidates axis (see :ref:`compute_axis`) and the effective width (defined as area/length ratio), the length has to be :math:`\ge\, 1500 km`, and length/width ratio has to be :math:`\ge \,2` if length is below :math:`2000\, km`.
 
+.. note:: API is provided to control all these parameters.
 
 .. _detect_params:
 
@@ -48,7 +49,7 @@ Additional inputs:
             # km^2, drop AR candidates larger than this area.
             'max_area': 1800*1e4,
 
-            # float, min length/width ratio.
+            # float, min length/width ratio, applied only when length<min_length.
             'min_LW': 2,
 
             # degree, exclude systems whose centroids are lower than this latitude.
@@ -74,7 +75,7 @@ Additional inputs:
             'single_dome': False,
 
             # max prominence/height ratio of a local peak. Only used when SINGLE_DOME=True
-            'max_ph_ratio': 0.4,
+            'max_ph_ratio': 0.6,
 
             # minimal proportion of flux component in a direction to total flux to
             # allow edge building in that direction
@@ -91,25 +92,31 @@ The following snippet shows the detection function calls:
 ::
 
         from ipart.AR_detector import findARs
-        time_idx, labels, angles, crossfluxes, result_df = findARs(ivt, ivtrec,
-                    ivtano, qu, qv, latax, lonax, times=timeax **PARAM_DICT)
+        time_idx, labelsNV, anglesNV, crossfluxesNV, result_df = findARs(ivtNV.data,
+            ivtrecNV.data, ivtanoNV.data, quNV.data, qvNV.data, latax, lonax,
+            times=timeax, **PARAM_DICT)
 
 where these input arguments are:
 
-* ``ivt`` is the IVT data, with dimensions of ``(time, level, latitude, longitude)`` or ``(time, latitude, longitude)``.
-* ``ivtrec`` is :math:`\delta(I)`, and ``ivtano`` is :math:`I-\delta(I)`, see :ref:`compute_thr` for more details.
-* ``qu``: is :math:`F_u`, and ``qv`` is :math:`F_v`.
-* ``latax``: is an 1d array storing the latitude coordinates of ``ivt`` and others.
-* ``lonax``: is an 1d array storing the longitude coordinates of ``ivt`` and others.
+* ``ivtNV`` is a ``ipart.utils.NCVAR`` data object, which is a rudimentary wrapper
+  object designed to achieve a tighter bound between data values and metadata.
+  Same for the other variables with an ``NV`` suffix.
+* ``ivtNV.data`` is the IVT data values in ``numpy.ndarray`` format, with
+  dimensions of ``(time, level, latitude, longitude)`` or ``(time, latitude, longitude)``.
+* ``ivtrecNV`` is :math:`\delta(I)`, and ``ivtanoNV`` is :math:`I-\delta(I)`, see :ref:`compute_thr` for more details.
+* ``quNV``: is :math:`F_u`, and ``qvNV`` is :math:`F_v`.
+* ``latax``: is an 1d array storing the latitude coordinates of ``ivtNV`` and others.
+* ``lonax``: is an 1d array storing the longitude coordinates of ``ivtNV`` and others.
+* ``timeax`` is a list of python ``datetime`` objects storing time stamps of the data in ``ivtNV`` and others.
 * ``PARAM_DICT`` is the parameter dictionary as defined above.
-* ``timeax`` is a list of strings storing time stamps of the data in ``ivt`` and others.
 
 The return values are:
 
 * ``time_idx`` is a list of indices of the time dimension when any AR is found.
-* ``labels`` is an ndarray variable saving the numerical labels of all found ARs in each time step. It has shape of ``(time, lat, lon)``.
-* ``angles`` is an ndarray variable saving the difference in the orientation of IVT vectors in all found ARs, wrt the AR axis.
-* ``crossfluxes`` is an ndarray variable saving the cross-sectional IVT flux, computed as the projection of IVT vectors onto the AR axis, using angles in angles.
+* ``labelsNV`` is a ``ipart.utils.NCVAR`` object, whose ``data`` attribute is an
+  ndarray variable saving the numerical labels of all found ARs in each time step. It has shape of ``(time, lat, lon)``.
+* ``anglesNV`` is a ``ipart.utils.NCVAR`` object storing an ndarray variable saving the difference in the orientation of IVT vectors in all found ARs, wrt the AR axis.
+* ``crossfluxesNV`` is a ``ipart.utils.NCVAR`` object storing an ndarray variable saving the cross-sectional IVT flux, computed as the projection of IVT vectors onto the AR axis, using angles in angles.
 * The ``result_df`` return value is a ``pandas.DataFrame`` object saving in a table the various attributes of all detected ARs at this time point.
 
 .. seealso:: :py:func:`AR_detector.findARs`, :py:func:`AR_detector.findARsGen`, :py:func:`AR_detector.getARData`.
@@ -181,8 +188,9 @@ The resultant detected ARs can be visualized using the following snippet:
     for jj in range(len(plot_vars)):
         ax=figure.add_subplot(3,1,jj+1)
         pobj=plot.plot2(plot_vars[jj],iso,ax,projection='cyl',
-            title='%s %s' %(timett_str, titles[jj]),
-            fix_aspect=False)
+                xarray=lonax, yarray=latax,
+                title='%s %s' %(timett_str, titles[jj]),
+                fix_aspect=False)
 
     bmap=pobj.bmap
     plotAR(ardf,ax,bmap)

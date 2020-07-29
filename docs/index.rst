@@ -106,17 +106,6 @@ version of a package, e.g.  ::
 
     conda install matplotlib=2.2.3
 
-
-For installation of ``CDAT``, checkout the `installation guides <https://github.com/CDAT/cdat/wiki/Install>`_. This is likely the most difficult package to install, and consider leaving it to the end. To verify the CDAT installation, in a python session:
-::
-
-    import cdms2
-    import MV2
-    import cdutil
-
-
-If nothing prints out, the installation is successful. In case of errors, also consider their `partial installation instructions <https://github.com/CDAT/cdat/wiki/Additional-Installation-Configurations>`_. Only the ``cdms2`` and ``cdutil`` modules are needed, the ``vcs`` module is not required.
-
 Lastly, install the ``ipart`` package
 ::
 
@@ -151,16 +140,16 @@ or
 Dependencies
 ############
 
-* OS: Linux or MacOS. Windows is likely not going to work, due to the lack of a Windows version of the CDAT package.
+* OS: Linux or MacOS. Windows is not tested.
 * Python2.7 or Python3.7.
-* CDAT `Climatic Data Analysis Tool <https://github.com/CDAT/cdat>`_.
-* numpy (developed in 1.16.5 in py2, tested 1.18.1 in py3)
-* scipy (developed in 1.2.1 in py2, tested 1.4.1 in py3)
-* matplotlib (2.2.3 for both py2 and py3, having `issues <https://github.com/matplotlib/matplotlib/issues/12820>`_ with 3.1.3.
-* basemap (developed in 1.2.0 in py2, tested 1.2.0 in py3)
-* pandas (developed in 0.23.4 in py2, tested 1.0.3 in py3)
+* netCDF4 (tested 1.4.2, 1.5.3 in py2, tested 1.5.3 in py3)
+* numpy (developed in 1.16.5 in py2, tested 1.18.1, 1.19.0 in py3)
+* scipy (developed in 1.2.1 in py2, tested 1.4.1, 1.5.1 in py3)
+* matplotlib (2.2.3 for both py2 and py3, having [issues](https://github.com/matplotlib/matplotlib/issues/12820) with 3.1.3)
+* basemap (developed in 1.2.0, 1.3.0 in py2, tested 1.2.0 in py3)
+* pandas (developed in 0.23.4, 0.24.2 in py2, tested 1.0.3, 1.0.5 in py3)
 * networkx (developed in 1.11 and 2.2 in py2, tested 2.4 in py3)
-* scikit-image (developed in 0.14.2 in py2, tested 0.16.2 in py3)
+* scikit-image (developed in 0.14.2, 0.14.3 in py2, tested 0.16.2, 0.17.2 in py3)
 
 
 
