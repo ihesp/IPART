@@ -352,8 +352,8 @@ def getARAxis(g, quslab, qvslab, mask):
     Args:
         g (networkx.DiGraph): directed planar graph constructed from AR mask
                               and flows. See maskToGraph().
-        quslab (cdms.TransientVariable): 2D map of u-flux.
-        qvslab (cdms.TransientVariable): 2D map of v-flux.
+        quslab (ndarray): 2D map of u-flux.
+        qvslab (ndarray): 2D map of v-flux.
         mask (ndarray): 2D binary map showing the location of an AR with 1s.
     Returns:
         path (ndarray): Nx2 array storing the AR axis coordinate indices in
@@ -535,14 +535,10 @@ def insertCropSlab(shape, cropslab, cropidx):
         cropslab (ndarray): 2D array to insert.
         cropidx (tuple): (y, x) coordinate indices, output from cropMask(),
                          defines where <cropslab> will be inserted into.
-    Keyword Args:
-        axislist (list or None): if list, a list of cdms.TransientAxis objs.
 
     Returns:
         result (ndarray): 2D slab with shape (n, m), an empty array with a
                           box at <cropidx> replaced with data from <cropslab>.
-                          Optionally, axes information is added if <axistlist>
-                          is not None, making it an TransientVariable.
     '''
 
     result=np.zeros(shape)
