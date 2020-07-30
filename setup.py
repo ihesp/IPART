@@ -2,8 +2,8 @@
 
 # Image-Processing based Atmospheric River Tracking (IPART) algorithms
 
-from setuptools import find_packages
-from distutils.core import setup
+from setuptools import find_packages, setup
+#from distutils.core import setup
 
 setup(name='ipart',
         version='2.0.2',
