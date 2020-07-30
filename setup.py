@@ -6,7 +6,7 @@ from setuptools import find_packages, setup
 #from distutils.core import setup
 
 setup(name='ipart',
-        version='2.0.2',
+        version='2.0',
         description='IPART is a Python package for the detection and tracking of atmospheric rivers from gridded IVT data using image-processing techniques.',
         author='Guangzhi XU',
         author_email='xugzhi1987@gmail.com',
@@ -34,5 +34,5 @@ setup(name='ipart',
             "basemap==1.2.0"
         ],
         packages=find_packages(include=['ipart', 'ipart.*']),
-        license='GPL-3'
+        license='GPL-3.0-or-later'
         )
