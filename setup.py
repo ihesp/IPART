@@ -26,7 +26,7 @@ setup(name='ipart',
             'Operating System :: MacOS',
             'Operating System :: Microsoft :: Windows',
             'Programming Language :: Python :: 3',
-            'Topic :: Scientific/Engineering :: Atmospheric Science',
+            'Topic :: Scientific/Engineering :: Atmospheric Science'
             ],
         install_requires=[
             "netcdf4",
