@@ -29,13 +29,14 @@ setup(name='ipart',
             'Topic :: Scientific/Engineering :: Atmospheric Science'
             ],
         install_requires=[
-            "netcdf4",
-            "matplotlib==2.2.3",
+            "numpy>=1.16",
             "scipy",
-            "scikit-image",
+            "netcdf4",
             "pandas",
-            "basemap==1.2.0",
-            "networkx"
+            "scikit-image",
+            "networkx",
+            "matplotlib==2.2.3",
+            "basemap==1.2.0"
         ],
         packages=find_packages(include=['ipart', 'ipart.*']),
         license='GPL-3'
