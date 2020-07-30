@@ -5,14 +5,9 @@
 from setuptools import find_packages
 from distutils.core import setup
 
-with open('README.md', 'r') as fin:
-    long_description=fin.read()
-
 setup(name='ipart',
         version='2.0.2',
         description='IPART is a Python package for the detection and tracking of atmospheric rivers from gridded IVT data using image-processing techniques.',
-        long_description=long_description,
-        long_description_content_type='text/markdown',
         author='Guangzhi XU',
         author_email='xugzhi1987@gmail.com',
         url='https://github.com/ihesp/IPART',
