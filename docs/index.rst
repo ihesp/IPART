@@ -159,6 +159,15 @@ The code of this package is hosted at https://github.com/ihesp/IPART.
 
 For any queries, please contact xugzhi1987@gmail.com.
 
+Contributing and getting help
+#############################
+
+We welcome contributions from the community. Please create a fork of the
+project on GitHub and use a pull request to propose your changes. We strongly encourage creating
+an issue before starting to work on major changes, to discuss these changes first.
+
+For help using the package, please post issues on the project GitHub page.
+
 
 License
 #######
