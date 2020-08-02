@@ -76,65 +76,20 @@ Similarly for Python 3.7, use:
 
 
 
-Manual Installation Guide
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Install in existing environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Alternatively, one can install ``ipart`` in an existing conda environment
-(note that the ``ipart`` package itself does not specificy the dependencies),
-or build the environment up from scratch, as instructed below.
+Alternatively, one can install ``ipart`` in an existing conda environment.
 
 First build the Python environment using
 `Anaconda <https://www.anaconda.com/distribution/>`_.
 
-After Anaconda installation, create a working environment:
+In your working environment, install the ``ipart`` package
 ::
 
-    conda create -n ipartpy3 python=3.7
-    conda activate ipartpy3
+    conda install -c conda-forge ipart
 
-This creates a Python environment named "ipartpy3" with Python version 3.7.
-
-Then install the dependencies listed below, e.g.
-::
-
-    conda install numpy
-
-
-This installs the current latest version of ``numpy``. Most likely the latest
-versions will work, in case of compatibility issues, consider forcing a given
-version of a package, e.g.  ::
-
-    conda install matplotlib=2.2.3
-
-Lastly, install the ``ipart`` package
-::
-
-    conda install -c guangzhi ipart
-
-
-Install from conda (experimental)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-For py2:
-::
-
-    conda create -n ipartpy2 python=2.7 ipart -c guangzhi -c conda-forge
-
-For py3 (good luck with ``cdms2`` and ``cdutil``):
-::
-
-    conda create -n ipartpy3 python=3.7 ipart -c guangzhi -c conda-forge
-
-Then activate the environment:
-::
-
-    conda activate ipartpy2
-
-or
-
-::
-
-    conda activate ipartpy3
+will install ``ipart`` for Python 3.
 
 
 Dependencies

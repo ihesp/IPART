@@ -17,7 +17,7 @@
 
 Recommend building the Python environment using [Anaconda](https://www.anaconda.com/distribution/).
 
-### Create conda env using environment file
+### Create conda environment using environment file
 
 After Anaconda installation, git clone this repository:
 
@@ -56,6 +56,15 @@ Finally install IPART using:
 pip install -e .
 ```
 
+### Install in existing environment from conda-forge
+
+In your working Python environment:
+
+```
+conda install -c conda-forge ipart
+```
+
+will install `ipart` for Python 3.
 
 ## tests
 
