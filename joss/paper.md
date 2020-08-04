@@ -136,12 +136,12 @@ later times.\label{fig:track}](ar_track_198424.png)
 
 # External libraries used
 
-Manipulation of the NetCDF data is achieved using the `CDAT` [@CDAT],
-`numpy` [@numpy] and `scipy` [@scipy] packages.
-The detection process utilizes the image-processing package `scikit-image` [@scikit-image].
-The AR axis finding process utilizes the `networkx` package [@networkx].
-Generated outputs are further manipulated with `pandas` [@pandas] and
-displayed using `matplotlib` [@matplotlib].
+Manipulation of the NetCDF data is achieved using the Python interface of the
+`NetCDF` software [@netcdf], `numpy` [@numpy] and `scipy`
+[@scipy] packages.  The detection process utilizes the image-processing package
+`scikit-image` [@scikit-image].  The AR axis finding process utilizes the
+`networkx` package [@networkx].  Generated outputs are further manipulated with
+`pandas` [@pandas] and displayed using `matplotlib` [@matplotlib].
 
 
 # Acknowledgements
