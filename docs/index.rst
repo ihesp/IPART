@@ -33,7 +33,7 @@ Below is an example output figure:
     :align: center
     :figclass: align-center
 
-    (a) The IVT field in kg/m/s at 1984-01-04 06:00 UTC over the North
+    (a) The IVT field in kg/(m*s) at 1984-01-04 06:00 UTC over the North
     Hemisphere. (b) the IVT reconstruction field at the same time point. (c)
     the IVT anomaly field from the THR process at the same time point. In all
     three subplots, the detected ARs are outlined in black contour. The AR axes

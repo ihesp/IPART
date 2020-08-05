@@ -106,7 +106,7 @@ Example output
     :align: center
     :figclass: align-center
 
-    (a) The IVT field in kg/m/s at 1984-01-26 00:00 UTC over the North
+    (a) The IVT field in kg/(m*s) at 1984-01-26 00:00 UTC over the North
     Hemisphere. (b) the IVT reconstruction field (:math:`\delta(I)`) at the same time point. (c)
     the IVT anomaly field (:math:`I-\delta(I)`) from the THR process at the same time point.
 

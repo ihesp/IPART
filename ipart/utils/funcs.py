@@ -71,7 +71,7 @@ class NCVAR(object):
                 var = NCVAR(data_array, 'sst', (times, lats, lons),
                      {'name': 'sst,
                       'long_name': 'sea surface temperature',
-                      'standard_name': 'sea surface temperature',
+                      'standard_name': 'sea_surface_temperature',
                       'units': 'K'})
                 ```
             * to get the np data array:

@@ -817,12 +817,12 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
     quslabNV=funcs.NCVAR(quslab, 'qu', [latax, lonax],
             {'name': 'qu',
              'long_name': 'u-component of IVT',
-             'standard_name': 'u-component of IVT',
+             'standard_name': 'eastward_atmosphere_water_transport_across_unit_distance',
              'units': 'kg/m/s'})
     qvslabNV=funcs.NCVAR(qvslab, 'qv', [latax, lonax],
             {'name': 'qv',
              'long_name': 'v-component of IVT',
-             'standard_name': 'v-component of IVT',
+             'standard_name': 'northward_atmosphere_water_transport_across_unit_distance',
              'units': 'kg/m/s'})
 
     # prepare outputs

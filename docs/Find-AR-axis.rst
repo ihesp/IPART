@@ -82,7 +82,7 @@ These boundary pixels are colored in green and black, respectively, in :numref:`
 
     Application of the axis finding algorithm on the AR in the North Pacific,
     2007-Dec-1, 00 UTC. IVT within the AR is shown as colors, in
-    :math:`kg/m/s`. The region of the AR (:math:`I_k`) is shown as a collection
+    :math:`kg/(m \cdot s)`. The region of the AR (:math:`I_k`) is shown as a collection
     of gray dots, which constitute nodes of the directed graph. Edges among
     neighboring nodes are created.  A square marker is drawn at each boundary
     node, and is filled with green if the boundary node has net input moisture
@@ -102,7 +102,7 @@ The weight for edge :math:`e_{ij}` is defined as:
                 w_{ij} = e^{-f_{ij}/A}
 
 where :math:`f_{i,j}` is the projected moisture flux along edge :math:`e_{i,j}`
-and :math:`A = 100\, kg/m/s` is a scaling factor.
+and :math:`A = 100\, kg/(m \cdot s)` is a scaling factor.
 
 This formulation
 ensures a non-negative weight for each edge, and penalizes the inclusion of

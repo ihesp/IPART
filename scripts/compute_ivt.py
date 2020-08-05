@@ -1,5 +1,10 @@
 '''Compute Integrated Vapor Transport (IVT) from u- and v- vapor flux components.
 
+u-vapor flux component's standard_name:
+    "eastward_atmosphere_water_transport_across_unit_distance".
+v-vapor flux component's standard_name:
+    "northward_atmosphere_water_transport_across_unit_distance".
+
 IVT = sqrt(uflux^2 + vflux^2), in kg/m/s.
 
 Author: guangzhi XU (xugzhi1987@gmail.com)

@@ -12,7 +12,12 @@ to disk in one go.
 
 1. uflux, vflux:
 
-    Instantaneous vertically integrated moisture flux, in kg/m/s.
+    Instantaneous vertically integrated moisture flux, in kg/(m*s).
+    u-moisture flux component's standard_name:
+        "eastward_atmosphere_water_transport_across_unit_distance".
+    v-moisture flux component's standard_name:
+        "northward_atmosphere_water_transport_across_unit_distance".
+
     Data should be formatted into 4D (time, singleton_z, latitude, longitude),
     or 3D (time, latitude, longitude).
 
@@ -23,7 +28,7 @@ to disk in one go.
 
 3. THR results:
 
-    Instantaneous THR reconstruction and anomalies of IVT, in kg/m/s.
+    Instantaneous THR reconstruction and anomalies of IVT, in kg/(m*s).
     This is the outcome of the THR process. See compute_thr_singlefile.py,
     compute_thr_multifile.py for scripts to perform this process.
     The THR algorithm is implemented in ipart.thr.THR.
@@ -58,7 +63,7 @@ Take only northern hemisphere, shift longitude to 80 E.
 
 3. crossfluxes:
 
-    Cross-sectional moisture fluxes in all ARs, in kg/m/s, computed as
+    Cross-sectional moisture fluxes in all ARs, in kg/(m*s), computed as
     the projection of the total moisture flux onto the local AR axis.
 
 labels, angles and crossfluxes have the same dimension and are saved into a

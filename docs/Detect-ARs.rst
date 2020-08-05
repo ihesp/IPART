@@ -40,7 +40,7 @@ Additional inputs:
 ::
 
         PARAM_DICT={
-            # kg/m/s, define AR candidates as regions >= than this anomalous ivt.
+            # kg/(m*s), define AR candidates as regions >= than this anomalous ivt.
             'thres_low' : 1,
 
             # km^2, drop AR candidates smaller than this area.
@@ -144,13 +144,13 @@ The rows of ``ardf`` are different AR records, the columns of ``ardf`` are liste
 * ``length``       : float, length of the AR in :math:`km`.
 * ``width``        : float, effective width in :math:`km`, as area/length.
 * ``LW_ratio``     : float, length/width ratio.
-* ``strength``     : float, spatially averaged IVT value within the AR region, in :math:`kg/m/s`.
-* ``strength_ano`` : float, spatially averaged anomalous IVT value within the AR region, in :math:`kg/m/s`.
-* ``strength_std`` : float, standard deviation of IVT within the AR region, in :math:`kg/m/s`.
-* ``max_strength`` : float, maximum IVT value within the AR region, in :math:`kg/m/s`.
+* ``strength``     : float, spatially averaged IVT value within the AR region, in :math:`kg/(m \cdot s)`.
+* ``strength_ano`` : float, spatially averaged anomalous IVT value within the AR region, in :math:`kg/(m \cdot s)`.
+* ``strength_std`` : float, standard deviation of IVT within the AR region, in :math:`kg/(m \cdot s)`.
+* ``max_strength`` : float, maximum IVT value within the AR region, in :math:`kg/(m \cdot s)`.
 * ``mean_angle``   : float, spatially averaged angle between the IVT vector and the AR axis, in degrees.
 * ``is_relaxed``   : True or False, whether the AR is flagged as "relaxed".
-* ``qv_mean``      : float, spatially averaged meridional integrated vapor flux, in :math:`kg/m/s`.
+* ``qv_mean``      : float, spatially averaged meridional integrated vapor flux, in :math:`kg/(m \cdot s)`.
 
 
 Detecated Python script
@@ -206,7 +206,7 @@ One example output figure is shown below:
     :align: center
     :figclass: align-center
 
-    (a) The IVT field in kg/m/s at 1984-01-04 06:00 UTC over the North
+    (a) The IVT field in kg/(m*s) at 1984-01-04 06:00 UTC over the North
     Hemisphere. (b) the IVT reconstruction field at the same time point. (c)
     the IVT anomaly field from the THR process at the same time point. In all
     three subplots, the detected ARs are outlined in black contour. The AR axes

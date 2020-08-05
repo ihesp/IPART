@@ -4,8 +4,12 @@ Data preparation
 netcdf data
 ###########
 
-Source data are the u- and v- components of the vertically integrated vapor fluxes, in a rectangular
-grid.
+Source data are the u- and v- components of the vertically integrated vapor
+fluxes, in a rectangular grid.
+
+The u-component of the vertically integrated vapor fluxes have a `standard_name` of `eastward_atmosphere_water_transport_across_unit_distance <http://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html>`_.
+
+The v-component of the vertically integrated vapor fluxes have a `standard_name` of `northward_atmosphere_water_transport_across_unit_distance <http://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html>`_.
 
 These are usually computed as:
 
@@ -19,7 +23,7 @@ These are usually computed as:
 where
 
 * :math:`F_u` (:math:`F_v`) is the zonal (meridional) component of the integrated flux, both
-  in :math:`kg/m/s`.
+  in :math:`kg/(m*s)`.
 * :math:`u` (:math:`v`): is the zonal (meridional) wind speed (in :math:`m/s`) at a given level, and
   :math:`q` is the specific humidity (in `kg/kg`) at the same level.
 * :math:`dP` is the pressure increment, in :math:`Pa`, and :math:`g` is acceleration by gravity.
