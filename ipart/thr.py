@@ -11,6 +11,38 @@ from skimage import morphology
 from ipart.utils import funcs
 #import recon
 
+
+def getAttrDict(ref_var, component):
+    '''Prepare a metadata dict from a reference variable
+
+    Args:
+        ref_var (ipart.utils.NCVAR): NCVAR obj from which meta is obtained
+            and modified.
+        component (str): 'reconstruction' or 'anomaly'. Strings as modifiers
+            to modify attributes in <ref_var>.
+    Returns:
+        attdict (dict): attribute dictionary.
+    '''
+
+    lgname=getattr(ref_var, 'long_name', '')
+    lgname='%s THR %s' %(lgname, component) if len(lgname)>0 else\
+            'integrated vapor transport THR %s' %component
+
+    sdname=getattr(ref_var, 'standard_name', '')
+    sdname='%s_THR_%s' %(sdname, component) if len(sdname)>0 else\
+            'integrated_vapor_transport_THR_%s' %component
+
+    attdict={'long_name': lgname,
+             'standard_name': sdname,
+             'title': lgname,
+             'units': getattr(ref_var, 'units', '')
+             }
+
+    return attdict
+
+
+
+
 def THR(ivtNV, kernel, oroNV=None, high_terrain=600, verbose=True):
     '''Perform THR filtering process on 3d data
 
@@ -100,15 +132,13 @@ def THR(ivtNV, kernel, oroNV=None, high_terrain=600, verbose=True):
         ivtrec=ivtrec[:,None,...]
         ivtano=ivtano[:,None,...]
 
-    ivtrecNV=funcs.NCVAR(ivtrec, 'ivt_rec', axislist, {'name': 'ivt_rec',
-        'long_name': '%s, THR reconstruction' %(getattr(ivt, 'long_name', '')),
-        'standard_name': '%s, THR reconstruction' %(getattr(ivt, 'long_name', '')),
-        'units': getattr(ivt, 'units', '')})
+    attdict=getAttrDict(ivtNV, 'reconstruction')
+    attdict['name']='ivt_rec'
+    ivtrecNV=funcs.NCVAR(ivtrec, 'ivt_rec', axislist, attdict)
 
-    ivtanoNV=funcs.NCVAR(ivtano, 'ivt_ano', axislist, {'name': 'ivt_ano',
-        'long_name': '%s, THR anomaly' %(getattr(ivt, 'long_name', '')),
-        'standard_name': '%s, THR anomaly' %(getattr(ivt, 'long_name', '')),
-        'units': getattr(ivt, 'units', '')})
+    attdict=getAttrDict(ivtNV, 'anomaly')
+    attdict['name']='ivt_ano'
+    ivtanoNV=funcs.NCVAR(ivtano, 'ivt_ano', axislist, attdict)
 
     return ivtNV, ivtrecNV, ivtanoNV
 
@@ -225,19 +255,13 @@ def rotatingTHR(filelist, varin, kernel, outputdir, oroNV=None,
                     rec1.shape)
 
         rec1.id=vartmp_rec.id
-        attdict={'long_name':'%s, THR reconstruction'\
-                %(getattr(var1, 'long_name', ''))}
-        attdict['standard_name']=attdict['long_name']
-        attdict['title']=attdict['long_name']
-        attdict['units']=var1.units
+        attdict=getAttrDict(var1, 'reconstruction')
+        attdict['name']='ivt_rec'
         rec1.attributes=attdict
 
         ano1.id=vartmp_ano.id
-        attdict={'long_name':'%s, THR anomaly'\
-                %(getattr(var1, 'long_name', ''))}
-        attdict['standard_name']=attdict['long_name']
-        attdict['title']=attdict['long_name']
-        attdict['units']=var1.units
+        attdict=getAttrDict(var1, 'anomaly')
+        attdict['name']='ivt_ano'
         ano1.attributes=attdict
 
         # left to pad in next iteration
@@ -272,19 +296,13 @@ def rotatingTHR(filelist, varin, kernel, outputdir, oroNV=None,
                 print('\n# <rotatingTHR>: Shape of last section after padding:', ano2.shape)
 
             rec2.id=vartmp_rec.id
-            attdict={'long_name':'%s, THR reconstruction'\
-                    %(getattr(var1, 'long_name', ''))}
-            attdict['standard_name']=attdict['long_name']
-            attdict['title']=attdict['long_name']
-            attdict['units']=var2.units
+            attdict=getAttrDict(var2, 'reconstruction')
+            attdict['name']='ivt_rec'
             rec2.attributes=attdict
 
             ano2.id=vartmp_ano.id
-            attdict={'long_name':'%s, THR anomaly'\
-                    %(getattr(var1, 'long_name', ''))}
-            attdict['standard_name']=attdict['long_name']
-            attdict['title']=attdict['long_name']
-            attdict['units']=var2.units
+            attdict=getAttrDict(var2, 'anomaly')
+            attdict['name']='ivt_ano'
             ano2.attributes=attdict
 
             #-----------------------Save-----------------------

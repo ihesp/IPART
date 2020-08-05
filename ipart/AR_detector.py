@@ -989,19 +989,19 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
     axislist=[latax, lonax]
     labelsNV=funcs.NCVAR(labels, 'labels', axislist, {
         'long_name': 'AR labels',
-        'standard_name': 'AR labels',
+        'standard_name': 'numerical_AR_labels',
         'tilte': 'AR labels',
         'units': ''})
 
     anglesNV=funcs.NCVAR(angles, 'angles', axislist, {
         'long_name': 'AR moisture flux orientation difference',
-        'standard_name': 'AR moisture flux orientation difference',
+        'standard_name': 'AR_moisture_flux_orientation_difference',
         'title': 'AR moisture flux orientation difference',
         'units': 'degree'})
 
     crossfluxesNV=funcs.NCVAR(crossfluxes, 'ivt_cross', axislist, {
         'long_name': 'AR total cross sectional moisture flux',
-        'standard_name': 'AR total cross sectional moisture flux',
+        'standard_name': 'AR_total_cross_sectional_moisture_flux',
         'title': 'AR total cross sectional moisture flux',
         'units': getattr(slab, 'units', 'kg/m/s')})
 
