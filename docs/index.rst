@@ -22,9 +22,12 @@ tracking from gridded Integrated Vapor Transport (IVT) data, for instance
 An overview of what ARs are can be found in this review paper: `Atmospheric
 rivers: a mini-review <https://doi.org/10.3389/feart.2014.00002>`_.
 
-Different from commonly used AR detection methods that rely on thresholding on
-the IVT magnitude, this package includes a method inspired by an image
-processing technique -- `Top-hap by reconstruction (THR) <https://ieeexplore.ieee.org/document/217222>`_.
+**IPART** is intended for researchers and students who are interested in the
+field of atmospheric river studies in the present day climate or future
+projections. Different from commonly used AR detection methods that rely on
+thresholding on the IVT magnitude, this package includes a method inspired by
+an image processing technique -- `Top-hap by reconstruction (THR)
+<https://ieeexplore.ieee.org/document/217222>`_.
 
 Below is an example output figure:
 
