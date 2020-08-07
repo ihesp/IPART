@@ -81,8 +81,11 @@ performed some systematic comparisons with two magnitude thresholding based AR
 detection methods included in ARTMIP, and the proposed method displays better
 correspondence between North Hemisphere AR tracks and storm tracks, better
 identification of the strong mid-latitude AR-related moisture transports, and
-longer AR track durations. The detailed analysis has been accepted by the
-journal of Atmosphere and is now in production.
+longer AR track durations. The detailed analysis is given in [@Xu2020].
+
+`IPART` is therefore intended for researchers and students who are interested
+in the field of atmospheric river studies in the present day climate or future
+projections.
 
 The `IPART` package includes a collection of Python functions/classes designed
 for an analysis workflow covering the detection of ARs, the simplification of
@@ -96,6 +99,7 @@ series of [Jupyter notebooks](https://github.com/ihesp/IPART/tree/master/noteboo
 included to help guide the users through the entire workflow, and some example
 scripts are provided as templates to help the user quickly build their own
 production scripts.
+
 
 
 # Example use case

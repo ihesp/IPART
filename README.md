@@ -1,5 +1,38 @@
 # Image-Processing based Atmospheric River Tracking (IPART) algorithms
 
+
+## Introduction
+
+IPART (Image-Processing based Atmospheric River Tracking) is a Python package
+for automated Atmospheric River (AR) detection, axis finding and AR tracking
+from gridded Integrated Vapor Transport (IVT) data, for instance Reanalysis
+datasets, or model simulations.
+
+IPART is intended for researchers and students who are interested in the
+field of atmospheric river studies in the present day climate or future
+projections. Unlike the convectional detection methods that rely on magnitude
+thresholding on the intensities of atmospheric vapor fluxes, IPART tackles the
+detection task from a spatio-temporal scale perspective and is thus
+free from magnitude thresholds.
+
+## Documentation
+
+Further documentation can be found at [https://ipart.readthedocs.io/en/latest/](https://ipart.readthedocs.io/en/latest/).
+
+
+## Example use case
+
+
+| ![fig3](joss/fig3.png) |
+| :--: |
+|*(a) The IVT field in kg/m/s at 1984-01-26 00:00 UTC over the North Hemisphere. (b) the IVT reconstruction field (IVT_rec) at the same time point. (c) the IVT anomaly field (IVT_ano) from the THR process at the same time point.*|
+
+| ![](joss/ar_track_198424.png) |
+| :--: |
+|*Locations of a track labelled "198424" found in year 1984. Black to yellow color scheme indicates the evolution.*|
+
+
+
 ## Dependencies
 
 * Python2.7 or Python3.7.
@@ -81,22 +114,6 @@ The `tests` folder also contains a number of `unittest`s, to run them:
 ```
 python -m unittest discover -s tests
 ```
-
-## Documentation
-
-Further documentation can be found at [https://ipart.readthedocs.io/en/latest/](https://ipart.readthedocs.io/en/latest/).
-
-
-## Example use case
-
-
-| ![fig3](joss/fig3.png) |
-| :--: |
-|*(a) The IVT field in kg/m/s at 1984-01-26 00:00 UTC over the North Hemisphere. (b) the IVT reconstruction field (IVT_rec) at the same time point. (c) the IVT anomaly field (IVT_ano) from the THR process at the same time point.*|
-
-| ![](joss/ar_track_198424.png) |
-| :--: |
-|*Locations of a track labelled "198424" found in year 1984. Black to yellow color scheme indicates the evolution.*|
 
 
 
