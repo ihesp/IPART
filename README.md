@@ -109,7 +109,7 @@ import ipart
 
 If nothing prints out, installation is successful.
 
-The `tests` folder also contains a number of `unittest`s, to run them:
+The `tests` folder also contains a number of `unittest`s, to run them (only if you have done a source code install):
 
 ```
 python -m unittest discover -s tests
