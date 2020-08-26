@@ -7,10 +7,13 @@ from __future__ import print_function
 import os
 import numpy as np
 import unittest
+# try fixing the issue of
+# _tkinter.TclError: no display name and no $DISPLAY environment variable
+import matplotlib
+matplotlib.use('Agg')
 from ipart.utils import funcs
 from ipart.thr import THR
 from ipart.AR_detector import findARs, _findARs, prepareMeta
-
 
 class TestDetect(unittest.TestCase):
     """Test input netcdf data"""

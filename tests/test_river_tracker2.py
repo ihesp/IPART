@@ -6,6 +6,10 @@
 from __future__ import print_function
 import os
 import unittest
+# try fixing the issue of
+# _tkinter.TclError: no display name and no $DISPLAY environment variable
+import matplotlib
+matplotlib.use('Agg')
 from ipart.AR_tracer import readCSVRecord, trackARs, filterTracks
 
 

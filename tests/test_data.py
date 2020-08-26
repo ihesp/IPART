@@ -8,6 +8,10 @@ import os
 import unittest
 from datetime import datetime
 import numpy as np
+# try fixing the issue of
+# _tkinter.TclError: no display name and no $DISPLAY environment variable
+import matplotlib
+matplotlib.use('Agg')
 from ipart.utils import funcs
 
 
