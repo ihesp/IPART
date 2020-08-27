@@ -7,6 +7,7 @@ Update time: 2020-07-22 09:27:30.
 #--------Import modules--------------
 import numpy
 import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
 from . import funcs as functions
 
 DEFAULT_CMAP=plt.cm.PRGn
@@ -1649,8 +1650,194 @@ class Plot2Basemap(Plot2D):
 
         return cbar
 
+class Plot2Cartopy(Plot2D):
+    def __init__(self,var,method,ax,legend='global',title=None,\
+            xarray=None,yarray=None,\
+            latlon=True,latlongrid=False,fill_color='0.8',
+            legend_ori='horizontal',clean=False,fix_aspect=False):
 
-def plot2(var,method,ax=None,legend='global',
+        Plot2D.__init__(self,var,method,ax=ax,\
+                xarray=xarray,yarray=yarray,\
+                title=title,latlon=latlon,\
+                latlongrid=latlongrid,legend=legend,
+                legend_ori=legend_ori,clean=clean)
+
+        self.projection=ax.projection
+        self.fill_color=fill_color
+        self.fix_aspect=fix_aspect
+
+    def getGrid(self):
+
+        try:
+            latax=self.var.getLatitude()[:]
+            lonax=self.var.getLongitude()[:]
+            lons,lats=numpy.meshgrid(lonax,latax)
+        except:
+            lonax,latax,lons,lats=super(Plot2Cartopy,self).getGrid()
+
+        return lonax,latax,lons,lats
+
+
+    def _plot(self):
+
+        #-------------Plot according to method-------------
+        #-------------------Contour fill/line-------------------
+        bmap=self.ax
+        trans=ccrs.PlateCarree()
+
+        if self.method.method in ['isofill','isoline']:
+
+            if self.method.ext_1 is False and self.method.ext_2 is False:
+                extend='neither'
+            elif self.method.ext_1 is True and self.method.ext_2 is False:
+                extend='min'
+            elif self.method.ext_1 is False and self.method.ext_2 is True:
+                extend='max'
+            else:
+                extend='both'
+
+            if self.method.method=='isofill':
+                cs=bmap.contourf(self.lons,self.lats,self.var,self.method.levels,latlon=True,\
+                        cmap=self.method.cmap,extend=extend,hatch='/',
+                        transform=trans)
+
+            elif self.method.method=='isoline':
+                if self.method.color is not None:
+                    colors=[self.method.color]*len(self.method.levels)
+                    cs=bmap.contour(self.lons,self.lats,self.var,self.method.levels,latlon=True,\
+                            colors=colors,extend=extend,
+                            linewidth=self.method.linewidth,
+                            alpha=self.method.alpha,
+                            transform=trans)
+                else:
+                    if self.method.black:
+                        colors=['k']*len(self.method.levels)
+                        cs=bmap.contour(self.lons,self.lats,self.var,self.method.levels,latlon=True,\
+                                colors=colors,extend=extend,
+                                linewidth=self.method.linewidth,
+                                alpha=self.method.alpha,
+                                transform=trans)
+                    else:
+                        cs=bmap.contour(self.lons,self.lats,self.var,self.method.levels,latlon=True,\
+                                cmap=self.method.cmap,extend=extend,
+                                alpha=self.method.alpha,
+                                transform=trans)
+
+                #-----------------Set line styles-----------------
+                # for some reason it's not giving me dashed line for negatives.
+                # have to set myself
+                for ii in range(len(cs.collections)):
+                    cii=cs.collections[ii]
+                    lii=cs.levels[ii]
+                    if lii<0:
+                        if self.method.dash_negative:
+                            cii.set_linestyle('dashed')
+                        else:
+                            cii.set_linestyle('solid')
+
+                # For some reason the linewidth keyword in contour doesn't
+                # work, has to set again.
+                for ii in range(len(cs.collections)):
+                    cs.collections[ii].set_linewidth(self.method.linewidth)
+
+                if self.method.bold_lines is not None:
+                    multi=2.0
+                    idx_bold=[]
+                    for bii in self.method.bold_lines:
+                        #idxii=numpy.where(numpy.array(self.method.levels)==bii)[0]
+                        idxii=numpy.where(numpy.array(cs.levels)==bii)[0]
+                        if len(idxii)>0:
+                            idx_bold.append(int(idxii))
+
+                    for bii in idx_bold:
+                        cs.collections[bii].set_linewidth(self.method.linewidth*multi)
+
+
+        #---------------------Boxfill---------------------
+        elif self.method.method == 'boxfill':
+
+            cs=bmap.imshow(self.var,cmap=self.method.cmap,
+                    vmin=self.method.vmin,vmax=self.method.vmax,interpolation='nearest',
+                    transform=trans)
+
+        #-------------------Pcolor fill-------------------
+        elif self.method.method == 'pcolor':
+
+            cs=bmap.pcolormesh(self.lons,self.lats,self.var,latlon=True,\
+                    cmap=self.method.cmap,vmin=self.method.levels[0],\
+                    vmax=self.method.levels[-1],
+                    transform=trans)
+
+        #------------------Hatch contourf------------------
+        elif self.method.method=='hatch':
+            # Skip if none == 1
+            if numpy.all(self.var==0):
+                nlevel=1
+            else:
+                nlevel=3
+            cs=bmap.contourf(self.lons,self.lats,self.var,nlevel,latlon=True,\
+                    colors='none',hatches=[None,self.method.hatch],
+                    alpha=0.,
+                    transform=trans)
+
+        elif self.method.method=='gis':
+            cs=bmap.arcgisimage(service='ESRI_Imagery_World_2D',xpixels=self.method.xpixels,
+                    dpi=self.method.dpi,verbose=self.method.verbose,
+                    transform=trans)
+
+        return cs
+
+
+    def plotOthers(self):
+
+        if self.clean:
+            return
+
+        #-------------------Draw others-------------------
+        if not self.method.method=='gis':
+            self.ax.coastlines()
+
+        return
+
+    #---------------Draw lat, lon grids---------------
+    def plotAxes(self):
+
+        if self.clean:
+            return
+
+        self.ax.set_facecolor(self.fill_color)
+
+        n_lat=int(6*1./self.geo[0]+3)
+        n_lon=int(6*1./self.geo[1]+3)
+
+        lat_labels=numpy.array(mkscale(self.latax[0],self.latax[-1],n_lat,1))
+        idx=numpy.where((lat_labels>=self.latax[0]) & (lat_labels<=self.latax[-1]))
+        lat_labels=numpy.array(lat_labels)[idx]
+
+        lon_labels=numpy.array(mkscale(self.lonax[0],self.lonax[-1],n_lon,1))
+        idx=numpy.where((lon_labels>=self.lonax[0]) & (lon_labels<=self.lonax[-1]))
+        lon_labels=numpy.array(lon_labels)[idx]
+
+        #-----------------Draw axes/lables/ticks-----------------
+        #self.ax.set_xticks(lon_labels)
+        #self.ax.set_yticks(lat_labels)
+        #self.ax.gridlines(draw_labels=True, xlocs=lon_labels, ylocs=lat_labels)
+        self.ax.gridlines(draw_labels=True, zorder=-1, color=self.fill_color)
+        self.plotOthers()
+
+        return
+
+    def plotColorbar(self):
+
+        cbar=super(Plot2Cartopy,self).plotColorbar()
+        #if cbar is not None:
+            #var_units=getattr(self.var,'units','')
+            #cbar.set_label(var_units,fontsize=self.font_size)
+
+        return cbar
+
+
+def plot2old(var,method,ax=None,legend='global',
         xarray=None,yarray=None,
         title=None,latlon=True,latlongrid=False,fill_color='0.8',
         projection='merc',legend_ori='horizontal',clean=False,
@@ -1707,5 +1894,36 @@ def plot2(var,method,ax=None,legend='global',
     return plotobj
 
 
+def plot2(var,method,ax=None,legend='global',\
+        xarray=None,yarray=None,\
+        title=None,latlon=True,latlongrid=False,fill_color='0.8',
+        legend_ori='horizontal',clean=False,
+        isbasemap=True,
+        fix_aspect=True,verbose=True):
 
+    #---------------Deal with longitude---------------
+    xarray=numpy.array(xarray)
+    lon0=xarray[len(xarray)//2]
+    ax.projection=ccrs.PlateCarree(central_longitude=lon0)
 
+    if numpy.ndim(var)==1:
+        raise Exception("<var> is 1D")
+
+    if isbasemap and Plot2D.checkBasemap(var,xarray,yarray):
+        try:
+            var=functions.increasingLatitude(var)
+        except:
+            pass
+        plotobj=Plot2Cartopy(var,method,ax=ax,legend=legend,\
+                xarray=xarray,yarray=yarray,\
+                title=title,latlon=latlon,latlongrid=latlongrid,\
+                fill_color=fill_color,
+                legend_ori=legend_ori,clean=clean,fix_aspect=fix_aspect)
+    else:
+        plotobj=Plot2D(var,method,ax=ax,legend=legend,\
+                xarray=xarray,yarray=yarray,\
+                title=title,latlon=latlon,latlongrid=latlongrid,
+                legend_ori=legend_ori,clean=clean)
+    cs=plotobj.plot()
+
+    return plotobj

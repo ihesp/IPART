@@ -12,6 +12,7 @@ from skimage import measure
 from skimage import morphology
 from scipy import ndimage
 import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
 from netCDF4 import date2num
 
 from ipart.utils import rdp
@@ -1075,13 +1076,12 @@ def save2DF(result_dict):
     return result_df
 
 
-def plotAR(ardf, ax, bmap):
+def plotAR(ardf, ax, lonax):
     '''Helper function to plot the regions and axes of ARs
 
     Args:
         ardf (pandas.DataFrame): table containing AR records.
         ax (matplotlib axis): axis to plot onto.
-        bmap (Basemap obj): defining the geo map.
     '''
 
     for ii in range(len(ardf)):
@@ -1093,26 +1093,39 @@ def plotAR(ardf, ax, bmap):
         px=vv['contour_x']
         py=vv['contour_y']
 
-        px_segs, py_segs=funcs.breakCurveAtEdge(px, py, bmap.llcrnrx,
-                bmap.urcrnrx)
+        #px_segs, py_segs=funcs.breakCurveAtEdge(px, py, bmap.llcrnrx,
+        #        bmap.urcrnrx)
+        px_segs, py_segs=funcs.breakCurveAtEdge(px, py,
+                #ax.get_extent()[0],
+                #ax.get_extent()[1])
+                lonax[0],
+                lonax[-1])
 
         for xjj, yjj in zip(px_segs, py_segs):
 
-            xjj,yjj=bmap(xjj,yjj)
+            #xjj,yjj=bmap(xjj,yjj)
             linewidth=2.0 if isrelaxkk else 2.0
             linestyle=':' if isrelaxkk else '-'
-            ax.plot(xjj,yjj,color='k',linestyle=linestyle,linewidth=linewidth)
+            ax.plot(xjj,yjj,color='k',linestyle=linestyle,linewidth=linewidth,
+                    transform=ccrs.PlateCarree())
 
         # plot axis
         px=vv['axis_x']
         py=vv['axis_y']
 
-        px_segs, py_segs=funcs.breakCurveAtEdge(px, py, bmap.llcrnrx,
-                bmap.urcrnrx)
+        #px_segs, py_segs=funcs.breakCurveAtEdge(px, py, bmap.llcrnrx,
+        #        bmap.urcrnrx)
+        px_segs, py_segs=funcs.breakCurveAtEdge(px, py,
+                #ax.get_extent()[0],
+                #ax.get_extent()[1])
+                lonax[0],
+                lonax[-1])
         for xjj, yjj in zip(px_segs, py_segs):
 
-            xjj,yjj=bmap(xjj,yjj)
-            ax.plot(xjj,yjj,'g:',linewidth=2.0)
+            #xjj,yjj=bmap(xjj,yjj)
+            ax.plot(xjj,yjj,'g:',linewidth=2.0,
+                    #transform=ax.projection)
+                    transform=ccrs.PlateCarree())
 
         # plot cross flux text
         '''

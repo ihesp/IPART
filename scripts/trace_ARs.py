@@ -61,6 +61,7 @@ import os, sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
 
 from ipart.AR_tracer import readCSVRecord, trackARs, filterTracks, \
         plotAR
@@ -106,8 +107,8 @@ if __name__=='__main__':
 
         if PLOT:
             figure=plt.figure(figsize=(12,6),dpi=100)
-            ax=figure.add_subplot(111)
-            plotAR(tii,latax,lonax,True,ax=ax)
+            ax=figure.add_subplot(111, projection=ccrs.PlateCarree())
+            plotAR(tii,latax,lonax,ax,True)
 
             #----------------- Save plot------------
             plot_save_name='ar_track_%s' %trackidii

@@ -12,10 +12,11 @@ import copy
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from mpl_toolkits.basemap import Basemap
+#from mpl_toolkits.basemap import Basemap
+import cartopy.crs as ccrs
 import matplotlib.patches as patches
 
-from ipart.utils import funcs, plot
+from ipart.utils import funcs
 
 
 #######################################################################
@@ -284,7 +285,7 @@ def plotHD(y1,x1,y2,x2,timelabel=None,linkflag='',ax=None,show=True):
 
     return
 
-def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',
+def plotAR(arlist,latax,lonax,ax,full=False,label=None,linestyle='solid',
         marker=None):
     '''Plot AR tracks
 
@@ -309,22 +310,25 @@ def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',
 
     if ax is None:
         figure=plt.figure(figsize=(12,6),dpi=100)
-        ax=figure.add_subplot(111)
+        ax=figure.add_subplot(111,projection=ccrs.PlateCarree())
         isshow=True
 
-    ax.patch.set_color('0.7')
+    lonax=np.array(lonax)
+    lon0=lonax[len(lonax)//2]
+    ax.projection=ccrs.PlateCarree(central_longitude=lon0)
 
     if not isinstance(arlist,(tuple,list)):
         arlist=[arlist,]
 
-    bmap=Basemap(projection='cyl',
-            llcrnrlat=latax[0],llcrnrlon=lonax[0],
-            urcrnrlat=latax[-1],urcrnrlon=lonax[-1],
-            ax=ax,fix_aspect=False)
+    #bmap=Basemap(projection='cyl',
+            #llcrnrlat=latax[0],llcrnrlon=lonax[0],
+            #urcrnrlat=latax[-1],urcrnrlon=lonax[-1],
+            #ax=ax,fix_aspect=False)
 
-    bmap.drawcoastlines(linewidth=0.5,linestyle='solid',color='k',\
-        antialiased=True)
+    #bmap.drawcoastlines(linewidth=0.5,linestyle='solid',color='k',\
+            #antialiased=True)
 
+    '''
     lon_labels=np.array(plot.mkscale(lonax[0],lonax[-1],15,1))
     idx=np.where((lon_labels>=lonax[0]) & (lon_labels<=lonax[-1]))
     lon_labels=np.array(lon_labels)[idx]
@@ -332,14 +336,21 @@ def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',
     lat_labels=np.array(plot.mkscale(latax[0],latax[-1],15,1))
     idx=np.where((lat_labels>=latax[0]) & (lat_labels<=latax[-1]))
     lat_labels=np.array(lat_labels)[idx]
+    '''
 
-    parallels=[1,1,0,0]
-    meridians=[0,0,0,1]
+    ax.patch.set_color('0.7')
+    ax.set_extent([lonax[0], lonax[-1], latax[0], latax[-1]],
+            crs=ccrs.PlateCarree())
+    ax.coastlines()
+    ax.gridlines(draw_labels=True, zorder=-1, color='0.7')
 
-    bmap.drawparallels(lat_labels,labels=parallels,linewidth=0,\
-            labelstyle='+/-',fontsize=14)
-    bmap.drawmeridians(lon_labels,labels=meridians,linewidth=0,\
-            labelstyle='+/-',fontsize=14)
+    #parallels=[1,1,0,0]
+    #meridians=[0,0,0,1]
+
+    #bmap.drawparallels(lat_labels,labels=parallels,linewidth=0,\
+            #labelstyle='+/-',fontsize=14)
+    #bmap.drawmeridians(lon_labels,labels=meridians,linewidth=0,\
+            #labelstyle='+/-',fontsize=14)
 
     #bmap=pobj.bmap
 
@@ -349,14 +360,19 @@ def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',
             axis_x=arii.anchor_lons
             #xx,yy=bmap(axis_x,axis_y)
 
+            #px_segs, py_segs=funcs.breakCurveAtEdge(axis_x, axis_y,
+                    #bmap.llcrnrx, bmap.urcrnrx)
             px_segs, py_segs=funcs.breakCurveAtEdge(axis_x, axis_y,
-                    bmap.llcrnrx, bmap.urcrnrx)
+                    lonax[0],
+                    lonax[-1])
 
             for xjj, yjj in zip(px_segs, py_segs):
-                xjj,yjj=bmap(xjj,yjj)
-                ax.plot(xjj,yjj,'bo-')
+                #xjj,yjj=bmap(xjj,yjj)
+                ax.plot(xjj,yjj,'bo-',
+                        transform=ccrs.PlateCarree())
 
-            x0,y0=bmap(axis_x[0], axis_y[0])
+            #x0,y0=bmap(axis_x[0], axis_y[0])
+            x0=axis_x[0]; y0=axis_y[0]
         else:
             #cmap=plt.cm.RdBu_r
             cmap=plt.cm.gnuplot
@@ -364,22 +380,26 @@ def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',
                 axis_yjj=getAnchors(arii.data['axis_y'].iloc[jj])
                 axis_xjj=getAnchors(arii.data['axis_x'].iloc[jj])
                 px_segs, py_segs=funcs.breakCurveAtEdge(axis_xjj, axis_yjj,
-                        bmap.llcrnrx, bmap.urcrnrx)
+                        #bmap.llcrnrx, bmap.urcrnrx)
+                    lonax[0],
+                    lonax[-1])
                 if jj!=len(arii.data)-1:
                     alpha=0.7
                 else:
                     alpha=1
                     #x0=xx[0]
                     #y0=yy[0]
-                    x0,y0=bmap(axis_xjj[0], axis_yjj[0])
+                    #x0,y0=bmap(axis_xjj[0], axis_yjj[0])
+                    x0=axis_xjj[0]; y0=axis_yjj[0]
                 #xx,yy=bmap(axis_xjj,axis_yjj)
                 frac=float(jj)/max(1,(len(arii.data)-1))
                 for xkk, ykk in zip(px_segs, py_segs):
-                    xkk,ykk=bmap(xkk,ykk)
+                    #xkk,ykk=bmap(xkk,ykk)
                     #ax.plot(xxkk,yykk,'bo-')
                     ax.plot(xkk,ykk,alpha=alpha,color=cmap(frac),
                             linestyle=linestyle,
-                            marker=marker,markersize=2)
+                            marker=marker,markersize=2,
+                        transform=ccrs.PlateCarree())
 
 
         if label is not None:
@@ -394,7 +414,8 @@ def plotAR(arlist,latax,lonax,full=False,ax=None,label=None,linestyle='solid',
             elif isinstance(label,(list,tuple)):
                 labii=label[ii]
 
-            ax.text(x0,y0,'%s' %labii, fontsize=10)
+            ax.text(x0,y0,'%s' %labii, fontsize=10,
+                        transform=ax.projection)
 
     if isshow:
         ax.get_figure().show()

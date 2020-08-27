@@ -172,6 +172,7 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
 
 from ipart.utils import funcs
 from ipart.utils import plot
@@ -273,14 +274,15 @@ if __name__=='__main__':
             figure=plt.figure(figsize=(12,10),dpi=100)
 
             for jj in range(len(plot_vars)):
-                ax=figure.add_subplot(3,1,jj+1)
-                pobj=plot.plot2(plot_vars[jj],iso,ax,projection='cyl',
+                ax=figure.add_subplot(3,1,jj+1,
+                            projection=ccrs.PlateCarree())
+                pobj=plot.plot2(plot_vars[jj],iso,ax,
                         xarray=lonax, yarray=latax,
                         title='%s %s' %(timett_str, titles[jj]),
                         fix_aspect=False)
 
-                bmap=pobj.bmap
-                plotAR(ardf,ax,bmap)
+                #bmap=pobj.bmap
+                plotAR(ardf,ax, lonax)
 
             #----------------- Save plot------------
             plot_save_name='ar_%s' %(timett_str)
