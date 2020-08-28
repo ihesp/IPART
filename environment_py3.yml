@@ -7,8 +7,8 @@ dependencies:
   - netcdf4
   - numpy
   - scipy
-  - basemap
-  - matplotlib=2.2.3
+  - cartopy
+  - matplotlib
   - networkx
   - pandas
   - scikit-image

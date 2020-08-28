@@ -181,6 +181,7 @@ The resultant AR track can be visualized using the following snippet:
 ::
 
         from ipart.AR_tracer import plotAR
+        import cartopy.crs as ccrs
 
         latax=np.arange(0, 90)
         lonax=np.arange(80, 440)  # degree east, shifted by 80 to ensure monotonically increasing axis
@@ -188,8 +189,8 @@ The resultant AR track can be visualized using the following snippet:
         plot_ar=track_list[6]  # plot the 7th track in list
 
         figure=plt.figure(figsize=(12,6),dpi=100)
-        ax=figure.add_subplot(111)
-        plotAR(plot_ar,latax,lonax,True,ax=ax)
+        ax=figure.add_subplot(111, projection=ccrs.PlateCarree())
+        plotAR(plot_ar,latax,lonax,ax,full=True)
 
 .. seealso:: :py:func:`AR_tracer.plotAR`.
 

@@ -15,6 +15,6 @@ Only some functions from this module are documented. The other undocumented func
 .. autoclass:: utils.plot.Plot2D
   :members:
 
-.. autoclass:: utils.plot.Plot2Basemap
+.. autoclass:: utils.plot.Plot2Cartopy
   :members:
   :inherited-members:

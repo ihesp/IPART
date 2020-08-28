@@ -177,6 +177,7 @@ The resultant detected ARs can be visualized using the following snippet:
 
     import matplotlib.pyplot as plt
     from ipart.utils import plot
+    import cartopy.crs as ccrs
     from ipart.AR_detector import plotAR
 
     plot_vars=[slab,slabrec,slabano]
@@ -186,14 +187,13 @@ The resultant detected ARs can be visualized using the following snippet:
     figure=plt.figure(figsize=(12,10),dpi=100)
 
     for jj in range(len(plot_vars)):
-        ax=figure.add_subplot(3,1,jj+1)
-        pobj=plot.plot2(plot_vars[jj],iso,ax,projection='cyl',
+        ax=figure.add_subplot(3,1,jj+1,projection=ccrs.PlateCarree())
+        pobj=plot.plot2(plot_vars[jj],iso,ax,
                 xarray=lonax, yarray=latax,
                 title='%s %s' %(timett_str, titles[jj]),
                 fix_aspect=False)
 
-    bmap=pobj.bmap
-    plotAR(ardf,ax,bmap)
+    plotAR(ardf,ax,lonax)
     figure.show()
 
 .. seealso:: :py:class:`utils.plot.Isofill`, :py:func:`utils.plot.plot2`.
