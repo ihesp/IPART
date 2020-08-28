@@ -1082,6 +1082,7 @@ def plotAR(ardf, ax, lonax):
     Args:
         ardf (pandas.DataFrame): table containing AR records.
         ax (matplotlib axis): axis to plot onto.
+        lonax (ndarray): 1d array of the longitude axis the plot is using.
     '''
 
     for ii in range(len(ardf)):
@@ -1100,6 +1101,7 @@ def plotAR(ardf, ax, lonax):
                 #ax.get_extent()[1])
                 lonax[0],
                 lonax[-1])
+        # note that the GeoAxes (of cartopy) doesn't seem to carry these info.
 
         for xjj, yjj in zip(px_segs, py_segs):
 
@@ -1124,7 +1126,6 @@ def plotAR(ardf, ax, lonax):
 
             #xjj,yjj=bmap(xjj,yjj)
             ax.plot(xjj,yjj,'g:',linewidth=2.0,
-                    #transform=ax.projection)
                     transform=ccrs.PlateCarree())
 
         # plot cross flux text

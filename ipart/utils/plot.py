@@ -1697,14 +1697,16 @@ class Plot2Cartopy(Plot2D):
                 extend='both'
 
             if self.method.method=='isofill':
-                cs=bmap.contourf(self.lons,self.lats,self.var,self.method.levels,latlon=True,\
-                        cmap=self.method.cmap,extend=extend,hatch='/',
+                cs=bmap.contourf(self.lons,self.lats,self.var,
+                        self.method.levels,
+                        cmap=self.method.cmap,extend=extend,
                         transform=trans)
 
             elif self.method.method=='isoline':
                 if self.method.color is not None:
                     colors=[self.method.color]*len(self.method.levels)
-                    cs=bmap.contour(self.lons,self.lats,self.var,self.method.levels,latlon=True,\
+                    cs=bmap.contour(self.lons,self.lats,self.var,
+                            self.method.levels,
                             colors=colors,extend=extend,
                             linewidth=self.method.linewidth,
                             alpha=self.method.alpha,
@@ -1712,13 +1714,15 @@ class Plot2Cartopy(Plot2D):
                 else:
                     if self.method.black:
                         colors=['k']*len(self.method.levels)
-                        cs=bmap.contour(self.lons,self.lats,self.var,self.method.levels,latlon=True,\
+                        cs=bmap.contour(self.lons,self.lats,self.var,
+                                self.method.levels,
                                 colors=colors,extend=extend,
                                 linewidth=self.method.linewidth,
                                 alpha=self.method.alpha,
                                 transform=trans)
                     else:
-                        cs=bmap.contour(self.lons,self.lats,self.var,self.method.levels,latlon=True,\
+                        cs=bmap.contour(self.lons,self.lats,self.var,
+                                self.method.levels,
                                 cmap=self.method.cmap,extend=extend,
                                 alpha=self.method.alpha,
                                 transform=trans)
@@ -1757,13 +1761,14 @@ class Plot2Cartopy(Plot2D):
         elif self.method.method == 'boxfill':
 
             cs=bmap.imshow(self.var,cmap=self.method.cmap,
-                    vmin=self.method.vmin,vmax=self.method.vmax,interpolation='nearest',
+                    vmin=self.method.vmin,vmax=self.method.vmax,
+                    interpolation='nearest',
                     transform=trans)
 
         #-------------------Pcolor fill-------------------
         elif self.method.method == 'pcolor':
 
-            cs=bmap.pcolormesh(self.lons,self.lats,self.var,latlon=True,\
+            cs=bmap.pcolormesh(self.lons,self.lats,self.var,
                     cmap=self.method.cmap,vmin=self.method.levels[0],\
                     vmax=self.method.levels[-1],
                     transform=trans)
@@ -1775,13 +1780,14 @@ class Plot2Cartopy(Plot2D):
                 nlevel=1
             else:
                 nlevel=3
-            cs=bmap.contourf(self.lons,self.lats,self.var,nlevel,latlon=True,\
+            cs=bmap.contourf(self.lons,self.lats,self.var,nlevel,
                     colors='none',hatches=[None,self.method.hatch],
                     alpha=0.,
                     transform=trans)
 
         elif self.method.method=='gis':
-            cs=bmap.arcgisimage(service='ESRI_Imagery_World_2D',xpixels=self.method.xpixels,
+            cs=bmap.arcgisimage(service='ESRI_Imagery_World_2D',
+                    xpixels=self.method.xpixels,
                     dpi=self.method.dpi,verbose=self.method.verbose,
                     transform=trans)
 
@@ -1837,71 +1843,41 @@ class Plot2Cartopy(Plot2D):
         return cbar
 
 
-def plot2old(var,method,ax=None,legend='global',
-        xarray=None,yarray=None,
-        title=None,latlon=True,latlongrid=False,fill_color='0.8',
-        projection='merc',legend_ori='horizontal',clean=False,
-        isbasemap=True,
-        fix_aspect=True,verbose=True):
+
+def plot2(var, method, ax, legend='global', xarray=None, yarray=None,
+        title=None, latlon=True, latlongrid=False, fill_color='0.8',
+        legend_ori='horizontal', clean=False, iscartopy=True,
+        fix_aspect=True, verbose=True):
     '''A helper function for quickly create 2D plots
 
     Args:
         var (NCVAR or ndarray): variable to plot. At least 2D.
         method: plotting method, could be an instance of Boxfill, Isofill.
+        ax: matplotlib axis obj.
     Keyword Args:
-        ax: matplotlib axis obj. If None, create a new.
-        xarray (ndarray): 1d array, the array values for the x-axis. If None, use
-                          the int indices for the x-dimension.
-        yarray (ndarray): 1d array, the array values for the y-axis. If None, use
-                          the int indices for the y-dimension.
-        title (str): title to plot at subtitle. If None, plot only an alphabetical index.
+        legend (str): location of colorbar. Could be: 'global': all subplots
+            share the colorbar of the 1st subplot in figure. or
+            'local': each subplot in figure uses its own colorbar.
+        xarray (ndarray): 1d array, the array values for the x-axis. If None,
+            use the int indices for the x-dimension.
+        yarray (ndarray): 1d array, the array values for the y-axis. If None,
+            use the int indices for the y-dimension.
+        title (str): title to plot at subtitle. If None, plot only an
+            alphabetical index.
         latlon (bool): plot lat/lon axis labels or not.
         latlongrid (bool): plot lat/lon grid lines or not.
         fill_color: color to fill continent or masked regions.
-        projection (str): map projection, used when plotting with basemap.
-        legend (str): location of colorbar. Could be: 'global': all subplots share
-                      the colorbar of the 1st subplot in figure. or
-                      'local': each subplot in figure uses its own colorbar.
         legend_ori (str): 'horizontal' or 'vertical', colorbar orientation.
-        clean (bool): if True, omit axis labels, colorbar, subtitle, continents, boundaries etc..
-                      Useful to overlay plots.
-        isbasemap (bool): plot using basemap or not. Usually used to force plot as a normal
-                          2d plot instead of geographical plot using basemap.
-        fix_aspect (bool): passed to the basemap plotting function (e.g. contourf())
-                           for control of aspect ratio.
+        clean (bool): if True, omit axis labels, colorbar, subtitle,
+            continents, boundaries etc.. Useful to overlay plots.
+        iscartopy (bool): plot using cartopy or not. Usually used to force
+            plot as a normal 2d plot instead of geographical plot using cartopy.
+        fix_aspect (bool): passed to the cartopy plotting function
+            (e.g. contourf()) for control of aspect ratio. NOTE: needs to be
+            deprecated.
     '''
 
-    if numpy.ndim(var)==1:
-        raise Exception("<var> is 1D")
-
-    if isbasemap and Plot2D.checkBasemap(var,xarray,yarray):
-        try:
-            var=functions.increasingLatitude(var)
-        except:
-            pass
-        plotobj=Plot2Basemap(var,method,ax=ax,legend=legend,\
-                xarray=xarray,yarray=yarray,\
-                title=title,latlon=latlon,latlongrid=latlongrid,\
-                fill_color=fill_color,projection=projection,
-                legend_ori=legend_ori,clean=clean,fix_aspect=fix_aspect)
-    else:
-        plotobj=Plot2D(var,method,ax=ax,legend=legend,\
-                xarray=xarray,yarray=yarray,\
-                title=title,latlon=latlon,latlongrid=latlongrid,
-                legend_ori=legend_ori,clean=clean)
-    cs=plotobj.plot()
-
-    return plotobj
-
-
-def plot2(var,method,ax=None,legend='global',\
-        xarray=None,yarray=None,\
-        title=None,latlon=True,latlongrid=False,fill_color='0.8',
-        legend_ori='horizontal',clean=False,
-        isbasemap=True,
-        fix_aspect=True,verbose=True):
-
-    #---------------Deal with longitude---------------
+    #---------------some preprocess of longitude---------------
     xarray=numpy.array(xarray)
     lon0=xarray[len(xarray)//2]
     ax.projection=ccrs.PlateCarree(central_longitude=lon0)
@@ -1909,7 +1885,7 @@ def plot2(var,method,ax=None,legend='global',\
     if numpy.ndim(var)==1:
         raise Exception("<var> is 1D")
 
-    if isbasemap and Plot2D.checkBasemap(var,xarray,yarray):
+    if iscartopy and Plot2D.checkBasemap(var,xarray,yarray):
         try:
             var=functions.increasingLatitude(var)
         except:

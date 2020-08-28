@@ -1460,8 +1460,9 @@ def breakCurveAtEdge(xs, ys, left_bound, right_bound):
             original input <ys>.
 
     This function segment a curve's coordinates into a number of segments
-    so that when plotted in a basemap plot, a zonally cyclic curve won't
-    be plotted as jumping straight lines linking the left and right bounds.
+    so that when plotted in a basemap/cartopy plot, a zonally cyclic curve
+    won't be plotted as jumping straight lines linking the left and right
+    bounds.
     '''
 
     idx=[]  # break point indices

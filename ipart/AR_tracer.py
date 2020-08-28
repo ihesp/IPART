@@ -293,11 +293,11 @@ def plotAR(arlist,latax,lonax,ax,full=False,label=None,linestyle='solid',
         arlist (list): list of AR objects to plot.
         latax,lonax (ndarray): 1darrays giving latitude- and longitude-
             coordinates of the plotting domain.
+        ax (matplotlib.axis): axis to plot onto.
 
     Keyword Args:
         full (bool): if True, plot tracks of an AR from its entire lifecycle.
                      if False, plot only the track of the last time step.
-        ax (matplotlib.axis): axis to plot onto.
         label (str or None): type of label to label tracks.
                              'id': label with AR id.
                              'time': label with time stamp.
@@ -338,6 +338,7 @@ def plotAR(arlist,latax,lonax,ax,full=False,label=None,linestyle='solid',
     lat_labels=np.array(lat_labels)[idx]
     '''
 
+    # draw the map
     ax.patch.set_color('0.7')
     ax.set_extent([lonax[0], lonax[-1], latax[0], latax[-1]],
             crs=ccrs.PlateCarree())
