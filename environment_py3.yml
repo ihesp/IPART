@@ -11,4 +11,4 @@ dependencies:
   - networkx
   - pandas
   - scikit-image
-
+  - cartopy

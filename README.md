@@ -50,7 +50,22 @@ Further documentation can be found at [https://ipart.readthedocs.io/en/latest/](
 
 Recommend building the Python environment using [Anaconda](https://www.anaconda.com/distribution/).
 
+
+### Install from conda-forge
+
+In your working Python environment:
+
+```
+conda install -c conda-forge ipart
+```
+
+will install `ipart` and its dependencies for Python 3.
+
+
 ### Create conda environment using environment file
+
+This way will install the optional `cartopy` package and allow you to run
+the notebook examples.
 
 After Anaconda installation, git clone this repository:
 
@@ -89,15 +104,6 @@ Finally install IPART using:
 pip install -e .
 ```
 
-### Install in existing environment from conda-forge
-
-In your working Python environment:
-
-```
-conda install -c conda-forge ipart
-```
-
-will install `ipart` for Python 3.
 
 ## tests
 

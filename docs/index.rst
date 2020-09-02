@@ -46,34 +46,35 @@ Below is an example output figure:
 Installation
 ############
 
-Install in existing conda environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Install from conda-forge
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 One can install ``ipart`` in an existing conda environment:
 ::
 
     conda install -c conda-forge ipart
 
-will install ``ipart`` for Python 3.
+will install ``ipart`` and its dependencies for Python 3.
 
 
-Create a conda env using the environment file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Create a conda environment using the environment file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Alternatively, users can obtain the code of this pacakge from the
 `github page <https://github.com/ihesp/IPART>`_, and create a new
-conda environment using the environment files provided. This way one gets
-the notebooks and template scripts to help get to learn the package quicker.
+conda environment using the environment files provided.
+This way will install the optional ``cartopy`` package and allow you to run
+the notebook examples.
 ::
 
     git clone https://github.com/ihesp/IPART
     cd IPART
-    conda env create -f environment_py2.yml
+    conda env create -f environment_py3.yml
 
-This creates a new environment named ``ipartpy2``. Activate the environment using:
+This creates a new environment named ``ipartpy3``. Activate the environment using:
 ::
 
-    conda activate ipartpy2
+    conda activate ipartpy3
 
 
 After that, you can check the list of packages installed by:
@@ -81,10 +82,10 @@ After that, you can check the list of packages installed by:
 
     conda list
 
-Similarly for Python 3.7, use:
+Similarly for Python 2, use:
 ::
 
-    conda env create -f environment_py3.yml
+    conda env create -f environment_py2.yml
 
 
 
