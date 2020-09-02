@@ -1903,3 +1903,219 @@ def plot2(var, method, ax, legend='global', xarray=None, yarray=None,
     cs=plotobj.plot()
 
     return plotobj
+
+
+def plotAR(ardf, ax, lonax):
+    '''Helper function to plot the regions and axes of ARs
+
+    Args:
+        ardf (pandas.DataFrame): table containing AR records.
+        ax (matplotlib axis): axis to plot onto.
+        lonax (ndarray): 1d array of the longitude axis the plot is using.
+    '''
+
+    for ii in range(len(ardf)):
+
+        vv=ardf.iloc[ii]
+        isrelaxkk=vv['is_relaxed']
+
+        # plot contour
+        px=vv['contour_x']
+        py=vv['contour_y']
+
+        #px_segs, py_segs=functions.breakCurveAtEdge(px, py, bmap.llcrnrx,
+        #        bmap.urcrnrx)
+        px_segs, py_segs=functions.breakCurveAtEdge(px, py,
+                #ax.get_extent()[0],
+                #ax.get_extent()[1])
+                lonax[0],
+                lonax[-1])
+        # note that the GeoAxes (of cartopy) doesn't seem to carry these info.
+
+        for xjj, yjj in zip(px_segs, py_segs):
+
+            #xjj,yjj=bmap(xjj,yjj)
+            linewidth=2.0 if isrelaxkk else 2.0
+            linestyle=':' if isrelaxkk else '-'
+            ax.plot(xjj,yjj,color='k',linestyle=linestyle,linewidth=linewidth,
+                    transform=ccrs.PlateCarree())
+
+        # plot axis
+        px=vv['axis_x']
+        py=vv['axis_y']
+
+        #px_segs, py_segs=functions.breakCurveAtEdge(px, py, bmap.llcrnrx,
+        #        bmap.urcrnrx)
+        px_segs, py_segs=functions.breakCurveAtEdge(px, py,
+                #ax.get_extent()[0],
+                #ax.get_extent()[1])
+                lonax[0],
+                lonax[-1])
+        for xjj, yjj in zip(px_segs, py_segs):
+
+            #xjj,yjj=bmap(xjj,yjj)
+            ax.plot(xjj,yjj,'g:',linewidth=2.0,
+                    transform=ccrs.PlateCarree())
+
+        # plot cross flux text
+        '''
+        lenkk=vv['length']
+        areakk=vv['area']
+        widthkk=vv['width']
+        cx=float(vv['centroid_x'])%360
+        cy=float(vv['centroid_y'])
+        cx,cy=bmap(cx,cy)
+
+        strkk=r'ID=%d, $R=%.0f$' %(ii+1,np.sqrt(areakk/3.14)) + '\n'+\
+                r'$L = %d km$' %lenkk +'\n'+\
+                r'$W = %d km$' %widthkk
+
+        ax.annotate(strkk,xy=(cx,cy),
+                horizontalalignment='center',
+                verticalalignment='center',
+                fontsize=8,
+                bbox=dict(facecolor='white',alpha=0.5))
+        '''
+
+    return
+
+
+def plotARTrack(arlist,latax,lonax,ax,full=False,label=None,linestyle='solid',
+        marker=None):
+    '''Plot AR tracks
+
+    Args:
+        arlist (list): list of AR objects to plot.
+        latax,lonax (ndarray): 1darrays giving latitude- and longitude-
+            coordinates of the plotting domain.
+        ax (matplotlib.axis): axis to plot onto.
+
+    Keyword Args:
+        full (bool): if True, plot tracks of an AR from its entire lifecycle.
+                     if False, plot only the track of the last time step.
+        label (str or None): type of label to label tracks.
+                             'id': label with AR id.
+                             'time': label with time stamp.
+                             None: don't put label.
+        linestyle (str): line style to plot the tracks.
+        marker (str): marker to plot track axes.
+    '''
+
+    from ..AR_tracer import getAnchors
+
+    isshow=False
+
+    if ax is None:
+        figure=plt.figure(figsize=(12,6),dpi=100)
+        ax=figure.add_subplot(111,projection=ccrs.PlateCarree())
+        isshow=True
+
+    lonax=numpy.array(lonax)
+    lon0=lonax[len(lonax)//2]
+    ax.projection=ccrs.PlateCarree(central_longitude=lon0)
+
+    if not isinstance(arlist,(tuple,list)):
+        arlist=[arlist,]
+
+    #bmap=Basemap(projection='cyl',
+            #llcrnrlat=latax[0],llcrnrlon=lonax[0],
+            #urcrnrlat=latax[-1],urcrnrlon=lonax[-1],
+            #ax=ax,fix_aspect=False)
+
+    #bmap.drawcoastlines(linewidth=0.5,linestyle='solid',color='k',\
+            #antialiased=True)
+
+    '''
+    lon_labels=np.array(plot.mkscale(lonax[0],lonax[-1],15,1))
+    idx=np.where((lon_labels>=lonax[0]) & (lon_labels<=lonax[-1]))
+    lon_labels=np.array(lon_labels)[idx]
+
+    lat_labels=np.array(plot.mkscale(latax[0],latax[-1],15,1))
+    idx=np.where((lat_labels>=latax[0]) & (lat_labels<=latax[-1]))
+    lat_labels=np.array(lat_labels)[idx]
+    '''
+
+    # draw the map
+    ax.patch.set_color('0.7')
+    ax.set_extent([lonax[0], lonax[-1], latax[0], latax[-1]],
+            crs=ccrs.PlateCarree())
+    ax.coastlines()
+    ax.gridlines(draw_labels=True, zorder=-1, color='0.7')
+
+    #parallels=[1,1,0,0]
+    #meridians=[0,0,0,1]
+
+    #bmap.drawparallels(lat_labels,labels=parallels,linewidth=0,\
+            #labelstyle='+/-',fontsize=14)
+    #bmap.drawmeridians(lon_labels,labels=meridians,linewidth=0,\
+            #labelstyle='+/-',fontsize=14)
+
+    #bmap=pobj.bmap
+
+    for ii,arii in enumerate(arlist):
+        if not full:
+            axis_y=arii.anchor_lats
+            axis_x=arii.anchor_lons
+            #xx,yy=bmap(axis_x,axis_y)
+
+            #px_segs, py_segs=functions.breakCurveAtEdge(axis_x, axis_y,
+                    #bmap.llcrnrx, bmap.urcrnrx)
+            px_segs, py_segs=functions.breakCurveAtEdge(axis_x, axis_y,
+                    lonax[0],
+                    lonax[-1])
+
+            for xjj, yjj in zip(px_segs, py_segs):
+                #xjj,yjj=bmap(xjj,yjj)
+                ax.plot(xjj,yjj,'bo-',
+                        transform=ccrs.PlateCarree())
+
+            #x0,y0=bmap(axis_x[0], axis_y[0])
+            x0=axis_x[0]; y0=axis_y[0]
+        else:
+            #cmap=plt.cm.RdBu_r
+            cmap=plt.cm.gnuplot
+            for jj in range(len(arii.data)):
+                axis_yjj=getAnchors(arii.data['axis_y'].iloc[jj])
+                axis_xjj=getAnchors(arii.data['axis_x'].iloc[jj])
+                px_segs, py_segs=functions.breakCurveAtEdge(axis_xjj, axis_yjj,
+                        #bmap.llcrnrx, bmap.urcrnrx)
+                    lonax[0],
+                    lonax[-1])
+                if jj!=len(arii.data)-1:
+                    alpha=0.7
+                else:
+                    alpha=1
+                    #x0=xx[0]
+                    #y0=yy[0]
+                    #x0,y0=bmap(axis_xjj[0], axis_yjj[0])
+                    x0=axis_xjj[0]; y0=axis_yjj[0]
+                #xx,yy=bmap(axis_xjj,axis_yjj)
+                frac=float(jj)/max(1,(len(arii.data)-1))
+                for xkk, ykk in zip(px_segs, py_segs):
+                    #xkk,ykk=bmap(xkk,ykk)
+                    #ax.plot(xxkk,yykk,'bo-')
+                    ax.plot(xkk,ykk,alpha=alpha,color=cmap(frac),
+                            linestyle=linestyle,
+                            marker=marker,markersize=2,
+                        transform=ccrs.PlateCarree())
+
+
+        if label is not None:
+            if label=='id':
+                if hasattr(arii,'trackid'):
+                    labii=arii.trackid
+                else:
+                    labii=str(arii.id)
+            elif label=='time':
+                labii=str(arii.latest.time)
+
+            elif isinstance(label,(list,tuple)):
+                labii=label[ii]
+
+            ax.text(x0,y0,'%s' %labii, fontsize=10,
+                        transform=ax.projection)
+
+    if isshow:
+        ax.get_figure().show()
+
+    return

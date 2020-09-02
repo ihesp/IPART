@@ -40,10 +40,10 @@ Further documentation can be found at [https://ipart.readthedocs.io/en/latest/](
 * numpy (developed in 1.16.5 in py2, tested 1.18.1, 1.19.0 in py3)
 * scipy (developed in 1.2.1 in py2, tested 1.4.1, 1.5.1 in py3)
 * matplotlib (tested 2.2.5 in py2, tested 3.3.1 in py3)
-* cartopy (tested 0.17.0 in py2, tested 1.18.0 in py3)
 * pandas (developed in 0.23.4, 0.24.2 in py2, tested 1.0.3, 1.0.5 in py3)
 * networkx (developed in 1.11 and 2.2 in py2, tested 2.4 in py3)
 * scikit-image (developed in 0.14.2, 0.14.3 in py2, tested 0.16.2, 0.17.2 in py3)
+* cartopy (optional, only used for plotting. Tested 0.17.0 in py2, tested 1.18.0 in py3)
 * OS: Linux or Mac, may work in Windows.
 
 ## Installation

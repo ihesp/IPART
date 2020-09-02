@@ -178,7 +178,6 @@ The resultant detected ARs can be visualized using the following snippet:
     import matplotlib.pyplot as plt
     from ipart.utils import plot
     import cartopy.crs as ccrs
-    from ipart.AR_detector import plotAR
 
     plot_vars=[slab,slabrec,slabano]
     titles=['IVT', 'Reconstruction', 'THR']
@@ -193,7 +192,7 @@ The resultant detected ARs can be visualized using the following snippet:
                 title='%s %s' %(timett_str, titles[jj]),
                 fix_aspect=False)
 
-    plotAR(ardf,ax,lonax)
+    plot.plotAR(ardf,ax,lonax)
     figure.show()
 
 .. seealso:: :py:class:`utils.plot.Isofill`, :py:func:`utils.plot.plot2`.

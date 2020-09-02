@@ -7,7 +7,6 @@ dependencies:
   - netcdf4
   - numpy
   - scipy
-  - cartopy
   - matplotlib
   - scikit-image
   - pandas

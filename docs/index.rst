@@ -46,14 +46,24 @@ Below is an example output figure:
 Installation
 ############
 
+Install in existing conda environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+One can install ``ipart`` in an existing conda environment:
+::
+
+    conda install -c conda-forge ipart
+
+will install ``ipart`` for Python 3.
+
 
 Create a conda env using the environment file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Users are advised to
-obtain the code of this pacakge from the
+Alternatively, users can obtain the code of this pacakge from the
 `github page <https://github.com/ihesp/IPART>`_, and create a new
-conda environment using the environment files provided:
+conda environment using the environment files provided. This way one gets
+the notebooks and template scripts to help get to learn the package quicker.
 ::
 
     git clone https://github.com/ihesp/IPART
@@ -78,23 +88,6 @@ Similarly for Python 3.7, use:
 
 
 
-
-Install in existing environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Alternatively, one can install ``ipart`` in an existing conda environment.
-
-First build the Python environment using
-`Anaconda <https://www.anaconda.com/distribution/>`_.
-
-In your working environment, install the ``ipart`` package
-::
-
-    conda install -c conda-forge ipart
-
-will install ``ipart`` for Python 3.
-
-
 Dependencies
 ############
 
@@ -104,10 +97,10 @@ Dependencies
 * numpy (developed in 1.16.5 in py2, tested 1.18.1, 1.19.0 in py3)
 * scipy (developed in 1.2.1 in py2, tested 1.4.1, 1.5.1 in py3)
 * matplotlib (tested 2.2.5 in py2, tested 3.3.1 in py3)
-* cartopy (tested 0.17.0 in py2, tested 1.18.0 in py3)
 * pandas (developed in 0.23.4, 0.24.2 in py2, tested 1.0.3, 1.0.5 in py3)
 * networkx (developed in 1.11 and 2.2 in py2, tested 2.4 in py3)
 * scikit-image (developed in 0.14.2, 0.14.3 in py2, tested 0.16.2, 0.17.2 in py3)
+* cartopy (optional, only used for plotting. Tested 0.17.0 in py2, tested 1.18.0 in py3)
 
 
 

@@ -176,7 +176,7 @@ import cartopy.crs as ccrs
 
 from ipart.utils import funcs
 from ipart.utils import plot
-from ipart.AR_detector import plotAR, findARs
+from ipart.AR_detector import findARs
 
 
 
@@ -282,7 +282,7 @@ if __name__=='__main__':
                         fix_aspect=False)
 
                 #bmap=pobj.bmap
-                plotAR(ardf,ax, lonax)
+                plot.plotAR(ardf,ax, lonax)
 
             #----------------- Save plot------------
             plot_save_name='ar_%s' %(timett_str)

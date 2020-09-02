@@ -180,7 +180,7 @@ Example output
 The resultant AR track can be visualized using the following snippet:
 ::
 
-        from ipart.AR_tracer import plotAR
+        from ipart.utils import plot
         import cartopy.crs as ccrs
 
         latax=np.arange(0, 90)
@@ -190,9 +190,9 @@ The resultant AR track can be visualized using the following snippet:
 
         figure=plt.figure(figsize=(12,6),dpi=100)
         ax=figure.add_subplot(111, projection=ccrs.PlateCarree())
-        plotAR(plot_ar,latax,lonax,ax,full=True)
+        plotplotARTrack(plot_ar,latax,lonax,ax,full=True)
 
-.. seealso:: :py:func:`AR_tracer.plotAR`.
+.. seealso:: :py:func:`utils.plot.plotARTrack`.
 
 The output figure looks like :numref:`figtrack` below.
 

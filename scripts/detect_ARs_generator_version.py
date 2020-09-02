@@ -177,7 +177,7 @@ from netCDF4 import Dataset
 
 from ipart.utils import funcs
 from ipart.utils import plot
-from ipart.AR_detector import plotAR, findARsGen
+from ipart.AR_detector import findARsGen
 
 
 
@@ -284,7 +284,7 @@ if __name__=='__main__':
                             fix_aspect=False)
 
                     #bmap=pobj.bmap
-                    plotAR(result_df,ax,lonax)
+                    plot.plotAR(result_df,ax,lonax)
 
                 #----------------- Save plot------------
                 plot_save_name='ar_%s' %(timett_str)
