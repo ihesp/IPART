@@ -49,7 +49,7 @@ Installation
 Install from conda-forge
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-One can install ``ipart`` in an existing conda environment:
+``ipart`` can be installed in an existing conda environment:
 ::
 
     conda install -c conda-forge ipart
