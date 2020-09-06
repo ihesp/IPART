@@ -11,7 +11,7 @@ class TestIPRT(unittest.TestCase):
     def test_ipart(self):
 
         from ipart.thr import THR, rotatingTHR
-        from ipart.utils import funcs, plot
+        from ipart.utils import funcs
         from ipart.AR_detector import _findARs, findARs, findARsGen,\
                 prepareMeta, findARAxis
         from ipart.AR_tracer import AR, trackARs, filterTracks
