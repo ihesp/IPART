@@ -99,7 +99,7 @@ if __name__=='__main__':
     oroNV=None
 
     #-----------------Shift longitude-----------------
-    var=var.sliceData(LAT1, LAT2, 2)
+    var=var.sliceData(LAT1, LAT2, axis=2)
     var=var.shiftLon(SHIFT_LON)
 
     #----------------------Do THR----------------------
