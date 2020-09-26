@@ -65,7 +65,6 @@ if __name__=='__main__':
                 xarray=ufluxNV.getLongitude(),
                 yarray=ufluxNV.getLatitude(),
                 legend='local',
-                projection='cyl',
                 fix_aspect=False)
 
     figure.show()
