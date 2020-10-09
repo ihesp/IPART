@@ -150,9 +150,11 @@ Make algorithms zonally cyclic.
 
 ## Contributing
 
-We welcome contributions from the community. Please create a fork of the
-project on GitHub and use a pull request to propose your changes. We strongly encourage creating
-an issue before starting to work on major changes, to discuss these changes first.
+Following the guidelines by the [Neurohackademy 2020 curriculum](https://github.com/neurohackademy/nh2020-curriculum), we welcome
+contributions from the community. Please create a fork of the project on GitHub
+and use a pull request to propose your changes. We strongly encourage creating
+an issue before starting to work on major changes, to discuss these changes
+first.
 
 ## Getting help
 
