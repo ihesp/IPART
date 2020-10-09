@@ -26,7 +26,7 @@ bibliography: paper.bib
 
 ---
 
-# Summary
+# Background
 
 An atmospheric river (AR) in the field of meteorology/climatology
 refers to enhanced water vapor content in the lower troposphere.  The
@@ -61,6 +61,8 @@ with this magnitude thresholding approach is that the atmospheric moisture
 level stays unchanged throughout the analysis period.  Such an assumption may
 not be fully justifiable under a warming climate as the atmospheric moisture
 level is expected to increase.
+
+# Summary
 
 In this package we propose a suite of new detection/tracking algorithms to help
 solve the above difficulties.  Through a systematic analysis using 7 years of
