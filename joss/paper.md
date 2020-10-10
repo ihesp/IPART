@@ -67,7 +67,7 @@ level is expected to increase.
 In this package we propose a suite of new detection/tracking algorithms to help
 solve the above difficulties.  Through a systematic analysis using 7 years of
 Reanalysis data [@Dee2011], we have found that the proposed detection algorithm
-has reduced sensitivity to parameters and data resolution.  Long-lived ARs
+has reduced sensitivity to parameters [@Xu2020b]. Long-lived ARs
 spanning multiple days, having cross-continent or cross-basin tracks can be
 more reliably traced through their tropical/sub-tropical origins to
 high-latitude landfalls. As the research on ARs matures, new AR
@@ -83,7 +83,8 @@ performed some systematic comparisons with two magnitude thresholding based AR
 detection methods included in ARTMIP, and the proposed method displays better
 correspondence between North Hemisphere AR tracks and storm tracks, better
 identification of the strong mid-latitude AR-related moisture transports, and
-longer AR track durations. The detailed analysis is given in [@Xu2020].
+longer AR track durations. The detailed comparison analysis is given in [@Xu2020], and
+a more thorough description of the detection/tracking methods are given in [@Xu2020b].
 
 `IPART` is therefore intended for researchers and students who are interested
 in the field of atmospheric river studies in the present day climate or future

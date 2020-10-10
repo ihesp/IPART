@@ -18,6 +18,7 @@ free from magnitude thresholds.
 ## Documentation
 
 Further documentation can be found at [https://ipart.readthedocs.io/en/latest/](https://ipart.readthedocs.io/en/latest/).
+A description of the methods is given in this work: [Xu, G., Ma, X., Chang, P., and Wang, L.: Image-processing-based atmospheric river tracking method version 1 (IPART-1), Geosci. Model Dev., 13, 4639–4662, https://doi.org/10.5194/gmd-13-4639-2020, 2020.](https://doi.org/10.5194/gmd-13-4639-2020).
 
 
 ## Example use case
