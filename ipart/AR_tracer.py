@@ -629,7 +629,7 @@ def filterTracks(tr_list, min_duration, min_nonrelax, verbose=True):
     new_list=[]
     for tt in tr_list:
         relaxed=tt.data.is_relaxed.tolist()
-        if relaxed.count(True)>=min_nonrelax:
+        if relaxed.count(False)>=min_nonrelax:
             new_list.append(tt)
     tr_list=new_list
 
