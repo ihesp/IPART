@@ -44,10 +44,10 @@ class TestDetect(unittest.TestCase):
         #------------------Filter tracks------------------
         track_list=filterTracks(track_list, self.min_duration,
                 self.min_nonrelax)
-        self.assertEqual(len(track_list), 4, "Number of filtered tracks wrong.")
+        self.assertEqual(len(track_list), 7, "Number of filtered tracks wrong.")
 
         nums=[len(track_list[ii].data) for ii in range(len(track_list))]
-        ans=(12, 21, 11, 11)
+        ans=(5, 12, 11, 21, 11, 11, 5)
         self.assertTupleEqual(tuple(nums), ans, "Track lengths wrong.")
 
 
