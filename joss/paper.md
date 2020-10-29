@@ -30,7 +30,7 @@ bibliography: paper.bib
 
 An atmospheric river (AR) in the field of meteorology/climatology
 refers to enhanced water vapor content in the lower troposphere.  The
-term was coined as an analogy to the terrestrial rivers in a sense
+term was coined as an analogy to terrestrial rivers in a sense
 that when viewed from satellite imagery or large scale atmospheric
 observation, they appear as narrow and elongated vapor filaments,
 representing transient intensified horizontal moisture fluxes
@@ -65,15 +65,15 @@ level is expected to increase.
 # Summary
 
 In this package we propose a suite of new detection/tracking algorithms to help
-solve the above difficulties.  Through a systematic analysis using 7 years of
-Reanalysis data [@Dee2011], we have found that the proposed detection algorithm
+solve the above difficulties.  Through a systematic analysis using seven years of
+reanalysis data [@Dee2011], we have found that the proposed detection algorithm
 has reduced sensitivity to parameters [@Xu2020b]. Long-lived ARs
-spanning multiple days, having cross-continent or cross-basin tracks can be
+spanning multiple days, having cross-continent or cross-basin tracks, can be
 more reliably traced through their tropical/sub-tropical origins to
 high-latitude landfalls. As the research on ARs matures, new AR
-detection/tracking methods are been developed, and the inter-comparisons of
-various AR detection/tracking are carried out by, for instance, the Atmospheric
-River Tracking Method Intercomparison Project (ARTMIP) [@Rutz2019b;@Shields2018].
+detection/tracking methods are being developed, and the inter-comparisons of
+various AR detection/tracking methods are carried out by, for instance,
+the Atmospheric River Tracking Method Intercomparison Project (ARTMIP) [@Rutz2019b;@Shields2018].
 Using the terminology of ARTMIP [@Shields2018], the proposed method is a
 "tracking" (Lagrangian approach) type, with length and shape geometrical
 requirements. It imposes no threshold on IVT/IWV, but instead imposes absolute
@@ -84,13 +84,13 @@ detection methods included in ARTMIP, and the proposed method displays better
 correspondence between North Hemisphere AR tracks and storm tracks, better
 identification of the strong mid-latitude AR-related moisture transports, and
 longer AR track durations. The detailed comparison analysis is given in [@Xu2020], and
-a more thorough description of the detection/tracking methods are given in [@Xu2020b].
+a more thorough description of the detection/tracking methods is given in [@Xu2020b].
 
 `IPART` is therefore intended for researchers and students who are interested
 in the field of atmospheric river studies in the present day climate or future
 projections.
 
-The `IPART` package includes a collection of Python functions/classes designed
+The `IPART` package includes a collection of Python functions and classes designed
 for an analysis workflow covering the detection of ARs, the simplification of
 the AR's geographical location, to the subsequent tracking through time.  The
 algorithms are implemented using the Python programming language as a wrapper
