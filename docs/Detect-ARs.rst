@@ -153,7 +153,7 @@ The rows of ``ardf`` are different AR records, the columns of ``ardf`` are liste
 * ``qv_mean``      : float, spatially averaged meridional integrated vapor flux, in :math:`kg/(m \cdot s)`.
 
 
-Detecated Python script
+Dedicated Python script
 #######################
 
 You can use the ``scripts/detect_ARs.py`` or
