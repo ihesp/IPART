@@ -34,7 +34,7 @@ term was coined as an analogy to terrestrial rivers in a sense
 that when viewed from satellite imagery or large scale atmospheric
 observation, they appear as narrow and elongated vapor filaments,
 representing transient intensified horizontal moisture fluxes
-[e.g. @Gimeno2014; @Dettinger2011]. A typical atmospheric river
+[e.g., @Gimeno2014; @Dettinger2011]. A typical atmospheric river
 can carry 7-15 times the water in the Mississippi River
 [@Ralph2011], and at any time in winter, there are four to five such
 systems in the Northern Hemisphere alone [@Zhu1998], accounting for
