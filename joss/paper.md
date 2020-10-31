@@ -34,11 +34,11 @@ term was coined as an analogy to terrestrial rivers in a sense
 that when viewed from satellite imagery or large scale atmospheric
 observation, they appear as narrow and elongated vapor filaments,
 representing transient intensified horizontal moisture fluxes
-(e.g. @Gimeno2014, @Dettinger2011). A typical atmospheric river
+[e.g., @Gimeno2014; @Dettinger2011]. A typical atmospheric river
 can carry 7-15 times the water in the Mississippi River
 [@Ralph2011], and at any time in winter, there are four to five such
 systems in the Northern Hemisphere alone [@Zhu1998], accounting for
-$80-90 \,\%$ of the total north-south integrated vapor transport
+80-90% of the total north-south integrated vapor transport
 [@Guan2015; @Zhu1998].  Its dual hydrological role, both as a fresh
 water source for some water-stressed areas [@Dettinger2011;
 @Dettinger2013; @Rutz2012] and as a potential trigger for floods
@@ -55,7 +55,7 @@ identification.
 In many existing applications, a magnitude thresholding approach is used. For
 instance, @Ralph2004, @Neiman2008, @Hagos2015 and @Dettinger2011 identified ARs
 by first locating regions where the Integrated Water Vapor (IWV) is greater
-than $20\, mm$.  A $250 \, kg/(m \cdot s)$ threshold on the Integrated Vapor Transport
+than 20 mm. A 250 kg/(m $\cdot$ s) threshold on the Integrated Vapor Transport
 (IVT) was used by @Rutz2014 and @Rutz2015.  However, an implicit assumption
 with this magnitude thresholding approach is that the atmospheric moisture
 level stays unchanged throughout the analysis period.  Such an assumption may
@@ -73,7 +73,7 @@ more reliably traced through their tropical/sub-tropical origins to
 high-latitude landfalls. As the research on ARs matures, new AR
 detection/tracking methods are being developed, and the inter-comparisons of
 various AR detection/tracking methods are carried out by, for instance,
-the Atmospheric River Tracking Method Intercomparison Project (ARTMIP) [@Rutz2019b;@Shields2018].
+the Atmospheric River Tracking Method Intercomparison Project [ARTMIP, @Rutz2019b;@Shields2018].
 Using the terminology of ARTMIP [@Shields2018], the proposed method is a
 "tracking" (Lagrangian approach) type, with length and shape geometrical
 requirements. It imposes no threshold on IVT/IWV, but instead imposes absolute
@@ -83,8 +83,8 @@ performed some systematic comparisons with two magnitude thresholding based AR
 detection methods included in ARTMIP, and the proposed method displays better
 correspondence between North Hemisphere AR tracks and storm tracks, better
 identification of the strong mid-latitude AR-related moisture transports, and
-longer AR track durations. The detailed comparison analysis is given in [@Xu2020], and
-a more thorough description of the detection/tracking methods is given in [@Xu2020b].
+longer AR track durations. The detailed comparison analysis is given in @Xu2020, and
+a more thorough description of the detection/tracking methods is given in @Xu2020b.
 
 `IPART` is therefore intended for researchers and students who are interested
 in the field of atmospheric river studies in the present day climate or future
@@ -121,7 +121,7 @@ searched. \autoref{fig:thr} shows this decomposition process.  It
 could be seen that after this separation of background/transient components,
 it becomes trivial to locate AR-like features.
 
-![(a) The IVT field in $kg/(m \cdot s)$ at 1984-01-26 00:00 UTC over the North Hemisphere. (b) the IVT reconstruction field ($\delta(I)$) at the same time point. (c) the IVT anomaly field ($I-\delta(I)$) from the THR process at the same time point.\label{fig:thr}](fig3.png)
+![(a) The IVT field in kg/(m $\cdot$ s) at 1984-01-26 00:00 UTC over the North Hemisphere. (b) the IVT reconstruction field ($\delta(I)$) at the same time point. (c) the IVT anomaly field ($I-\delta(I)$) from the THR process at the same time point.\label{fig:thr}](fig3.png)
 
 After locating ARs at various time steps, a single curve is sought for
 each AR as a summary of its location. A directed planar graph model
