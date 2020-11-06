@@ -1,5 +1,6 @@
 # Image-Processing based Atmospheric River Tracking (IPART) algorithms
 
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.02407/status.svg)](https://doi.org/10.21105/joss.02407)
 
 ## Introduction
 
@@ -156,6 +157,11 @@ contributions from the community. Please create a fork of the project on GitHub
 and use a pull request to propose your changes. We strongly encourage creating
 an issue before starting to work on major changes, to discuss these changes
 first.
+
+## Citation
+
+If you use `IPART` in published research, please cite it by referencing the
+[peer-reviewed work published in JOSS](https://doi.org/10.21105/joss.02407).
 
 ## Getting help
 
