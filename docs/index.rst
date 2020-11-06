@@ -166,6 +166,16 @@ an issue before starting to work on major changes, to discuss these changes firs
 For help using the package, please post issues on the project GitHub page.
 
 
+Citation
+########
+
+If you use ``IPART`` in published research, please cite it by referencing the
+peer-reviewed work published in JOSS:
+
+.. image:: https://joss.theoj.org/papers/10.21105/joss.02407/status.svg
+   :target: https://doi.org/10.21105/joss.02407
+
+
 License
 #######
 
