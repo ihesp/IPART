@@ -1542,7 +1542,7 @@ def getGridsInContour(contour, x, y):
     ymax_idx=min(len(y)-1,ymax_idx+3) # enlarge a bit
 
     X2,Y2=np.meshgrid(x[xmin_idx:xmax_idx],y[ymin_idx:ymax_idx])
-    coords=np.array(zip(X2.flat, Y2.flat))
+    coords=np.array(list(zip(X2.flat, Y2.flat)))
 
     #------Create a path from vertices------
     if ispath:
