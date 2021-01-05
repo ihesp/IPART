@@ -894,7 +894,7 @@ def saveNCDims(fout, axislist):
         axisvar[:]=axisdata
 
         for kk,vv in aa.attributes.items():
-            if kk!='isunlimited':
+            if kk!='isunlimited' and kk!='_FillValue':
                 axisvar.setncattr(kk, vv)
 
     return
