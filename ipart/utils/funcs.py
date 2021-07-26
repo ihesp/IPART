@@ -7,6 +7,7 @@ from __future__ import print_function
 import sys, os
 import copy
 from datetime import datetime, timedelta
+import cftime
 import numpy as np
 import pandas as pd
 from netCDF4 import Dataset, date2num, num2date
@@ -878,7 +879,7 @@ def saveNCDims(fout, axislist):
             continue
         if aa.id in ['t', 'time', 'Time', 'T']:
             lenii=None
-            if all([isinstance(ii, datetime) for ii in aa.data]):
+            if all([isinstance(ii, (datetime, cftime.datetime)) for ii in aa.data]):
                 axisdata=date2num(aa.data, aa.units)
             else:
                 axisdata=aa.data
