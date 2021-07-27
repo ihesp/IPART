@@ -781,14 +781,14 @@ def readNC(abpath_in, varid):
     axislist=[]
     for dd in dims:
         ncaxis=fin.variables[dd]
-        if dd=='time':
+        if dd.lower() in ['time', 't']:
             # convert time to datetime objs
             axisii=num2dateWrapper(ncaxis[:], ncaxis.units)
         else:
             axisii=ncaxis[:]
         axisattr=getAttributes(ncaxis)
         axisattr['isunlimited']=fin.dimensions[dd].isunlimited()
-        axisii=NCVAR(axisii, dd, [], axisattr)
+        axisii=NCVAR(axisii, dd.lower(), [], axisattr)
         axislist.append(axisii)
 
     attributes=getAttributes(var)
