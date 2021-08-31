@@ -1626,10 +1626,18 @@ def _findARs(anoslab, latax, areas, param_dict):
         centroidy,centroidx=rpii.weighted_centroid
         centroidy=latax[int(centroidy)]
         centroidy=np.sign(centroidy)*centroidy
-        min_lat_idx=np.argmin(np.abs(latax[:]-min_lat))
+        min_lat_idx=np.argmin(np.abs(abs(latax[:])-min_lat))
+
+        latsii=np.where(maskii==1)[0]
+        latsii=np.take(latax, latsii)
+        if np.mean(latsii)>0:
+            # NH
+            mask_lowlat = maskii[:min_lat_idx]
+        else:
+            mask_lowlat = maskii[min_lat_idx:]
 
         if (centroidy<=min_lat and\
-                maskii[:min_lat_idx].sum()/float(maskii.sum())>=0.5)\
+                mask_lowlat.sum()/float(maskii.sum())>=0.5)\
                 or centroidy>=max_lat:
             continue
 
