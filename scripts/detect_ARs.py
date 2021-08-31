@@ -97,7 +97,7 @@ from __future__ import print_function
 #--------------------Time range--------------------
 YEAR=2007
 TIME_START='%d-01-01 00:00:00' %YEAR
-TIME_END='%d-01-10 18:00:00' %YEAR
+TIME_END='%d-01-10 18:00:00' %YEAR  # NOTE: end point not included
 
 #-----------u-qflux----------------------
 UQ_FILE_NAME='/home/guangzhi/datasets/erai_qflux/uflux_m1-60_6_%d_cln-cea-proj.nc' %YEAR
