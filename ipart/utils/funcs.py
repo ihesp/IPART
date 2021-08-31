@@ -329,9 +329,12 @@ class NCVAR(object):
         if v1>v2:
             v1,v2=v2,v1
 
-        if axis==interpretAxis('time', self):
-            v1=pd.to_datetime(v1).to_pydatetime()
-            v2=pd.to_datetime(v2).to_pydatetime()
+        try:
+            if axis==interpretAxis('time', self):
+                v1=pd.to_datetime(v1).to_pydatetime()
+                v2=pd.to_datetime(v2).to_pydatetime()
+        except:
+            pass
 
         #--------------------Slice axis--------------------
         axisobj=self._axislist[axis]
