@@ -143,7 +143,7 @@ def THR(ivtNV, kernel, oroNV=None, high_terrain=600, verbose=True):
     return ivtNV, ivtrecNV, ivtanoNV
 
 def rotatingTHR(filelist, varin, kernel, outputdir, oroNV=None,
-        selector=None, high_terrain=600, verbose=True):
+        selector=None, high_terrain=600, shift_lon=None, verbose=True):
     '''Compute time filtering on data in different files.
 
     Args:
@@ -173,6 +173,7 @@ def rotatingTHR(filelist, varin, kernel, outputdir, oroNV=None,
             Only used if <oroNV> is not None.
 
             New in v2.0.
+        shift_lon (float): Shift data along longitude dimension.
         verbose (bool): print some messages or not.
 
     Designed to perform temporal filtering on data that are too large to fit
@@ -214,6 +215,11 @@ def rotatingTHR(filelist, varin, kernel, outputdir, oroNV=None,
         n1=var1.shape[0]
 
         vartmp=funcs.cat(var1,var2,axis=0)
+        
+        # shift longitude
+        if shift_lon is not None:
+            vartmp.shiftLon(shift_lon)
+            
         vartmp, vartmp_rec, vartmp_ano=THR(vartmp, kernel, oroNV=oroNV,
             high_terrain=high_terrain)
 
