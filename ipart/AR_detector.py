@@ -1022,6 +1022,277 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
     return labelsNV, anglesNV, crossfluxesNV, df
 
 
+def getARDataPolar(slab, quslab, qvslab, anoslab, quano, qvano, areas,
+        lats, lons, mask_list, axis_list, timestr, param_dict):
+    '''Fetch AR related data
+
+    Args:
+        slab (ndarray): (n * m) 2D array of IVT, in kg/m/s.
+        quslab (ndarray): (n * m) 2D array of u-flux, in kg/m/s.
+        qvslab (ndarray): (n * m) 2D array of v-flux, in kg/m/s.
+        anoslab (ndarray): (n * m) 2D array of IVT anomalies, in kg/m/s.
+        quano (ndarray): (n * m) 2D array of u-flux anomalies, in kg/m/s.
+        qvano (ndarray): (n * m) 2D array of v-flux anomalies, in kg/m/s.
+        areas (ndarray): (n * m) 2D grid cell area slab, in km^2.
+        lats (ndarray): 1d array, latitude coordinates.
+        lons (ndarray): 1d array, longitude coordinates.
+        mask_list (list): list of 2D binary masks, each with the same shape as
+                      <anoslab> etc., and with 1s denoting the location of a
+                      found AR.
+        axis_list (list): list of AR axis coordinates. Each coordinate is defined
+                     as a Nx2 ndarray storing (y, x) indices of the axis
+                     (indices defined in the matrix of corresponding mask
+                     in <masks>.)
+        timestr (str): string of time snap.
+        param_dict (dict): a dict containing parameters controlling the
+            detection process. Keys of the dict:
+            'thres_low', 'min_area', 'max_area', 'max_isoq', 'max_isoq_hard',
+            'min_lat', 'max_lat', 'min_length', 'min_length_hard', 'rdp_thres',
+            'fill_radius', 'single_dome', 'max_ph_ratio', 'edge_eps'.
+            See the doc string of findARs() for more.
+
+    Returns:
+        labelsNV (NCVAR): (n * m) 2D int map showing all ARs at current time.
+            Each AR is labeled by an int label, starting from 1. Background is
+            filled with 0s.
+        anglesNV (NCVAR): (n * m) 2D map showing orientation differences
+            between AR axes and fluxes, for all ARs. In degrees.
+        crossfluxesNV (NCVAR): (n * m) 2D map showing cross- sectional fluxes
+            in all ARs.  In kg/m/s.
+        df (pandas.DataFrame): AR record table. Each row is an AR, see code
+                               below for columns.
+    '''
+
+    #max_isoq=param_dict['max_isoq']
+    #max_isoq_hard=param_dict['max_isoq_hard']
+    min_length=param_dict['min_length']
+    min_length_hard=param_dict['min_length_hard']
+    rdp_thres=param_dict['rdp_thres']
+    min_area=param_dict['min_area']
+    min_LW=param_dict['min_LW']
+
+    #---Create some NCVAR variables, for easy data manipulation
+    lonax=funcs.NCVAR(np.arange(lons.shape[1]), 'x', [], {'name': 'x',
+        'long_name': 'x-axis', 'standard_name': 'x-axis',
+        'units': 'pixel'})
+    latax=funcs.NCVAR(np.arange(lats.shape[0]), 'y', [], {'name': 'y',
+        'long_name': 'y-axis', 'standard_name': 'y-axis',
+        'units': 'pixel'})
+    '''
+    quslabNV=funcs.NCVAR(quslab, 'qu', [latax, lonax],
+            {'name': 'qu',
+             'long_name': 'u-component of IVT',
+             'standard_name': 'eastward_atmosphere_water_transport_across_unit_distance',
+             'units': 'kg/m/s'})
+    qvslabNV=funcs.NCVAR(qvslab, 'qv', [latax, lonax],
+            {'name': 'qv',
+             'long_name': 'v-component of IVT',
+             'standard_name': 'northward_atmosphere_water_transport_across_unit_distance',
+             'units': 'kg/m/s'})
+    '''
+
+    # prepare outputs
+    labels=np.zeros(slab.shape)
+    #angles=np.zeros(slab.shape)
+    #crossfluxes=np.zeros(slab.shape)
+    results={}
+
+    #-----------------Loop through ARs-----------------
+    for ii in range(len(mask_list)):
+
+        maskii=mask_list[ii]
+
+        # region properties, in pixel units
+        rpii=measure.regionprops(maskii, intensity_image=np.array(slab))[0]
+
+        # get centroid
+        centroidy,centroidx=rpii.weighted_centroid
+        centroidlat=lats[int(centroidy), int(centroidx)]
+        centroidlon=lons[int(centroidy), int(centroidx)]
+
+        # get axis coordinate array
+        skelii=axis_list[ii]
+        latsii=lats[skelii[:,0], skelii[:,1]]
+        lonsii=lons[skelii[:,0], skelii[:,1]]
+        axisii=np.c_[latsii,lonsii]
+
+        # segment axis using rdp
+        axis_rdpii=np.array(rdp.rdpGC(axisii.tolist(),rdp_thres))  # lat,lon
+
+        # area
+        areaii=(maskii*areas).sum()  # km^2
+
+        # compute length
+        lens=funcs.greatCircle(axis_rdpii[:-1,0], axis_rdpii[:-1,1],
+                axis_rdpii[1:,0], axis_rdpii[1:,1])/1e3
+        lenii=lens.sum() #km
+
+        # skip if too small or too short
+        if areaii<min_area or lenii<min_length_hard:
+            continue
+
+        # skip if end points too close
+        #enddist=funcs.greatCircle(latsii[0], lonsii[0], latsii[-1],
+                #lonsii[-1])/1e3
+        #if enddist/lenii<=0.25:
+            #continue
+
+        # mean width
+        widthii=areaii/lenii # km
+
+        # length/width ratio
+        ratioii=lenii/widthii
+        if ratioii<min_LW and lenii<min_length:
+            continue
+
+        # mask contour
+        '''
+        if checkCyclic(maskii):
+            # if mask is zonally cyclic, shift to center
+            maskii_roll=np.roll(maskii, maskii.shape[1]//2, axis=1)
+            contii=funcs.getBinContour(maskii_roll,lons,lats)
+            # have to shift the longitude coordinates again
+            contii=contii.vertices
+            xx=contii[:,0]
+            xx2=np.zeros(xx.shape)
+            mid_lon=lons[len(lons)//2]
+            xx2=np.where(xx<=mid_lon, xx+180, xx2)
+            xx2=np.where(xx>mid_lon, xx-180, xx2)
+            contii[:,0]=xx2
+        else:
+        '''
+        contii=funcs.getBinContour(maskii,lons,lats)
+        contii=contii.vertices
+
+        # isoperimetric quotient
+        #isoquoii=4*np.pi*rpii.area/rpii.perimeter**2
+        #if isoquoii>=max_isoq_hard:
+            #continue
+
+        area_weight = areas*maskii
+        # mean strength
+        #slabii=np.ma.masked_where(maskii==0,slab)
+        #strengthii=funcs.areaAverage(slabii, axis=(0,1), weights='generate',
+                #lats=lats, lons=lons, keepdims=False)
+        strengthii = np.sum(slab*area_weight) / np.sum(area_weight)
+
+        # strength std
+        #strengthstdii=float(funcs.areaStd(slabii, axis=(0,1),
+            #weights='generate', lats=lats, lons=lons, keepdims=False))
+        strengthstdii = np.sum(((slab-strengthii)**2)*area_weight) / np.sum(area_weight)
+
+        # anomaly strength
+        #anoslabii=np.ma.masked_where(maskii==0,anoslab)
+        #anostrengthii=funcs.areaAverage(anoslabii,axis=(0,1),
+                #weights='generate', lats=lats, lons=lons, keepdims=False)
+        anostrengthii = np.sum(anoslab*area_weight) / np.sum(area_weight)
+
+        # max strength
+        max_strengthii=float(np.ma.max(slab*maskii))
+
+        # compute angles and cross-section flux of total flux
+        '''
+        cropmask,cropidx=cropMask(maskii)
+        cropuNV=applyCropIdx(quslabNV, cropidx)
+        cropvNV=applyCropIdx(qvslabNV, cropidx)
+
+        anglesii,anglesmeanii,crossfluxii,seg_thetasii=crossSectionFlux(
+                cropmask, cropuNV, cropvNV, axis_rdpii)
+
+        # insert crop back to the big map
+        anglesii=insertCropSlab(maskii.shape, anglesii, cropidx)
+        anglesii=np.ma.where(maskii==1,anglesii,0)
+
+        crossfluxii=insertCropSlab(maskii.shape,crossfluxii,cropidx)
+        crossfluxii=np.ma.where(maskii==1,crossfluxii,0)
+        '''
+
+        # mean meridional flux
+        #qvslabmasked=np.ma.masked_where(maskii==0,qvslab)
+        #qvmeanii=funcs.areaAverage(qvslabmasked, axis=(0,1), weights='generate',
+                #lats=lats, lons=lons, keepdims=False)
+        qvmeanii = np.sum(qvslab*area_weight) / np.sum(area_weight)
+        qvmeanii=float(qvmeanii)
+
+        # is candidate a strict AR
+        is_relaxedii=False
+        #if isoquoii>max_isoq:
+            #is_relaxedii=True
+        if lenii<min_length:
+            is_relaxedii=True
+        # NOTE that in SH, qvmean<0 is poleward
+        if np.sign(centroidlat)*qvmeanii<=0:
+            is_relaxedii=True
+
+        labels=labels+maskii*(ii+1)
+        #angles=angles+anglesii
+        #crossfluxes=crossfluxes+crossfluxii
+
+        results[ii+1]={
+                'id': ii+1,
+                'time':timestr,
+                'contour_y': contii[:,1],
+                'contour_x': contii[:,0],
+                'centroid_y': centroidlat,
+                'centroid_x': centroidlon,
+                'axis_y':axisii[:,0],
+                'axis_x':axisii[:,1],
+                'axis_rdp_y':axis_rdpii[:,0],
+                'axis_rdp_x':axis_rdpii[:,1],
+                'area': areaii,
+                'length': lenii,
+                'width': widthii,
+                #'iso_quotient':isoquoii,
+                'LW_ratio':ratioii,
+                'strength':strengthii,
+                'strength_ano':anostrengthii,
+                'strength_std':strengthstdii,
+                'max_strength':max_strengthii,
+                #'mean_angle': float(anglesmeanii),
+                'is_relaxed':is_relaxedii,
+                'qv_mean':qvmeanii
+                }
+
+    #----------------Create NCVAR variables----------------
+    axislist=[latax, lonax]
+    labelsNV=funcs.NCVAR(labels, 'labels', axislist, {
+        'long_name': 'AR labels',
+        'standard_name': 'numerical_AR_labels',
+        'tilte': 'AR labels',
+        'units': ''})
+
+    '''
+    anglesNV=funcs.NCVAR(angles, 'angles', axislist, {
+        'long_name': 'AR moisture flux orientation difference',
+        'standard_name': 'AR_moisture_flux_orientation_difference',
+        'title': 'AR moisture flux orientation difference',
+        'units': 'degree'})
+
+    crossfluxesNV=funcs.NCVAR(crossfluxes, 'ivt_cross', axislist, {
+        'long_name': 'AR total cross sectional moisture flux',
+        'standard_name': 'AR_total_cross_sectional_moisture_flux',
+        'title': 'AR total cross sectional moisture flux',
+        'units': getattr(slab, 'units', 'kg/m/s')})
+    '''
+
+    keys=['id', 'time', 'contour_y', 'contour_x', 'centroid_y', 'centroid_x',
+            'axis_y', 'axis_x', 'axis_rdp_y', 'axis_rdp_x',
+            'area', 'length', 'width',
+            #'iso_quotient',
+            'LW_ratio',
+            'strength', 'strength_ano', 'strength_std', 'max_strength',
+            #'mean_angle',
+            'is_relaxed', 'qv_mean']
+
+    df=pd.DataFrame(results).T
+    if len(df)>0:
+        df=df[keys]
+
+
+    #return labelsNV, anglesNV, crossfluxesNV, df
+    return labelsNV, df
+
+
 def uvDecomp(u0, v0, i1, i2):
     '''Decompose background-transient components of u-, v- fluxes
 
@@ -1395,6 +1666,100 @@ def prepareMeta(lats, lons, times, ntime, nlat, nlon,
     return timeax, areamap, costhetas, sinthetas, lats, lons, reso
 
 
+def prepareMetaPolar(qu, qv, lats, lons, times, ntime, nlat, nlon,
+        dlats, dlons, areamap,
+        ref_time='days since 1900-01-01', verbose=True):
+    '''Prepare metadata for AR detection function calls
+
+    Args:
+        lats (ndarray): 1D, latitude coordinates, the length needs to equal
+            <nlat>.
+        lons (ndarray): 1D, longitude coordinates, the length needs to equal
+            <nlon>.
+        times (list or array): time stamps of the input data as a list of strings,
+            e.g. ['2007-01-01 06:00:00', '2007-01-01 12:00', ...].
+            Needs to have the a length of <ntime>.
+        ntime (int): length of the time axis, should equal the length of
+            <times>.
+        nlat (int): length of the latitude axis, should equal the length of
+            <lats>.
+        nlon (int): length of the longitude axis, should equal the length of
+            <lons>.
+
+    Keyword Args:
+        ref_time (str): reference time point to create time axis.
+        verbose (bool): print some messages or not.
+
+    Returns:
+        timeax (list): a list of datetime objs.
+        areamap (ndarray): grid cell areas in km^2, with shape (<nlat> x <nlon>).
+        costhetas (ndarray): ratios of dx/sqrt(dx^2 + dy^2) for all grid cells.
+            with shape (<nlat> x <nlon>).
+        sinthetas (ndarray): ratios of dy/sqrt(dx^2 + dy^2) for all grid cells.
+            with shape (<nlat> x <nlon>).
+        reso (float): (approximate) horizontal resolution in degrees of lat/lon
+            estimate from <lats> and <lons>.
+
+    New in v2.0.
+    '''
+
+    #-------------------Check inputs-------------------
+    lats=np.asarray(lats).squeeze()
+    lons=np.asarray(lons).squeeze()
+    if np.ndim(lats) != 2:
+        raise Exception("<lats> needs to be an 2-D array.")
+    if np.ndim(lons) != 2:
+        raise Exception("<lons> needs to be an 2-D array.")
+    if len(lats) != nlat:
+        raise Exception("Length of <lats> doesn't equal <nlat>.")
+    if len(lons) != nlon:
+        raise Exception("Length of <lons> doesn't equal <nlon>.")
+
+    #------Make sure lats and lons are increasing------
+    # NOTE: important to make sure lat is increasing
+    #lats=np.sort(lats)
+    #lons=np.sort(lons)
+    reso=np.mean([np.diff(lats, axis=0).mean(),
+                  np.diff(lats, axis=1).mean(),
+                  np.diff(lons, axis=0).mean(),
+                  np.diff(lons, axis=1).mean()])
+
+
+    #------------------Get time axis------------------
+    timeax=funcs.getTimeAxis(times, ntime, ref_time)
+
+    #-------------Compute grid geometries-------------
+    #dxs=funcs.dLongitude(lats, lons, R=6371)
+    #dys=funcs.dLatitude(lats, lons, R=6371)
+    #areamap=dxs*dys # km^2
+    #dxs = dlons
+    #dys = dlats
+    lon0 = lons[lons.shape[0]//2, -1]  # lon at 0 degree angle loc
+    lon_sign = np.sign(np.diff(lons[:, -1]).mean())
+    lontmp = np.deg2rad(lon_sign * (lons - lon0))
+
+    #R = 6371  # km
+    dxs = abs(dlats * np.cos(lontmp) - dlons * np.sin(lontmp))
+    dys = abs(dlats * np.sin(lontmp) + dlons * np.cos(lontmp))
+
+    #dxs = dlats * np.cos(lontmp)
+    #dys = dlats * np.sin(lontmp)
+    costhetas=dxs/np.sqrt(dxs**2+dys**2)
+    sinthetas=dys/np.sqrt(dxs**2+dys**2)
+
+    # convert to Cartisian velocities
+    ux = qu * np.sin(lontmp)
+    uy = - qu * np.cos(lontmp)
+    vx = qv * np.cos(lontmp)
+    vy = qv * np.sin(lontmp)
+    cx = ux + vx
+    cy = uy + vy
+
+    if verbose:
+        print('\n# <prepareMeta>: Metadata created.')
+
+    return cx, cy, timeax, areamap, costhetas, sinthetas, lats, lons, reso
+
 def cyclicLabel(mask, connectivity=1, iszonalcyclic=False):
     '''Label connected region, zonally cyclic version
 
@@ -1671,6 +2036,203 @@ def _findARs(anoslab, latax, areas, param_dict):
 
         if rollii:
             maskii=np.roll(maskii, -maskii.shape[1]//2, axis=1)
+
+        masks.append(maskii)
+        armask=armask+maskii
+
+    return masks, armask
+
+
+def _findARsPolar(anoslab, latax, areas, param_dict):
+    '''Find ARs from THR results at a time snap
+
+    Args:
+        anoslab (ndarray): (n * m) 2D anomalous IVT slab, in kg/m/s.
+        latax (ndaray): 1d array, latitude coordinates.
+        areas (ndarray): (n * m) 2D grid cell area slab, in km^2.
+        param_dict (dict): a dict containing parameters controlling the
+            detection process. Keys of the dict:
+            'thres_low', 'min_area', 'max_area', 'max_isoq', 'max_isoq_hard',
+            'min_lat', 'max_lat', 'min_length', 'min_length_hard', 'rdp_thres',
+            'fill_radius', 'single_dome', 'max_ph_ratio', 'edge_eps'.
+            See the doc string of findARs() for more.
+
+    Returns:
+        masks (list): list of 2D binary masks, each with the same shape as
+                      <anoslab>, and with 1s denoting the location of a
+                      found AR.
+        armask (ndarray): 2D binary mask showing all ARs in <masks> merged into
+                         one map.
+
+    If no ARs are found, <masks> will be []. <armask> will be zeros.
+    '''
+
+    # fetch parameters
+    thres_low=param_dict['thres_low']
+    min_area=param_dict['min_area']
+    max_area=param_dict['max_area']
+    min_lat=abs(param_dict['min_lat'])
+    max_lat=abs(param_dict['max_lat'])
+    single_dome=param_dict['single_dome']
+    max_ph_ratio=param_dict['max_ph_ratio']
+    #max_isoq_hard=param_dict['max_isoq_hard']
+    fill_radius=param_dict['fill_radius']
+    #zonal_cyclic=param_dict['zonal_cyclic']
+    zonal_cyclic = False
+    #latax=anoslab.getLatitude()
+
+    def paddedClosing(mask, ele, pad):
+        # pad
+        padmask=np.pad(mask, (pad,pad), mode='constant', constant_values=0)
+        # closing
+        padmask=morphology.closing(padmask, selem=ele)
+        # trim
+        padmask=padmask[slice(pad,-pad), slice(pad,-pad)]
+        return padmask
+
+    if thres_low is None:
+        thres_low=determineThresLow(anoslab)
+
+    mask0=np.ma.where(anoslab>thres_low,1,0)
+    if single_dome:
+        # NOTE: if using single_dome, should not filter max_area here.
+        mask0=areaFilt(mask0,areas,min_area,np.inf, zonal_cyclic)
+    else:
+        mask0=areaFilt(mask0,areas,min_area,max_area, zonal_cyclic)
+
+    # prepare outputs
+    masks=[]
+    armask=np.zeros(mask0.shape)
+
+    if mask0.max()==0:
+        return masks, armask
+
+    #---------------Separate grouped peaks---------------
+    if single_dome:
+        labels=measure.label(mask0,connectivity=2)
+        #labels=cyclicLabel(mask0,connectivity=2,iszonalcyclic=zonal_cyclic)
+        mask1=np.zeros(mask0.shape)
+
+        for ii in range(labels.max()):
+            maskii=np.where(labels==ii+1,1,0)
+
+            #-------------Skip if latitude too low or too high---------
+            #latsii=np.where(maskii==1)[0]
+            #latsii=np.take(latax, latsii)
+            #latsii=np.where(maskii==1)
+            latsii=latax[maskii==1]
+            if np.mean(latsii)>0:
+                # NH
+                if np.max(latsii)<min_lat:
+                    continue
+                if np.min(latsii)>max_lat:
+                    continue
+            else:
+                # SH
+                if -np.min(latsii)<min_lat:
+                    continue
+                if -np.max(latsii)>max_lat:
+                    continue
+
+            '''
+            if zonal_cyclic and checkCyclic(maskii):
+                maskii=np.roll(maskii, maskii.shape[1]//2, axis=1)
+                if checkCyclic(maskii):
+                    #raise Exception("WTF")
+                    pass
+                rollii=True
+                anoslab_roll=np.roll(anoslab, maskii.shape[1]//2, axis=1)
+                anoslabii=anoslab_roll
+            else:
+                rollii=False
+                anoslabii=anoslab
+            '''
+            anoslabii=anoslab
+
+            cropmask,cropidx=cropMask(maskii)
+            maskii2=partPeaks(cropmask,cropidx,anoslabii,areas,min_area,
+                    max_ph_ratio, fill_radius)
+            #maskii2=partPeaksOld(cropmask,cropidx,anoslabii,
+                    #max_ph_ratio)
+            #if rollii:
+                #maskii2=np.roll(maskii2, -maskii.shape[1]//2, axis=1)
+
+            # should I revert to maskii if the peak separation results in
+            # a large area loss?
+            mask1=mask1+maskii2
+    else:
+        mask1=mask0
+
+    mask1=areaFilt(mask1,areas,min_area,max_area,zonal_cyclic)
+
+    if mask1.max()==0:
+        return masks, armask
+
+    #-------Latitude filtering-------
+    labels=measure.label(mask1,connectivity=2)
+    #labels=cyclicLabel(mask1, connectivity=2, iszonalcyclic=zonal_cyclic)
+    mask1=np.ma.zeros(mask0.shape)
+    lowlat_idx = abs(latax) < min_lat
+
+    for ii in range(labels.max()):
+        maskii=np.ma.where(labels==ii+1,1,0)
+
+        #-------------Skip if latitude too low or too high---------
+        rpii=measure.regionprops(maskii, intensity_image=np.array(anoslab))[0]
+        centroidy,centroidx=rpii.weighted_centroid
+        centroidy=latax[int(centroidy), int(centroidx)]
+        centroidy=np.sign(centroidy)*centroidy
+        #min_lat_idx=np.argmin(np.abs(abs(latax[:])-min_lat))
+
+        #latsii=np.where(maskii==1)[0]
+        #latsii=np.take(latax, latsii)
+        #latsii=latax[maskii==1]
+        '''
+        if np.mean(latsii)>0:
+            # NH
+            mask_lowlat = maskii[:min_lat_idx]
+        else:
+            mask_lowlat = maskii[min_lat_idx:]
+        '''
+        mask_lowlat = maskii[lowlat_idx]
+
+        if (centroidy<=min_lat and\
+                mask_lowlat.sum()/float(maskii.sum())>=0.5)\
+                or centroidy>=max_lat:
+            continue
+
+        mask1=mask1+maskii
+
+    if mask1.max()==0:
+        return masks, armask
+
+    #--------Fill some small holes and make the contour smoother--------
+    labels=measure.label(mask1,connectivity=2)
+    #labels=cyclicLabel(mask1, connectivity=2, iszonalcyclic=zonal_cyclic)
+    filldisk=morphology.disk(fill_radius)
+
+    for ii in range(labels.max()):
+        maskii=np.where(labels==ii+1,1,0)
+        '''
+        if zonal_cyclic and checkCyclic(maskii):
+            maskii=np.roll(maskii, maskii.shape[1]//2, axis=1)
+            if checkCyclic(maskii):
+                #raise Exception("WTF")
+                pass
+            rollii=True
+        else:
+            rollii=False
+        '''
+
+        maskii=paddedClosing(maskii, filldisk, fill_radius)
+
+        #rpii=measure.regionprops(maskii)[0]
+        #isoquoii=4*np.pi*rpii.area/rpii.perimeter**2
+        #if isoquoii>=max_isoq_hard:
+            #continue
+
+        #if rollii:
+            #maskii=np.roll(maskii, -maskii.shape[1]//2, axis=1)
 
         masks.append(maskii)
         armask=armask+maskii
@@ -2010,5 +2572,211 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
         crossfluxesNV=funcs.addExtraAxis(crossfluxesNV, timeaxii)
 
         yield ii, timett_str, labelsNV, anglesNV, crossfluxesNV, ardf
+
+
+
+def findARsGenPolar(ivt, ivtrec, ivtano, qu, qv, lats, lons,
+        dlats, dlons, areamap,
+        times=None, ref_time='days since 1900-01-01',
+        thres_low= 1, min_area= 50*1e4, max_area= 1800*1e4,
+        min_LW= 2, min_lat= 20, max_lat= 80, min_length= 2000,
+        min_length_hard= 1500, rdp_thres= 2, fill_radius= None,
+        single_dome=False, max_ph_ratio= 0.6, edge_eps= 0.4,
+        zonal_cyclic=False,
+        verbose=True):
+    '''Find ARs from THR results, generator version
+
+    Args:
+        ivt (ndarray): 3D or 4D input IVT data, with dimensions
+            (time, lat, lon) or (time, level, lat, lon).
+        ivtrec (ndarray): 3D or 4D array, the reconstruction
+            component from the THR process.
+        ivtano (ndarray): 3D or 4D array, the difference between
+            input <ivt> and <ivtrec>.
+        qu (ndarray): 3D or 4D array, zonal component of
+            integrated moisture flux.
+        qv (ndarray): 3D or 4D array, meridional component of
+            integrated moisture flux.
+        lats (ndarray): 1D, latitude coordinates, the length needs to be the
+            same as the lat dimension of <ivt>.
+        lons (ndarray): 1D, longitude coordinates, the length needs to be the
+            same as the lon dimension of <ivt>.
+
+    Keyword Args:
+        times (list or array): time stamps of the input data as a list of strings,
+            e.g. ['2007-01-01 06:00:00', '2007-01-01 12:00', ...].
+            Needs to have the same length as the time dimension of <ivt>.
+            If None, default to create a dummy 6-hourly time axis, using
+            <ref_time> as start, with a length as the time dimension of <ivt>.
+        ref_time (str): reference time point to create dummy time axis, if
+            no time stamps are given in <times>.
+        thres_low (float or None): kg/m/s, define AR candidates as regions
+            >= this anomalous ivt level. If None is given, compute a
+            threshold based on anomalous ivt data in <ivtano> using an
+            empirical method:
+                1. make a loop through an array of thresholds from 1 to the
+                99th percentile of <ivtano>.
+                2. at each level, record the number of pixels > threshold.
+                3. after looping, pixel number counts will have a curve with a
+                   lower-left elbow. Compute the product of number counts and
+                   thresholds P. P will have a peak value around the elbow.
+                4. choose the 1st time P reaches the 80% of max(P), and pick
+                   the corresponding threshold as result.
+        min_area (float): km^2, drop AR candidates smaller than this area.
+        max_area (float): km^2, drop AR candidates larger than this area.
+        min_LW (float): minimum length/width ratio.
+        min_lat (float): degree, exclude systems whose centroids are lower
+            than this latitude. NOTE this is the absolute latitude for both
+            NH and SH. For SH, systems with centroid latitude north of
+            - min_lat will be excluded.
+        max_lat (float): degree, exclude systems whose centroids are higher
+            than this latitude. NOTE this is the absolute latitude for both
+            NH and SH. For SH, systems with centroid latitude south of
+            - max_lat will be excluded.
+        min_length (float): km, ARs shorter than this length is treated as
+            relaxed.
+        min_length_hard (float): km, ARs shorter than this length is discarded.
+        rdp_thres (float): degree lat/lon, error when simplifying axis using
+            rdp algorithm.
+        fill_radius (int or None): number of grids as radius to fill small
+            holes in AR contour. If None, computed as
+
+                max(1,int(4*0.75/RESO))
+
+            where RESO is the approximate resolution in degrees of lat/lon,
+            estimated from <lat>, <lon>.
+        single_dome (bool): do peak partition or not, used to separate
+            systems that are merged together with an outer contour.
+        max_ph_ratio (float): max prominence/height ratio of a local peak.
+            Only used when single_dome=True
+        edge_eps (float): minimal proportion of flux component in a direction
+            to total flux to allow edge building in that direction.
+        zonal_cyclic (bool): if True, treat the data as zonally cyclic (e.g.
+            entire hemisphere or global). ARs covering regions across the
+            longitude bounds will be correctly treated as one. If your data
+            is not zonally cyclic, or a zonal shift of the data can put the
+            domain of interest to the center, consider doing the shift and
+            setting this to False, as it will save computations.
+        verbose (bool): print some messages or not.
+
+    Returns:
+        ii (int): index of the time dimension when any AR is found.
+        timett_str (str): time when any AR is found, in string format.
+        labelsNV (NCVAR): 2D array, with dimension
+            (lat, lon). A unique int label is assign
+            to each detected AR at the time, and the AR region is filled
+            out with the label value in the (lat, lon) map.
+        anglesNV (NCVAR): 2D array showing orientation
+            differences between AR axes and fluxes, for all ARs. In degrees.
+        crossfluxesNV (NCVAR): 2D array showing cross-
+            sectional fluxes in all ARs. In kg/m/s.
+        ardf (DataFrame): AR record table. Each row is an AR, see code
+            in getARData() for columns.
+
+    See also:
+        findARs(): collect and return all results in one go.
+    New in v2.0.
+    '''
+
+
+    #-----------------Get coordinate metadata-----------------
+    # squeeze to 3D
+    ivt=funcs.squeezeTo3D(ivt)
+    ivtrec=funcs.squeezeTo3D(ivtrec)
+    ivtano=funcs.squeezeTo3D(ivtano)
+    qu=funcs.squeezeTo3D(qu)
+    qv=funcs.squeezeTo3D(qv)
+
+    # NOTE: important to make sure lat is increasing
+    #ivt, _=funcs.increasingLatitude2(ivt, 1, lats)
+    #ivtrec, _=funcs.increasingLatitude2(ivtrec, 1, lats)
+    #ivtano, _=funcs.increasingLatitude2(ivtano, 1, lats)
+    #qu, _=funcs.increasingLatitude2(qu, 1, lats)
+    #qv, lats=funcs.increasingLatitude2(qv, 1, lats)
+
+    cu, cv, timeax, areamap, costhetas, sinthetas, lats, lons, reso = prepareMetaPolar(
+            qu, qv,
+            lats, lons, times, ivt.shape[0], ivt.shape[1], ivt.shape[2],
+            dlats, dlons, areamap,
+            ref_time=ref_time, verbose=verbose)
+    if fill_radius is None:
+        fill_radius=max(1,int(4*0.75/reso))
+
+    param_dict={
+        'thres_low' : thres_low,
+        'min_area': min_area,
+        'max_area': max_area,
+        #'max_isoq': max_isoq,
+        #'max_isoq_hard': max_isoq_hard,
+        'min_LW': min_LW,
+        'min_lat': min_lat,
+        'max_lat': max_lat,
+        'min_length': min_length,
+        'min_length_hard': min_length_hard,
+        'rdp_thres': rdp_thres,
+        'fill_radius': fill_radius,
+        'single_dome': single_dome,
+        'max_ph_ratio': max_ph_ratio,
+        'edge_eps': edge_eps,
+        'zonal_cyclic': False,
+        }
+
+    yield # this bare yield prepares the generator by advancing it to the 1st yield
+
+    #######################################################################
+    #                          Start processing                           #
+    #######################################################################
+
+    #----------------Loop through time----------------
+    for ii, timett in enumerate(timeax):
+
+        timett_str='%d-%02d-%02d %02d:00' %(timett.year,timett.month,\
+                timett.day,timett.hour)
+
+        if verbose:
+            print('\n# <findARsGen>: Processing time: %s' %timett_str)
+
+        slab=ivt[ii]
+        slabano=ivtano[ii]
+        slabrec=ivtrec[ii]
+        quslab=qu[ii]
+        qvslab=qv[ii]
+        cuslab=cu[ii]
+        cvslab=cv[ii]
+
+        # find ARs
+        mask_list,armask=_findARsPolar(slabano, lats, areamap, param_dict)
+
+        # skip if none
+        if armask.sum()==0:
+            continue
+
+        # find AR axis
+        axis_list, axismask=findARAxis(cuslab, cvslab, mask_list, costhetas,
+                sinthetas, param_dict)
+
+        # decompose background-transient
+        qurec,quano,qvrec,qvano=uvDecomp(quslab,qvslab,slabrec,slabano)
+
+        # fetch AR related data
+        labelsNV, ardf=getARDataPolar(slab, quslab, qvslab,
+                slabano, quano, qvano, areamap, lats, lons,
+                mask_list, axis_list, timett_str, param_dict)
+
+        if verbose:
+            print('# <findARsGen>: NO. of ARs found =  %d' %len(ardf))
+
+        # prepare nc output
+        timeaxii=funcs.createAxis('time',
+                np.array([date2num(timett, 'days since 1900-1-1')]),
+                    {'name': 'time', 'long_name': 'time',
+                        'standard_name': 'time',
+                        'units': 'days since 1900-1-1'})
+
+        labelsNV=funcs.addExtraAxis(labelsNV, timeaxii)
+        #anglesNV=funcs.addExtraAxis(anglesNV, timeaxii)
+        #crossfluxesNV=funcs.addExtraAxis(crossfluxesNV, timeaxii)
+
+        yield ii, timett_str, labelsNV, ardf
 
 

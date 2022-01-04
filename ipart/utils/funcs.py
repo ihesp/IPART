@@ -802,7 +802,10 @@ def readNC(abpath_in, varid):
     for ii in axislist:
         setattr(ncvarNV, ii.id, ii)
 
-    ncvarNV=increasingLatitude(ncvarNV, interpretAxis('latitude', ncvarNV))
+    try:
+        ncvarNV=increasingLatitude(ncvarNV, interpretAxis('latitude', ncvarNV))
+    except:
+        pass
 
     return ncvarNV
 
@@ -1206,10 +1209,10 @@ def getBinContour(mask,lons=None,lats=None,return_largest=True):
 
     assert np.ndim(mask)==2, "<mask> needs to be 2D."
     if lons is not None:
-        assert np.ndim(lons)==1, "<lons> needs to be 1D."
+        #assert np.ndim(lons)==1, "<lons> needs to be 1D."
         assert len(lons)==mask.shape[1], "<lons> doesn't match <mask> shape."
     if lats is not None:
-        assert np.ndim(lats)==1, "<lats> needs to be 1D."
+        #assert np.ndim(lats)==1, "<lats> needs to be 1D."
         assert len(lats)==mask.shape[0], "<lats> doesn't match <mask> shape."
 
     fig,ax=plt.subplots()
