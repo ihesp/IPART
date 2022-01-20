@@ -426,7 +426,8 @@ def getARAxis(g, quslab, qvslab, mask):
         return s
 
     #---------------Find "longest" path---------------
-    for ii in range(n1):
+    dt = 6
+    for ii in range(0, n1, dt):
         eii=inedgecoor[ii]
         pathsii=nx.single_source_dijkstra_path(g,eii,weight='weight')
         pathsii=dict([(kk,vv) for kk,vv in pathsii.items() if kk in outedgecoor])
@@ -454,6 +455,22 @@ def getARAxis(g, quslab, qvslab, mask):
     else:
         maxidx=np.argmax(dists)
         yidx,xidx=np.unravel_index(maxidx,(n1,n2))
+        #print('1st search', yidx, xidx)
+
+        # 2nd search
+        for ii in range(max(0, yidx-dt), min(n1, yidx+dt)):
+            eii=inedgecoor[ii]
+            pathsii=nx.single_source_dijkstra_path(g,eii,weight='weight')
+            pathsii=dict([(kk,vv) for kk,vv in pathsii.items() if kk in outedgecoor])
+            if len(pathsii)>0:
+                distdict=dict([(kk, sumDists(vv,'ivt',g)) for kk,vv in pathsii.items()])
+                nodeii=sorted(distdict,key=distdict.get)[-1]
+                distii=distdict[nodeii]
+                dists[ii,outedgecoor.index(nodeii)]=distii
+
+        maxidx=np.argmax(dists)
+        yidx,xidx=np.unravel_index(maxidx,(n1,n2))
+        #print('2nd search', yidx, xidx)
         path=nx.dijkstra_path(g,inedgecoor[yidx],outedgecoor[xidx],weight='weight')
 
     # get a mask for axis
