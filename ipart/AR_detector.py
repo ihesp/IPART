@@ -14,6 +14,11 @@ from scipy import ndimage
 import matplotlib.pyplot as plt
 #import cartopy.crs as ccrs
 from netCDF4 import date2num
+try:
+    import cv2 as cv
+    HAS_CV = True
+except:
+    HAS_CV = False
 
 from ipart.utils import rdp
 from ipart.utils import funcs
@@ -286,8 +291,8 @@ def maskToGraph(mask, quslab, qvslab, costhetas, sinthetas, edge_eps,
             meanivt=speedslab[yii,xii]
 
             g.add_edge(nii,nii2,
-                    weight=np.exp(-meanivt/1e2),
-                    ivt=meanivt)
+                    weight=np.exp(-meanivt/1e2).astype(np.float32),
+                    ivt=meanivt.astype(np.float32))
 
 
     def addWeightedEdges(nodes1,nodes2,speedslab):
@@ -300,8 +305,8 @@ def maskToGraph(mask, quslab, qvslab, costhetas, sinthetas, edge_eps,
                 meanivt=speedslab[nii]
 
                 g.add_edge(nii,nii2,
-                        weight=np.exp(-meanivt/1e2),
-                        ivt=meanivt)
+                        weight=np.exp(-meanivt/1e2).astype(np.float32),
+                        ivt=meanivt.astype(np.float32))
 
     # add 1 connectivity edges
     #addWeightedEdges(right,right0,quslab)
@@ -347,7 +352,7 @@ def maskToGraph(mask, quslab, qvslab, costhetas, sinthetas, edge_eps,
     return g
 
 
-def getARAxis(g, quslab, qvslab, mask):
+def getARAxis(g, quslab, qvslab, mask, edge=None):
     '''Find AR axis from AR region mask
 
     Args:
@@ -356,6 +361,9 @@ def getARAxis(g, quslab, qvslab, mask):
         quslab (ndarray): 2D map of u-flux.
         qvslab (ndarray): 2D map of v-flux.
         mask (ndarray): 2D binary map showing the location of an AR with 1s.
+    Keyword Args:
+        edge (ndarray or None): 2D binary map denoting edge pixels of the AR mask.
+            If None, compute using a binary erosion on <mask>.
     Returns:
         path (ndarray): Nx2 array storing the AR axis coordinate indices in
                         (y, x) format.
@@ -367,7 +375,11 @@ def getARAxis(g, quslab, qvslab, mask):
     nodes=list(g.nodes())
 
     #---------------Find boundary nodes---------------
-    edge=mask-morphology.binary_erosion(mask)
+    if edge is None:
+        if HAS_CV:
+            edge=mask-cv.erode(mask, cv.getStructuringElement(cv.MORPH_CROSS, (3,3)))
+        else:
+            edge=mask-morphology.binary_erosion(mask)
 
     gy,gx=np.gradient(np.array(mask))
     inedge=(gx*quslab+gy*qvslab)*edge
@@ -1240,7 +1252,7 @@ def crossSectionFlux(mask, quslabNV, qvslabNV, axis_rdp):
     return angles,anglesmean,crossflux,seg_thetas
 
 
-def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
+def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, reso, param_dict,
         verbose=True):
     '''Find AR axis
 
@@ -1253,6 +1265,7 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
                                           cos=dx/sqrt(dx^2+dy^2).
         sinthetas (ndarray): (n * m) 2D slab of grid cell shape:
                                           sin=dy/sqrt(dx^2+dy^2).
+        reso (float): (approximate) horizontal resolution in degrees of lat/lon.
         param_dict (dict): a dict containing parameters controlling the
             detection process. Keys of the dict:
             'thres_low', 'min_area', 'max_area', 'max_isoq', 'max_isoq_hard',
@@ -1275,6 +1288,7 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
 
     edge_eps=param_dict['edge_eps']
     zonal_cyclic=param_dict['zonal_cyclic']
+    ds = max(1, int(1./reso))
 
     #-----------------Prepare outputs-----------------
     axismask=np.zeros(quslab.shape)
@@ -1307,11 +1321,45 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, param_dict,
             sinii=sinthetas
             cosii=costhetas
 
-        #----------Convert mask to directed graph----------
-        gii=maskToGraph(maskii,quii,qvii,cosii,sinii,edge_eps)
+        if ds == 1:
+            #----------Convert mask to directed graph----------
+            gii=maskToGraph(maskii,quii,qvii,cosii,sinii,edge_eps)
+            #--------------Get AR axis from graph--------------
+            axisarrii,axismaskii=getARAxis(gii,quii,qvii,maskii,None)
+        else:
+            #-------------------down sample-------------------
+            maskii_ds = maskii[::ds, ::ds]
+            quii_ds = quii[::ds, ::ds]
+            qvii_ds = qvii[::ds, ::ds]
+            cosii_ds = cosii[::ds, ::ds]
+            sinii_ds = sinii[::ds, ::ds]
 
-        #--------------Get AR axis from graph--------------
-        axisarrii,axismaskii=getARAxis(gii,quii,qvii,maskii)
+            #------------------Find axis from down sampled--------------
+            gii_ds=maskToGraph(maskii_ds,quii_ds,qvii_ds,cosii_ds,sinii_ds,edge_eps)
+            axisarrii_ds,axismaskii_ds=getARAxis(gii_ds,quii_ds,qvii_ds,maskii_ds,None)
+
+            #------------------Get end points------------------
+            p1=axisarrii_ds[0]*ds
+            p2=axisarrii_ds[-1]*ds
+
+            #-----------------Edge points to search from-----------------
+            edge_mask = np.zeros_like(maskii)
+            # enlarge the search region a bit: ds*3
+            edge_mask[max(0, p1[0]-ds*3):min(edge_mask.shape[0], p1[0]+ds*3),
+                      max(0, p1[1]-ds*3):min(edge_mask.shape[1], p1[1]+ds*3)] = 1
+            edge_mask[max(0, p2[0]-ds*3):min(edge_mask.shape[0], p2[0]+ds*3),
+                      max(0, p2[1]-ds*3):min(edge_mask.shape[1], p2[1]+ds*3)] = 1
+
+            if HAS_CV:
+                edge=maskii-cv.erode(maskii, cv.getStructuringElement(cv.MORPH_CROSS, (3,3)))
+                edge_mask = edge_mask * edge
+            else:
+                edge_mask = edge_mask * (maskii-morphology.binary_erosion(maskii))
+
+            gii=maskToGraph(maskii,quii,qvii,cosii,sinii,edge_eps)
+
+            #--------------Get AR axis from graph--------------
+            axisarrii,axismaskii=getARAxis(gii,quii,qvii,maskii,edge_mask)
 
         if rollii:
             # shift back
@@ -1531,11 +1579,14 @@ def _findARs(anoslab, latax, areas, param_dict):
     zonal_cyclic=param_dict['zonal_cyclic']
     #latax=anoslab.getLatitude()
 
-    def paddedClosing(mask, ele, pad):
+    def paddedClosing(mask, ele, pad, has_cv):
         # pad
         padmask=np.pad(mask, (pad,pad), mode='constant', constant_values=0)
         # closing
-        padmask=morphology.closing(padmask, selem=ele)
+        if has_cv:
+            padmask=cv.morphologyEx(padmask, cv.MORPH_CLOSE, ele)
+        else:
+            padmask=morphology.closing(padmask, selem=ele)
         # trim
         padmask=padmask[slice(pad,-pad), slice(pad,-pad)]
         return padmask
@@ -1649,10 +1700,11 @@ def _findARs(anoslab, latax, areas, param_dict):
     #--------Fill some small holes and make the contour smoother--------
     #labels=measure.label(mask1,connectivity=2)
     labels=cyclicLabel(mask1, connectivity=2, iszonalcyclic=zonal_cyclic)
-    filldisk=morphology.disk(fill_radius)
+    filldisk=morphology.disk(fill_radius).astype('uint8')
 
     for ii in range(labels.max()):
-        maskii=np.where(labels==ii+1,1,0)
+        maskii=np.where(labels==ii+1,1,0).astype('uint8')
+
         if zonal_cyclic and checkCyclic(maskii):
             maskii=np.roll(maskii, maskii.shape[1]//2, axis=1)
             if checkCyclic(maskii):
@@ -1662,7 +1714,10 @@ def _findARs(anoslab, latax, areas, param_dict):
         else:
             rollii=False
 
-        maskii=paddedClosing(maskii, filldisk, fill_radius)
+        if HAS_CV:
+            maskii=paddedClosing(maskii, filldisk, fill_radius, True)
+        else:
+            maskii=paddedClosing(maskii, filldisk, fill_radius, False)
 
         #rpii=measure.regionprops(maskii)[0]
         #isoquoii=4*np.pi*rpii.area/rpii.perimeter**2
@@ -1674,6 +1729,7 @@ def _findARs(anoslab, latax, areas, param_dict):
 
         masks.append(maskii)
         armask=armask+maskii
+
 
     return masks, armask
 
@@ -1985,7 +2041,7 @@ def findARsGen(ivt, ivtrec, ivtano, qu, qv, lats, lons,
 
         # find AR axis
         axis_list, axismask=findARAxis(quslab, qvslab, mask_list, costhetas,
-                sinthetas, param_dict)
+                sinthetas, reso, param_dict)
 
         # decompose background-transient
         qurec,quano,qvrec,qvano=uvDecomp(quslab,qvslab,slabrec,slabano)

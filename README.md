@@ -46,6 +46,7 @@ A description of the methods is given in this work: [Xu, G., Ma, X., Chang, P., 
 * networkx (developed in 1.11 and 2.2 in py2, tested 2.4 in py3)
 * scikit-image (developed in 0.14.2, 0.14.3 in py2, tested 0.16.2, 0.17.2 in py3)
 * cartopy (optional, only used for plotting. Tested 0.17.0 in py2, tested 1.18.0 in py3)
+* opencv (optional but recommended. Tested 4.5.5 in py3. Used to speed up some computations, new in v4.0.)
 * OS: Linux or Mac, may work in Windows.
 
 ## Installation
@@ -134,6 +135,17 @@ python -m unittest discover -s tests
 
 
 ## Changelog
+
+### v4.0
+
+* Speed optimization for the AR detection task.
+
+For computations in `scripts/detect_ARs.py` and
+`scripts/detect_ARs_generator_version.py`, expect to see a 200 - 300 % speed up
+(only when the data resolution is higher than 1.0 degree latitude/longitude).
+
+If the `opencv` module is also installed, up to 300 - 500 % speed gain
+(tested with 0.25 degree resolution data).
 
 ### v3.0
 
