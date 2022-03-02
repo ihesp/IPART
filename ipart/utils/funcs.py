@@ -1865,5 +1865,3 @@ def arrayGrow(array, shape, axis=None, verbose=True):
     newarray=np.transpose(newarray,order)
 
     return newarray
-
-
