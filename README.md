@@ -46,7 +46,7 @@ A description of the methods is given in this work: [Xu, G., Ma, X., Chang, P., 
 * networkx (developed in 1.11 and 2.2 in py2, tested 2.4 in py3)
 * scikit-image (developed in 0.14.2, 0.14.3 in py2, tested 0.16.2, 0.17.2 in py3)
 * cartopy (optional, only used for plotting. Tested 0.17.0 in py2, tested 1.18.0 in py3)
-* opencv (optional but recommended. Tested 4.5.5 in py3. Used to speed up some computations, new in v4.0.)
+* opencv (optional but recommended. Tested 4.5.5 in py3. Used to speed up some computations, new in v3.2.0)
 * OS: Linux or Mac, may work in Windows.
 
 ## Installation
@@ -136,7 +136,7 @@ python -m unittest discover -s tests
 
 ## Changelog
 
-### v4.0
+### v3.2.0
 
 * Speed optimization for the AR detection task.
 
