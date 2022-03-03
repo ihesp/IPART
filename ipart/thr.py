@@ -215,11 +215,11 @@ def rotatingTHR(filelist, varin, kernel, outputdir, oroNV=None,
         n1=var1.shape[0]
 
         vartmp=funcs.cat(var1,var2,axis=0)
-        
+
         # shift longitude
         if shift_lon is not None:
             vartmp.shiftLon(shift_lon)
-            
+
         vartmp, vartmp_rec, vartmp_ano=THR(vartmp, kernel, oroNV=oroNV,
             high_terrain=high_terrain)
 
@@ -259,6 +259,8 @@ def rotatingTHR(filelist, varin, kernel, outputdir, oroNV=None,
         if verbose:
             print('\n# <rotatingTHR>: Shape of left section after padding:',
                     rec1.shape)
+
+        var1.id = 'ivt'
 
         rec1.id=vartmp_rec.id
         attdict=getAttrDict(var1, 'reconstruction')
@@ -300,6 +302,8 @@ def rotatingTHR(filelist, varin, kernel, outputdir, oroNV=None,
 
             if verbose:
                 print('\n# <rotatingTHR>: Shape of last section after padding:', ano2.shape)
+
+            var2.id = 'ivt'
 
             rec2.id=vartmp_rec.id
             attdict=getAttrDict(var2, 'reconstruction')

@@ -136,6 +136,15 @@ python -m unittest discover -s tests
 
 ## Changelog
 
+### v3.3.0
+
+* Minor fixes
+
+Use `agg` backend of `matplotlib` in `utils/funcs.py` to prevent [memory leaking](https://github.com/matplotlib/matplotlib/issues/20490).
+
+Allow specifying the calendar type (e.g. `noleap`) when reading netCDF data using `readNC()`:
+`readNC(data_path, varid, calendar='noleap')`.
+
 ### v3.2.0
 
 * Speed optimization for the AR detection task.

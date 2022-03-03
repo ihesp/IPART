@@ -11,6 +11,7 @@ import cftime
 import numpy as np
 import pandas as pd
 from netCDF4 import Dataset, date2num, num2date
+import matplotlib; matplotlib.use('agg')  # matplotlib is leaking mem like mad
 
 
 class DataError(Exception):
@@ -739,12 +740,14 @@ def getAttributes(var):
         attr[kk]=var.getncattr(kk)
     return attr
 
-def num2dateWrapper(values, units):
+def num2dateWrapper(values, units, calendar='standard'):
     '''A wrapper of netCDF4.num2date to work for different versions
 
     Args:
         values (ndarray): date values.
         units (str): date units.
+    Keyword Args:
+        calendar (str): calendar used. Default to 'standard'.
     Returns:
         axis (ndarray): date values converted to python datetime objs.
 
@@ -754,24 +757,26 @@ def num2dateWrapper(values, units):
     '''
 
     try:
-        axis=num2date(values, units,
+        axis=num2date(values, units, calendar=calendar,
                 only_use_cftime_datetimes=False,
                 only_use_python_datetimes=True)
     except:
         try:
-            axis=num2date(values, units,
+            axis=num2date(values, units, calendar=calendar,
                     only_use_cftime_datetimes=False)
         except:
-            axis=num2date(values, units)
+            axis=num2date(values, units, calendar=calendar)
 
     return axis
 
-def readNC(abpath_in, varid):
+def readNC(abpath_in, varid, calendar='standard'):
     '''Read in a variable from an netcdf file
 
     Args:
         abpath_in (str): absolute file path to the netcdf file.
         varid (str): id of variable to read.
+    Keyword Args:
+        calendar (str): calendar used. Default to 'standard'.
     Returns:
         ncvarNV (NCVAR): variable stored as an NCVAR obj.
     '''
@@ -786,7 +791,7 @@ def readNC(abpath_in, varid):
         ncaxis=fin.variables[dd]
         if dd.lower() in ['time', 't']:
             # convert time to datetime objs
-            axisii=num2dateWrapper(ncaxis[:], ncaxis.units)
+            axisii=num2dateWrapper(ncaxis[:], ncaxis.units, calendar)
         else:
             axisii=ncaxis[:]
         axisattr=getAttributes(ncaxis)
@@ -1436,7 +1441,7 @@ def getTimeAxis(times, ntime, ref_time='days since 1900-01-01'):
     isstr=lambda x: isinstance(x, str if sys.version_info[0]>=3 else basestring)
 
     #------If times are already datetime, return------
-    if all([isinstance(ii, datetime) for ii in times]):
+    if all([isinstance(ii, (datetime, cftime.datetime)) for ii in times]):
         result=times
 
     #---If times are in strings, convert to datetime---
