@@ -11,7 +11,6 @@ import cftime
 import numpy as np
 import pandas as pd
 from netCDF4 import Dataset, date2num, num2date
-import matplotlib; matplotlib.use('agg')  # matplotlib is leaking mem like mad
 
 
 class DataError(Exception):
@@ -1217,13 +1216,12 @@ def getBinContour(mask,lons=None,lats=None,return_largest=True):
         assert np.ndim(lats)==1, "<lats> needs to be 1D."
         assert len(lats)==mask.shape[0], "<lats> doesn't match <mask> shape."
 
-    fig,ax=plt.subplots()
     if lons is None:
         lons=np.arange(mask.shape[1])
     if lats is None:
         lats=np.arange(mask.shape[0])
 
-    cs=ax.contourf(lons,lats,mask,[0.9,1.1]).collections
+    cs=plt.contourf(lons,lats,mask,[0.9,1.1]).collections
     conts=cs[0].get_paths()
     if return_largest:
         conts.sort(key=lambda x:len(x.vertices))
@@ -1231,8 +1229,6 @@ def getBinContour(mask,lons=None,lats=None,return_largest=True):
         cont=conts[-1]
     else:
         cont=conts
-    ax.cla()
-    plt.close(fig)
 
     return cont
 

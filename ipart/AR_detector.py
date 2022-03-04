@@ -1088,7 +1088,6 @@ def save2DF(result_dict):
     return result_df
 
 
-
 def getNormalVectors(point_list, idx):
     '''Get the normal vector and the tagent vector to the plane dividing
     2 sections along the AR axis.
@@ -1252,6 +1251,29 @@ def crossSectionFlux(mask, quslabNV, qvslabNV, axis_rdp):
     return angles,anglesmean,crossflux,seg_thetas
 
 
+def zonalShiftMask(mask):
+    '''Shift a mask zonally to make it not zonally cyclic
+    Args:
+        mask (ndarray): 2d bianry mask array which is deemed to be zonally cyclic.
+    Returns:
+        mask (ndarray): zonally leftward shifted mask which is no longer zonally
+            cyclic, if possible, otherwise return <mask> as it is.
+        shift_lon (int): number of pixels the input <mask> has been shifted.
+            Note this is a negative number (leftward shift). To shift back,
+            use `np.roll(mask, -shift_lon, axis=1)`. If 0, the mask spans the
+            entire longitude circle and it is not possible to break its zonal
+            cycle by shifting.
+    '''
+
+    row_sum = np.where(np.sum(mask, axis=0)==0)[0]
+    if len(row_sum) == 0:
+        return mask, 0
+    else:
+        shift_lon = -row_sum[0]
+        mask=np.roll(mask, shift_lon, axis=1)
+        return mask, shift_lon
+
+
 def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, reso, param_dict,
         verbose=True):
     '''Find AR axis
@@ -1295,27 +1317,24 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, reso, param_di
     axes=[]
 
     #--------------------Find axes--------------------
-    if zonal_cyclic:
-        # prepare zonally shifted copies for later use
-        quslab_roll=np.roll(quslab, quslab.shape[1]//2, axis=1)
-        qvslab_roll=np.roll(qvslab, qvslab.shape[1]//2, axis=1)
-        sinthetas_roll=np.roll(sinthetas, sinthetas.shape[1]//2, axis=1)
-        costhetas_roll=np.roll(costhetas, costhetas.shape[1]//2, axis=1)
-
     for maskii in armask_list:
 
         #------------Check mask if zonal cyclic------------
         if zonal_cyclic and checkCyclic(maskii):
-            maskii=np.roll(maskii, maskii.shape[1]//2, axis=1)
-            if checkCyclic(maskii):
-                raise Exception("WTF")
-            rollii=True
-            quii=quslab_roll
-            qvii=qvslab_roll
-            sinii=sinthetas_roll
-            cosii=costhetas_roll
+            maskii, shift_lon = zonalShiftMask(maskii)
+            if shift_lon == 0:
+                rollii=False
+            else:
+                rollii=True
         else:
             rollii=False
+
+        if rollii:
+            quii=np.roll(quslab, shift_lon, axis=1)
+            qvii=np.roll(qvslab, shift_lon, axis=1)
+            sinii=np.roll(sinthetas, shift_lon, axis=1)
+            cosii=np.roll(costhetas, shift_lon, axis=1)
+        else:
             quii=quslab
             qvii=qvslab
             sinii=sinthetas
@@ -1363,8 +1382,10 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, reso, param_di
 
         if rollii:
             # shift back
-            axismaskii=np.roll(axismaskii, -axismaskii.shape[1]//2, axis=1)
-            newx=(axisarrii[:,1] - axismaskii.shape[1]//2)%axismaskii.shape[1]
+            #axismaskii=np.roll(axismaskii, -axismaskii.shape[1]//2, axis=1)
+            #newx=(axisarrii[:,1] - axismaskii.shape[1]//2)%axismaskii.shape[1]
+            axismaskii=np.roll(axismaskii, -shift_lon, axis=1)
+            newx=(axisarrii[:,1] - shift_lon)%axismaskii.shape[1]
             axisarrii[:,1]=newx
 
         axes.append(axisarrii)
@@ -1620,26 +1641,18 @@ def _findARs(anoslab, latax, areas, param_dict):
             #-------------Skip if latitude too low or too high---------
             latsii=np.where(maskii==1)[0]
             latsii=np.take(latax, latsii)
-            if np.mean(latsii)>0:
-                # NH
-                if np.max(latsii)<min_lat:
-                    continue
-                if np.min(latsii)>max_lat:
-                    continue
-            else:
-                # SH
-                if -np.min(latsii)<min_lat:
-                    continue
-                if -np.max(latsii)>max_lat:
-                    continue
+            if np.max(abs(latsii)) < abs(min_lat):
+                continue
+            if np.min(abs(latsii)) > abs(max_lat):
+                continue
 
             if zonal_cyclic and checkCyclic(maskii):
-                maskii=np.roll(maskii, maskii.shape[1]//2, axis=1)
-                if checkCyclic(maskii):
-                    #raise Exception("WTF")
-                    pass
-                rollii=True
-                anoslab_roll=np.roll(anoslab, maskii.shape[1]//2, axis=1)
+                maskii, shift_lon = zonalShiftMask(maskii)
+                if shift_lon == 0:
+                    rollii=False
+                else:
+                    rollii=True
+                anoslab_roll=np.roll(anoslab, shift_lon , axis=1)
                 anoslabii=anoslab_roll
             else:
                 rollii=False
@@ -1651,7 +1664,8 @@ def _findARs(anoslab, latax, areas, param_dict):
             #maskii2=partPeaksOld(cropmask,cropidx,anoslabii,
                     #max_ph_ratio)
             if rollii:
-                maskii2=np.roll(maskii2, -maskii.shape[1]//2, axis=1)
+                #maskii2=np.roll(maskii2, -maskii.shape[1]//2, axis=1)
+                maskii2=np.roll(maskii2, -shift_lon, axis=1)
 
             # should I revert to maskii if the peak separation results in
             # a large area loss?
@@ -1668,6 +1682,7 @@ def _findARs(anoslab, latax, areas, param_dict):
     #labels=measure.label(mask1,connectivity=2)
     labels=cyclicLabel(mask1, connectivity=2, iszonalcyclic=zonal_cyclic)
     mask1=np.ma.zeros(mask0.shape)
+    lowlat_idy = np.where(abs(latax) <= abs(min_lat))[0]
 
     for ii in range(labels.max()):
         maskii=np.ma.where(labels==ii+1,1,0)
@@ -1675,21 +1690,11 @@ def _findARs(anoslab, latax, areas, param_dict):
         #-------------Skip if latitude too low or too high---------
         rpii=measure.regionprops(maskii, intensity_image=np.array(anoslab))[0]
         centroidy,centroidx=rpii.weighted_centroid
-        centroidy=latax[int(centroidy)]
-        centroidy=np.sign(centroidy)*centroidy
-        min_lat_idx=np.argmin(np.abs(abs(latax[:])-min_lat))
+        centroidy = latax[int(centroidy)]
 
-        latsii=np.where(maskii==1)[0]
-        latsii=np.take(latax, latsii)
-        if np.mean(latsii)>0:
-            # NH
-            mask_lowlat = maskii[:min_lat_idx]
-        else:
-            mask_lowlat = maskii[min_lat_idx:]
-
-        if (centroidy<=min_lat and\
-                mask_lowlat.sum()/float(maskii.sum())>=0.5)\
-                or centroidy>=max_lat:
+        if (abs(centroidy) <= abs(min_lat) and\
+                maskii[lowlat_idy, :].sum()/float(maskii.sum()) >= 0.5)\
+                or abs(centroidy) >= abs(max_lat):
             continue
 
         mask1=mask1+maskii
@@ -1706,11 +1711,11 @@ def _findARs(anoslab, latax, areas, param_dict):
         maskii=np.where(labels==ii+1,1,0).astype('uint8')
 
         if zonal_cyclic and checkCyclic(maskii):
-            maskii=np.roll(maskii, maskii.shape[1]//2, axis=1)
-            if checkCyclic(maskii):
-                #raise Exception("WTF")
-                pass
-            rollii=True
+            maskii, shift_lon = zonalShiftMask(maskii)
+            if shift_lon == 0:
+                rollii=False
+            else:
+                rollii=True
         else:
             rollii=False
 
@@ -1725,7 +1730,8 @@ def _findARs(anoslab, latax, areas, param_dict):
             #continue
 
         if rollii:
-            maskii=np.roll(maskii, -maskii.shape[1]//2, axis=1)
+            #maskii=np.roll(maskii, -maskii.shape[1]//2, axis=1)
+            maskii=np.roll(maskii, -shift_lon, axis=1)
 
         masks.append(maskii)
         armask=armask+maskii
