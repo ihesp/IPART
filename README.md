@@ -136,6 +136,15 @@ python -m unittest discover -s tests
 
 ## Changelog
 
+### v3.4.0
+
+Minor fixes:
+
+* fix a bug in latitudinal range filtering when data cover both of the Northern and Southern Hemispheres.
+* more robust handling of zonally cyclic data.
+* (related to a change in v3.3.0) a better way to prevent potential [matplotlib memory leaking](https://github.com/matplotlib/matplotlib/issues/20490).
+
+
 ### v3.3.0
 
 * Minor fixes
