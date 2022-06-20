@@ -1340,12 +1340,9 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, reso, param_di
             sinii=sinthetas
             cosii=costhetas
 
-        if ds == 1:
-            #----------Convert mask to directed graph----------
-            gii=maskToGraph(maskii,quii,qvii,cosii,sinii,edge_eps)
-            #--------------Get AR axis from graph--------------
-            axisarrii,axismaskii=getARAxis(gii,quii,qvii,maskii,None)
-        else:
+        ds_path_success = None
+        if ds > 1:
+            # try quicker graph path search first
             #-------------------down sample-------------------
             maskii_ds = maskii[::ds, ::ds]
             quii_ds = quii[::ds, ::ds]
@@ -1354,31 +1351,43 @@ def findARAxis(quslab, qvslab, armask_list, costhetas, sinthetas, reso, param_di
             sinii_ds = sinii[::ds, ::ds]
 
             #------------------Find axis from down sampled--------------
-            gii_ds=maskToGraph(maskii_ds,quii_ds,qvii_ds,cosii_ds,sinii_ds,edge_eps)
-            axisarrii_ds,axismaskii_ds=getARAxis(gii_ds,quii_ds,qvii_ds,maskii_ds,None)
-
-            #------------------Get end points------------------
-            p1=axisarrii_ds[0]*ds
-            p2=axisarrii_ds[-1]*ds
-
-            #-----------------Edge points to search from-----------------
-            edge_mask = np.zeros_like(maskii)
-            # enlarge the search region a bit: ds*3
-            edge_mask[max(0, p1[0]-ds*3):min(edge_mask.shape[0], p1[0]+ds*3),
-                      max(0, p1[1]-ds*3):min(edge_mask.shape[1], p1[1]+ds*3)] = 1
-            edge_mask[max(0, p2[0]-ds*3):min(edge_mask.shape[0], p2[0]+ds*3),
-                      max(0, p2[1]-ds*3):min(edge_mask.shape[1], p2[1]+ds*3)] = 1
-
-            if HAS_CV:
-                edge=maskii-cv.erode(maskii, cv.getStructuringElement(cv.MORPH_CROSS, (3,3)))
-                edge_mask = edge_mask * edge
+            try:
+                gii_ds=maskToGraph(maskii_ds,quii_ds,qvii_ds,cosii_ds,sinii_ds,edge_eps)
+                axisarrii_ds,axismaskii_ds=getARAxis(gii_ds,quii_ds,qvii_ds,maskii_ds,None)
+            except:
+                ds_path_success = False
             else:
-                edge_mask = edge_mask * (maskii-morphology.binary_erosion(maskii))
+                ds_path_success = True
 
+                #------------------Get end points------------------
+                p1=axisarrii_ds[0]*ds
+                p2=axisarrii_ds[-1]*ds
+
+                #-----------------Edge points to search from-----------------
+                edge_mask = np.zeros_like(maskii)
+                # enlarge the search region a bit: ds*3
+                edge_mask[max(0, p1[0]-ds*3):min(edge_mask.shape[0], p1[0]+ds*3),
+                          max(0, p1[1]-ds*3):min(edge_mask.shape[1], p1[1]+ds*3)] = 1
+                edge_mask[max(0, p2[0]-ds*3):min(edge_mask.shape[0], p2[0]+ds*3),
+                          max(0, p2[1]-ds*3):min(edge_mask.shape[1], p2[1]+ds*3)] = 1
+
+                if HAS_CV:
+                    edge=maskii-cv.erode(maskii, cv.getStructuringElement(cv.MORPH_CROSS, (3,3)))
+                    edge_mask = edge_mask * edge
+                else:
+                    edge_mask = edge_mask * (maskii-morphology.binary_erosion(maskii))
+
+                gii=maskToGraph(maskii,quii,qvii,cosii,sinii,edge_eps)
+
+                #--------------Get AR axis from graph--------------
+                axisarrii,axismaskii=getARAxis(gii,quii,qvii,maskii,edge_mask)
+
+        # if quicker graph search failed, or do not do downsample:
+        if ds == 1 or ds_path_success == False:
+            #----------Convert mask to directed graph----------
             gii=maskToGraph(maskii,quii,qvii,cosii,sinii,edge_eps)
-
             #--------------Get AR axis from graph--------------
-            axisarrii,axismaskii=getARAxis(gii,quii,qvii,maskii,edge_mask)
+            axisarrii,axismaskii=getARAxis(gii,quii,qvii,maskii,None)
 
         if rollii:
             # shift back

@@ -136,6 +136,12 @@ python -m unittest discover -s tests
 
 ## Changelog
 
+### v3.5.0
+
+Minor fix:
+
+* When data resolution is higher than 1.0 degree, put axis-finding using down-sampled AR mask in a `try` block. If it failed, revert back to axis-finding using original resolution.
+
 ### v3.4.0
 
 Minor fixes:
