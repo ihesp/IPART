@@ -1618,7 +1618,7 @@ def _findARs(anoslab, latax, areas, param_dict):
         else:
             padmask=morphology.closing(padmask, selem=ele)
         # trim
-        padmask=padmask[slice(pad,-pad), slice(pad,-pad)]
+        padmask=padmask[tuple(slice(pad,-pad), slice(pad,-pad))]
         return padmask
 
     if thres_low is None:

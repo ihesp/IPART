@@ -297,7 +297,7 @@ class NCVAR(object):
         #--------------------Slice data--------------------
         slicer=[slice(None),]*self.ndim
         slicer[axis]=slice(idx1,idx2)
-        newdata=self.data[slicer]
+        newdata=self.data[tuple(slicer)]
         if idx2-idx1==1 and squeeze:
             newdata=np.squeeze(newdata, axis=axis)
 
@@ -347,7 +347,7 @@ class NCVAR(object):
         else:
             raise Exception("No data found in [v1,v2].")
 
-        newdata=self.data[slicer]   # if var is np.ndarray
+        newdata=self.data[tuple(slicer)]   # if var is np.ndarray
 
         #--------------Create a new data obj--------------
         newaxisdata=axisdata[idx]
@@ -1037,7 +1037,7 @@ def getSlab(var, index1=-1, index2=-2, verbose=True):
     slicer=['0',]*ndim
     slicer[index1]=':'
     slicer[index2]=':'
-    string='slab=var[%s]' %','.join(slicer)
+    string='slab=var[tuple(%s)]' %','.join(slicer)
     exec(string)
     return slab
 
