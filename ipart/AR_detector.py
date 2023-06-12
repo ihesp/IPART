@@ -412,7 +412,11 @@ def getARAxis(g, quslab, qvslab, mask, edge=None):
             if nxversion=='2':
                 sii=g[path[ii]][path[ii+1]][attr]
             else:
-                sii=g.edge[path[ii]][path[ii+1]][attr]
+                # make compatible with different versions of networkx
+                try:
+                    sii=g.edge[path[ii]][path[ii+1]][attr]
+                except:
+                    sii=g.adj[path[ii]][path[ii+1]][attr]
 
             # penalize sharp turns. Doesn't make big difference but notably
             # slower
@@ -819,6 +823,7 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
     rdp_thres=param_dict['rdp_thres']
     min_area=param_dict['min_area']
     min_LW=param_dict['min_LW']
+    zonal_cyclic=param_dict['zonal_cyclic']
 
     #---Create some NCVAR variables, for easy data manipulation
     lonax=funcs.NCVAR(lons, 'longitude', [], {'name': 'longitude',
@@ -893,7 +898,7 @@ def getARData(slab, quslab, qvslab, anoslab, quano, qvano, areas,
             continue
 
         # mask contour
-        if checkCyclic(maskii):
+        if zonal_cyclic and checkCyclic(maskii):
             # if mask is zonally cyclic, shift to center
             maskii_roll=np.roll(maskii, maskii.shape[1]//2, axis=1)
             contii=funcs.getBinContour(maskii_roll,lons,lats)
