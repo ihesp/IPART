@@ -102,12 +102,20 @@ def THR(ivtNV, kernel, oroNV=None, high_terrain=600, verbose=True):
     if verbose:
         print('\n# <THR>: Computing erosion ...')
 
-    lm=morphology.erosion(ivt, selem=ele)
+    try:
+        lm=morphology.erosion(ivt, selem=ele)
+    except TypeError:
+        # version >= 0.19 changes to footprint
+        lm=morphology.erosion(ivt, footprint=ele)
 
     if verbose:
         print('\n# <THR>: Computing reconstruction ...')
 
-    ivtrec=morphology.reconstruction(lm, ivt, method='dilation', selem=rec_ele)
+    try:
+        ivtrec=morphology.reconstruction(lm, ivt, method='dilation', selem=rec_ele)
+    except TypeError:
+        # version >= 0.19 changes to footprint
+        ivtrec=morphology.reconstruction(lm, ivt, method='dilation', footprint=rec_ele)
 
     # perform an extra reconstruction over land
     if oroNV is not None:
@@ -116,8 +124,14 @@ def THR(ivtNV, kernel, oroNV=None, high_terrain=600, verbose=True):
         oro_rs=oro_rs[None,...]
         oro_rs=np.repeat(oro_rs, len(ivt), axis=0)
 
-        ivtrec_oro=morphology.reconstruction(lm*oro_rs, ivt, method='dilation',
-                selem=rec_ele)
+        try:
+            ivtrec_oro=morphology.reconstruction(lm*oro_rs, ivt, method='dilation',
+                    selem=rec_ele)
+        except TypeError:
+        # version >= 0.19 changes to footprint
+            ivtrec_oro=morphology.reconstruction(lm*oro_rs, ivt, method='dilation',
+                    footprint=rec_ele)
+
         ivtano=np.ma.maximum(ivt-ivtrec, (ivt-ivtrec_oro)*oro_rs)
     else:
         ivtano=ivt-ivtrec
@@ -386,12 +400,20 @@ def THRCyclicLongitude(ivt, kernel, oro=None, high_terrain=600, verbose=True):
     if verbose:
         print('\n# <THR>: Computing erosion ...')
 
-    lm=morphology.erosion(ivt.data, selem=ele)
+    try:
+        lm=morphology.erosion(ivt.data, selem=ele)
+    except TypeError:
+        # version >= 0.19 changes to footprint
+        lm=morphology.erosion(ivt.data, footprint=ele)
 
     if verbose:
         print('\n# <THR>: Computing reconstruction ...')
 
-    ivtrec=recon.reconstruction(lm, ivt, method='dilation', selem=rec_ele)
+    try:
+        ivtrec=recon.reconstruction(lm, ivt, method='dilation', selem=rec_ele)
+    except TypeError:
+        # version >= 0.19 changes to footprint
+        ivtrec=recon.reconstruction(lm, ivt, method='dilation', footprint=rec_ele)
 
     # perform an extra reconstruction over land
     if oro is not None:
@@ -399,8 +421,14 @@ def THRCyclicLongitude(ivt, kernel, oro=None, high_terrain=600, verbose=True):
         oro_rs=funcs.addExtraAxis(oro_rs,axis=0)
         oro_rs=np.repeat(oro_rs, len(ivt), axis=0)
 
+    try:
         ivtrec_oro=recon.reconstruction(lm*oro_rs, ivt, method='dilation',
                 selem=rec_ele)
+    except TypeError:
+        # version >= 0.19 changes to footprint
+        ivtrec_oro=recon.reconstruction(lm*oro_rs, ivt, method='dilation',
+                footprint=rec_ele)
+
         ivtano=MV.maximum(ivt-ivtrec, (ivt-ivtrec_oro)*oro_rs)
     else:
         ivtano=ivt-ivtrec

@@ -763,7 +763,13 @@ def partPeaks(cropmask, cropidx, orislab, area, min_area, max_ph_ratio,
         ele=morphology.diamond(fill_radius//2)
 
         gap=cropmask-mask1
-        op=morphology.opening(mask1, selem=ele)
+
+        try:
+            op=morphology.opening(mask1, selem=ele)
+        except:
+            # version >= 0.19 changes to footprint
+            op=morphology.opening(mask1, footprint=ele)
+
         gap2=morphology.reconstruction(gap, mask1-op+gap)
         mask1=np.where(mask1-gap2<=0, 0, mask1)
         #gap2=morphology.dilation(gap, selem=ele)
@@ -1621,7 +1627,11 @@ def _findARs(anoslab, latax, areas, param_dict):
         if has_cv:
             padmask=cv.morphologyEx(padmask, cv.MORPH_CLOSE, ele)
         else:
-            padmask=morphology.closing(padmask, selem=ele)
+            try:
+                padmask=morphology.closing(padmask, selem=ele)
+            except:
+                # version >= 0.19 changes to footprint
+                padmask=morphology.closing(padmask, footprint=ele)
         # trim
         padmask=padmask[tuple([slice(pad,-pad), slice(pad,-pad)])]
         return padmask
