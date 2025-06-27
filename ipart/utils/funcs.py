@@ -1185,7 +1185,7 @@ def dLatitude(lats, lons, R=6371000, verbose=True):
 
     #---------Get axes and bounds-------------------
     latax_bounds=getBounds(lats)
-    delta_y=latax_bounds.ptp(axis=1)*np.pi/180.*R
+    delta_y=np.ptp(latax_bounds,axis=1)*np.pi/180.*R
 
     #-------Repeat array to get slab---------------
     delta_y=np.repeat(delta_y[:,None],len(lons),axis=1)
@@ -1593,7 +1593,7 @@ def signedArea(x, y):
     y=np.asarray(y)
     def isClosed(xs,ys):
         if np.alltrue([np.allclose(xs[0],xs[-1]),\
-            np.allclose(ys[0],ys[-1]),xs.ptp(),ys.ptp()]):
+            np.allclose(ys[0],ys[-1]),np.ptp(xs),np.ptp(ys)]):
             return True
         else:
             return False
