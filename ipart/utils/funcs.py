@@ -1229,7 +1229,8 @@ def getBinContour(mask,lons=None,lats=None,return_largest=True):
         cont=conts[-1]
     else:
         cont=conts
-
+    plt.clf()
+    plt.close()
     return cont
 
 #-----------Find index of value in array-----------
