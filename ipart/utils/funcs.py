@@ -1221,8 +1221,8 @@ def getBinContour(mask,lons=None,lats=None,return_largest=True):
     if lats is None:
         lats=np.arange(mask.shape[0])
 
-    cs=plt.contourf(lons,lats,mask,[0.9,1.1]).collections
-    conts=cs[0].get_paths()
+    cs=plt.contourf(lons,lats,mask,[0.9,1.1])
+    conts=cs.get_paths()
     if return_largest:
         conts.sort(key=lambda x:len(x.vertices))
         #cont=conts[-1].vertices
