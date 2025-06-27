@@ -494,6 +494,7 @@ def getProminence(var,step,lats=None,lons=None,min_depth=None,
             result_map[yidx,xidx]=prokk
             parent_map[yidx,xidx]=parents[kk]
 
+    plt.clf()
     plt.close(fig)
 
     return result, id_map, result_map, parent_map
